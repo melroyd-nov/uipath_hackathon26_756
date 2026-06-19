@@ -1,0 +1,46 @@
+{
+  "name": "AcmeCallCenterAnalytics",
+  "sddRef": "../Docs/acme-call-center-analytics-solution-sdd.md",
+  "sharedResources": [
+    { "id": "data-fabric-entities", "path": "shared/data-fabric" },
+    { "id": "storage-bucket", "path": "shared/storage-bucket" },
+    { "id": "daily-ingestion-trigger", "path": "shared/triggers" },
+    { "id": "llm-gateway-connection", "path": "shared/llm-gateway" }
+  ],
+  "projects": [
+    {
+      "id": "call-center-ai-agent",
+      "product": "Coded Agent",
+      "path": "call-center-ai-agent",
+      "sddRef": "../Docs/call-center-ai-agent-sdd.md",
+      "dependsOn": ["data-fabric-entities", "llm-gateway-connection"]
+    },
+    {
+      "id": "call-center-followup-case",
+      "product": "Maestro BPMN",
+      "path": "call-center-followup-case",
+      "sddRef": "../Docs/call-center-followup-case-sdd.md",
+      "dependsOn": ["data-fabric-entities"]
+    },
+    {
+      "id": "call-center-orchestration",
+      "product": "Maestro Flow",
+      "path": "call-center-orchestration",
+      "sddRef": "../Docs/call-center-orchestration-sdd.md",
+      "dependsOn": ["data-fabric-entities", "storage-bucket", "daily-ingestion-trigger", "call-center-ai-agent"]
+    },
+    {
+      "id": "call-center-dashboard",
+      "product": "Coded App",
+      "path": "call-center-dashboard",
+      "sddRef": "../Docs/call-center-dashboard-sdd.md",
+      "dependsOn": ["data-fabric-entities", "call-center-ai-agent", "call-center-followup-case"]
+    }
+  ],
+  "buildOrder": [
+    ["data-fabric-entities", "storage-bucket", "daily-ingestion-trigger", "llm-gateway-connection"],
+    ["call-center-ai-agent", "call-center-followup-case"],
+    ["call-center-orchestration"],
+    ["call-center-dashboard"]
+  ]
+}

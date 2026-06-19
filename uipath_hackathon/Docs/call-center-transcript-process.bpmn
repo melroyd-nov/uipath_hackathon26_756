@@ -1,0 +1,1199 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:uipath="http://uipath.org/schema/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_CCAnalytics_Full" targetNamespace="http://Acme.com/cc-analytics/uipath" exporter="UiPath (https://bpmn.uipath.com)" exporterVersion="a0f9348b">
+  <bpmn:collaboration id="Collaboration_CC_Full">
+    <bpmn:extensionElements>
+      <uipath:migrationVersion version="11.5" />
+    </bpmn:extensionElements>
+    <bpmn:participant id="Pool_CC" name="Acme — Call Center Analytics (End-to-End)" processRef="Process_CC_Full" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_CC_Full" isExecutable="true">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_System" name="Automated System (FastAPI / UiPath)">
+        <bpmn:flowNodeRef>Start_CallReceived</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_RecordCall</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_IngestTranscript</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AIParallelFork</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AIParallelJoin</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_StoreCallRecord</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SeedFollowups</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_HasFollowups</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_UpdateDashboard</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AnalyticsFork</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SentimentAnalytics</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_EscalationAnalytics</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ComplianceAnalytics</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AnalyticsJoin</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Complete</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_AI" name="UiPath Generative AI Service">
+        <bpmn:flowNodeRef>Task_ExtractSentiment</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ClassifyIntents</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_DetectTriggerWords</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_CheckCompliance</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_GenFollowups</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_DetermineResolution</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_GenSummary</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ResolutionAnalytics</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_IntentAnalytics</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_FrictionAnalytics</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_GenerateAIResponse</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Supervisor" name="Supervisor / Manager">
+        <bpmn:flowNodeRef>Task_SupervisorReview</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_ApproveReject</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AssignDetails</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_RejectFollowup</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_TrackProgress</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_ProgressStatus</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_MarkCompleted</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_QueryAI</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_CallReceived" name="Customer Call Received at Acme">
+      <bpmn:documentation>
+        TRIGGER: A customer contacts the Acme call centre.
+        This event starts the full analytics pipeline:
+          1. Transcript recording and ingestion (load_transcripts.py)
+          2. 7-way UiPath Generative AI UiPath Generative AI analysis (parallel)
+          3. Data Fabric (UiPath) persistence (call_records table, Data Fabric (UiPath))
+          4. Follow-up seeding (call_followups table)
+          5. Supervisor review workflow (approve / reject / track / complete)
+          6. 8-KPI dashboard refresh (vs benchmarks from config.py)
+          7. 6 analytics modules (parallel fan-out)
+          8. UiPath Generative UiPath Generative AI Q&amp;A via UiPath Generative AI (grounded in live Data Fabric (UiPath) data)
+        CALL TYPES: Claims FNOL, Policy Info, Cancellations, Billing, Grievances, New Business.
+        AGENTS: Sam=Claims/Grievances, John=Policy Services, David=Escalations/Quality,
+                Mike=New Business/Renewals, Mary=Billing/Amendments.
+      </bpmn:documentation>
+      <bpmn:extensionElements>
+        <uipath:entryPointId value="c76ae006-619b-4257-8fac-4eee852c97c8" />
+      </bpmn:extensionElements>
+      <bpmn:outgoing>F_Start_Record</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Task_RecordCall" name="Record Call and Capture Transcript File">
+      <bpmn:documentation>
+        WHAT: Telephony system records the call and produces a plain-text transcript file.
+        FILE NAMING by intent: Claims_Registration_FNOL.txt, Cancellations_Retention.txt,
+          Claims_Status_and_Tracking.txt, Grievances_Complaints.txt, etc.
+        HEADER FIELDS: Call Date, Call Start/End Time, Caller Name, Caller NRIC,
+          Caller DOB, Caller Phone, Agent Name, Policy Number.
+        STORAGE: Files may be bundled as transcripts.zip for batch processing.
+        UIPATH: UiPath Agent authenticates to UiPath Orchestrator storage bucket,
+          reads files from incoming/ folder on a scheduled daily trigger.
+        DURATION: Computed later as EXTRACT(EPOCH FROM (call_end_time - call_start_time)).
+      </bpmn:documentation>
+      <bpmn:incoming>F_Start_Record</bpmn:incoming>
+      <bpmn:outgoing>F_Record_Ingest</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_IngestTranscript" name="Load and Parse Transcript (load_transcripts.py)">
+      <bpmn:documentation>
+        WHAT: load_transcripts.py reads the .txt file; generate_summaries.py handles
+          batch ingestion from transcripts.zip.
+        STEPS:
+          1. Parse header: extract caller metadata (name, NRIC, DOB, phone, agent, policy#, timestamps).
+          2. Parse body: isolate speaker-labelled dialogue lines.
+          3. Attach file_name for source traceability.
+        OUTPUT: Structured payload { metadata, dialogue_text, file_name } ready for AI.
+        UIPATH AGENT: downloads from storage bucket, reads into String variable, passes to AI.
+        API RETRIEVAL ENDPOINTS:
+          GET /api/calls                — paginated list with filters
+          GET /api/calls/{call_id}      — full detail including raw transcript
+      </bpmn:documentation>
+      <bpmn:incoming>F_Record_Ingest</bpmn:incoming>
+      <bpmn:outgoing>F_Ingest_AIFork</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:parallelGateway id="GW_AIParallelFork" name="Fan-out: 7 Parallel UiPath Generative AI analysis Tasks">
+      <bpmn:documentation>
+        WHAT: Dispatches transcript simultaneously to 7 UiPath Generative UiPath Generative AI analysis tasks.
+        WHY: Parallel execution maximises throughput. All 7 use the same model:
+          UiPathAI.GenerativeModel(model_name=os.getenv("UIPATH_AI_MODEL","uipath-generative-ai"),
+                               system_instruction=SYSTEM_PROMPT)
+        SYNCHRONISATION: GW_AIParallelJoin waits for all 7 before any DB writes.
+      </bpmn:documentation>
+      <bpmn:incoming>F_Ingest_AIFork</bpmn:incoming>
+      <bpmn:outgoing>F_Fork_Sentiment</bpmn:outgoing>
+      <bpmn:outgoing>F_Fork_Intents</bpmn:outgoing>
+      <bpmn:outgoing>F_Fork_TriggerWords</bpmn:outgoing>
+      <bpmn:outgoing>F_Fork_Compliance</bpmn:outgoing>
+      <bpmn:outgoing>F_Fork_Followups</bpmn:outgoing>
+      <bpmn:outgoing>F_Fork_Resolution</bpmn:outgoing>
+      <bpmn:outgoing>F_Fork_Summary</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:parallelGateway id="GW_AIParallelJoin" name="Synchronise: All 7 AI Results Ready">
+      <bpmn:documentation>
+        WHAT: Waits for all 7 AI branches before advancing.
+        WHY: Prevents partial records in Data Fabric (UiPath). All call_records fields
+          must be populated in one atomic INSERT (db.add() then db.commit()).
+        BRANCHES WAITED FOR: sentiment, intents x3, trigger words, compliance,
+          follow-up items x3, resolution flags x4, call summary.
+      </bpmn:documentation>
+      <bpmn:incoming>F_Sentiment_Join</bpmn:incoming>
+      <bpmn:incoming>F_Intents_Join</bpmn:incoming>
+      <bpmn:incoming>F_TriggerWords_Join</bpmn:incoming>
+      <bpmn:incoming>F_Compliance_Join</bpmn:incoming>
+      <bpmn:incoming>F_Followups_Join</bpmn:incoming>
+      <bpmn:incoming>F_Resolution_Join</bpmn:incoming>
+      <bpmn:incoming>F_Summary_Join</bpmn:incoming>
+      <bpmn:outgoing>F_Join_StoreRecord</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:serviceTask id="Task_StoreCallRecord" name="Persist Call Record to Data Fabric (UiPath) (call_records table)">
+      <bpmn:documentation>
+        DATABASE: Data Fabric (UiPath)
+        CONNECTION: DB_URL env var, Data Fabric (UiPath) connector
+        ORM: SQLAlchemy — class CallRecord, __tablename__='call_records'
+        KEY COLUMNS:
+          call_id (BigInteger PK, 8-digit auto), call_date, call_start/end_time,
+          caller_name, caller_nric, caller_dob, caller_number, agent_name, policy_number,
+          call_sentiment (SmallInteger -1/0/+1), call_intent1/2/3, followup_item1/2/3,
+          escalation_flag, compliance_flag ('No'=FAIL), call_resolved_flag, preverified_flag,
+          triggerword_flag, triggerwords, call_summary, file_name, repeatcall_flag, transcript.
+        STARTUP: Base.metadata.create_all(bind=engine) in main.py.
+          ALTER TABLE ADD COLUMN IF NOT EXISTS for idempotent migrations.
+        API ENDPOINTS: GET /api/calls (list+filters), GET /api/calls/{call_id} (full detail)
+      </bpmn:documentation>
+      <bpmn:incoming>F_Join_StoreRecord</bpmn:incoming>
+      <bpmn:outgoing>F_StoreRecord_SeedFollowups</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_SeedFollowups" name="Seed UiPath Generative AI follow-up Items into call_followups Table">
+      <bpmn:documentation>
+        FUNCTION: _seed_ai_items(db, call_id) in backend/routers/followups.py
+        LOGIC:
+          1. Check if ai_generated rows already exist for this call_id.
+          2. If NOT: create up to 3 CallFollowup rows from followup_item1/2/3.
+             source='ai_generated', status='pending'
+             reason = _extract_reason(transcript, item_text) — keyword match, top 3 lines
+          3. If YES but reason is None: backfill reason only (no duplicate inserts)
+        BATCH: _seed_all_missing() seeds up to 100 un-seeded calls per request.
+        CALL_FOLLOWUPS COLUMNS:
+          id (PK), call_id (FK indexed), text (String 500), reason (Text),
+          source ('ai_generated'|'manual'), status ('pending'|'approved'|'rejected'|'in_progress'|'completed'),
+          priority ('low'|'medium'|'high'), assigned_to, due_date, approved_by, approved_at,
+          completed_at, completion_notes, created_at, updated_at.
+        DEDUP: Startup migration removes duplicate ai_generated rows (keeps MIN(id)).
+      </bpmn:documentation>
+      <bpmn:incoming>F_StoreRecord_SeedFollowups</bpmn:incoming>
+      <bpmn:outgoing>F_Seed_HasFollowupsGW</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="GW_HasFollowups" name="Were Follow-up Action Items Generated?">
+      <bpmn:documentation>
+        CONDITION: At least one of followup_item1/2/3 is non-null and non-empty.
+        YES path: supervisor review workflow needed (Task_SupervisorReview).
+        NO path:  skip to dashboard refresh (purely informational calls).
+        WHY: Prevents empty workflow tasks for calls with no outstanding commitments.
+      </bpmn:documentation>
+      <bpmn:incoming>F_Seed_HasFollowupsGW</bpmn:incoming>
+      <bpmn:outgoing>F_HasFollowups_Yes</bpmn:outgoing>
+      <bpmn:outgoing>F_HasFollowups_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Task_UpdateDashboard" name="Refresh Analytics Dashboard — 8 KPI Summary">
+      <bpmn:documentation>
+        ENDPOINT: GET /api/dashboard/summary (filters: start_date, end_date, agent)
+        8 KPI METRICS (SQL aggregations on call_records):
+          total_calls         = COUNT(*)
+          avg_sentiment       = AVG(call_sentiment)  range -1.0 to +1.0
+          escalation_pct      = 100 * SUM(escalation_flag='Yes') / COUNT(*)
+          compliance_fail_pct = 100 * SUM(compliance_flag='No') / COUNT(*)
+          resolution_pct      = 100 * SUM(call_resolved_flag='Yes') / COUNT(*)
+          preverified_pct     = 100 * SUM(preverified_flag='Yes') / COUNT(*)
+          trigger_word_pct    = 100 * SUM(triggerword_flag='Yes') / COUNT(*)
+          repeat_call_pct     = 100 * SUM(repeatcall_flag='Yes') / COUNT(*)
+        BENCHMARKS (config.py BENCHMARKS dict returned alongside each metric):
+          escalation_pct      must be less than or equal to 10.0%
+          compliance_fail_pct must be less than or equal to  5.0%
+          resolution_pct      must be greater than or equal to 80.0%
+          preverified_pct     must be greater than or equal to 80.0%
+          trigger_word_pct    must be less than or equal to  3.0%
+          repeat_call_pct     must be less than or equal to 20.0%
+        UiPath Apps: RAG (Red/Amber/Green) indicators vs benchmarks.
+        ALSO REFRESHES:
+          GET /api/dashboard/kpi-trends    — monthly KPI trend (YYYY-MM grouping)
+          GET /api/dashboard/agent-summary — per-agent leaderboard (all KPIs + avg duration)
+      </bpmn:documentation>
+      <bpmn:incoming>F_HasFollowups_No</bpmn:incoming>
+      <bpmn:incoming>F_Reject_UpdateDashboard</bpmn:incoming>
+      <bpmn:incoming>F_Progress_Active</bpmn:incoming>
+      <bpmn:incoming>F_Completed_UpdateDashboard</bpmn:incoming>
+      <bpmn:outgoing>F_UpdateDashboard_AnalyticsFork</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:parallelGateway id="GW_AnalyticsFork" name="Fan-out: 6 Analytics Modules in Parallel">
+      <bpmn:documentation>
+        WHAT: Six analytics modules run simultaneously to power dashboard charts.
+        All query call_records via analytics_service.py. All endpoints under /api/analytics/*.
+        Results are JSON consumed by UiPath Apps visualisations.
+        MODULES:
+          1. Sentiment Analytics   (System lane) — 3 endpoints
+          2. Escalation Analytics  (System lane) — 3 endpoints incl. root-cause
+          3. Compliance Analytics  (System lane) — 2 endpoints
+          4. Resolution Analytics  (AI lane)     — 5 endpoints incl. repeat calls
+          5. Intent Analytics      (AI lane)     — 3 endpoints incl. marketing opps
+          6. Friction Points       (AI lane)     — 3 endpoints incl. trigger words
+      </bpmn:documentation>
+      <bpmn:incoming>F_UpdateDashboard_AnalyticsFork</bpmn:incoming>
+      <bpmn:outgoing>F_AnalyticsFork_Sentiment</bpmn:outgoing>
+      <bpmn:outgoing>F_AnalyticsFork_Escalation</bpmn:outgoing>
+      <bpmn:outgoing>F_AnalyticsFork_Compliance</bpmn:outgoing>
+      <bpmn:outgoing>F_AnalyticsFork_Resolution</bpmn:outgoing>
+      <bpmn:outgoing>F_AnalyticsFork_Intent</bpmn:outgoing>
+      <bpmn:outgoing>F_AnalyticsFork_Friction</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:serviceTask id="Task_SentimentAnalytics" name="[Analytics] Sentiment Trends and Per-Agent Breakdown">
+      <bpmn:documentation>
+        1. GET /api/dashboard/sentiment-trend (daily):
+           GROUP BY call_date → date, positive_count, neutral_count, negative_count, avg_score.
+        2. GET /api/dashboard/sentiment-monthly:
+           GROUP BY YYYY-MM → month, avg_score, positive/neutral/negative counts, total_calls.
+        3. GET /api/analytics/sentiment/by-agent:
+           GROUP BY agent_name ORDER BY avg_sentiment ASC (worst first) →
+           agent_name, total_calls, positive/neutral/negative counts, avg_sentiment, negative_pct.
+        IMPACT: Identifies call centre staff needing coaching based on persistent negative sentiment.
+      </bpmn:documentation>
+      <bpmn:incoming>F_AnalyticsFork_Sentiment</bpmn:incoming>
+      <bpmn:outgoing>F_SentimentAnalytics_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_EscalationAnalytics" name="[Analytics] Escalations by Agent, Trend, Root Cause">
+      <bpmn:documentation>
+        1. GET /api/analytics/escalations/by-agent:
+           GROUP BY agent_name ORDER BY escalation_pct DESC →
+           agent_name, total_calls, escalation_count, escalation_pct.
+        2. GET /api/analytics/escalations/trend:
+           GROUP BY YYYY-MM → date, total_calls, escalation_count, escalation_pct.
+        3. GET /api/analytics/escalations/root-cause:
+           Parses triggerwords (comma-separated) for escalated calls (escalation_flag='Yes').
+           Python Counter for top 10. Returns: trigger_words[{word,count}], by_intent[{intent,count}].
+        BENCHMARK: escalation_pct must be less than or equal to 10%.
+        IMPACT: Root cause links trigger words to escalation drivers for targeted coaching.
+      </bpmn:documentation>
+      <bpmn:incoming>F_AnalyticsFork_Escalation</bpmn:incoming>
+      <bpmn:outgoing>F_EscalationAnalytics_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_ComplianceAnalytics" name="[Analytics] Compliance Failures by Agent and Trend">
+      <bpmn:documentation>
+        1. GET /api/analytics/compliance/by-agent:
+           GROUP BY agent_name ORDER BY compliance_fail_pct DESC →
+           agent_name, total_calls, fail_count (compliance_flag='No'), compliance_fail_pct.
+        2. GET /api/analytics/compliance/trend:
+           GROUP BY YYYY-MM → date, total_calls, fail_count, compliance_fail_pct.
+        KEY RULE: compliance_flag='No' = AGENT FAILED. 'Yes' = passed.
+        BENCHMARK: compliance_fail_pct must be less than or equal to 5%.
+        IMPACT: Persistent failures trigger re-training; high rates may need MAS reporting.
+          Monthly trend validates whether coaching interventions are effective.
+      </bpmn:documentation>
+      <bpmn:incoming>F_AnalyticsFork_Compliance</bpmn:incoming>
+      <bpmn:outgoing>F_ComplianceAnalytics_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:parallelGateway id="GW_AnalyticsJoin" name="Synchronise: All 6 Analytics Modules Complete">
+      <bpmn:documentation>
+        WHAT: Waits for all 6 analytics modules. Then _build_context(db) in ai_service.py
+          assembles the live analytics snapshot for UiPath Generative AI grounding.
+        CONTEXT FORMAT SENT TO UiPath Generative AI:
+          === Acme CALL CENTER — LIVE ANALYTICS CONTEXT ===
+          Data range: [MIN(call_date)] to [MAX(call_date)] | Total calls: [N]
+          --- OVERALL KPIs --- (8 metrics with benchmark values)
+          --- TOP CALL INTENTS --- (top 8 by volume)
+          --- AGENT PERFORMANCE --- (all agents: sentiment, escalation, resolution, compliance, repeat)
+          --- MONTHLY TREND --- (by YYYY-MM: volume, sentiment, escalation, resolution)
+          --- TOP TRIGGER WORDS --- (top 10 from Counter)
+          --- TOP FRICTION POINTS --- (top 5 composite-scored intents)
+        This grounding ensures every UiPath Generative AI answer references real, current Data Fabric (UiPath) figures.
+      </bpmn:documentation>
+      <bpmn:incoming>F_SentimentAnalytics_Join</bpmn:incoming>
+      <bpmn:incoming>F_EscalationAnalytics_Join</bpmn:incoming>
+      <bpmn:incoming>F_ComplianceAnalytics_Join</bpmn:incoming>
+      <bpmn:incoming>F_ResolutionAnalytics_Join</bpmn:incoming>
+      <bpmn:incoming>F_IntentAnalytics_Join</bpmn:incoming>
+      <bpmn:incoming>F_FrictionAnalytics_Join</bpmn:incoming>
+      <bpmn:outgoing>F_AnalyticsJoin_QueryAI</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:endEvent id="End_Complete" name="Call Analytics Process Complete">
+      <bpmn:documentation>
+        ALL STEPS COMPLETED:
+          Transcript recorded and ingested (load_transcripts.py / generate_summaries.py).
+          7 UiPath Generative UiPath Generative AI analyses: sentiment, intents x3, trigger words, compliance,
+            follow-up items x3, resolution flags x4, call summary.
+          call_records row persisted to Data Fabric (UiPath).
+          UiPath Generative AI follow-ups seeded to call_followups (source='ai_generated', status='pending').
+          Supervisor workflow actioned (approved/rejected/in_progress/completed).
+          8-KPI dashboard refreshed vs 6 benchmarks.
+          6 analytics modules computed (sentiment, escalation, compliance, resolution,
+            intents+marketing, friction+trigger-words).
+          UiPath Generative UiPath Generative AI Q&amp;A response returned in markdown format, grounded in live Data Fabric (UiPath) data.
+          ai_usage counters incremented (calls_today, total_calls).
+        SYSTEM HEALTH:
+          FastAPI backend: Cloud Run (uvicorn, backend/Dockerfile).
+          Frontend: UiPath Apps.conf.template).
+          Health: GET /health or /api/health returns { status:'ok', records: N }.
+          Docs: GET /docs — Swagger UI with full interactive API documentation.
+        READY: System immediately accepts the next incoming customer call.
+      </bpmn:documentation>
+      <bpmn:incoming>F_GenerateResponse_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Task_ExtractSentiment" name="[UiPath Generative AI] Extract Call Sentiment Score">
+      <bpmn:documentation>
+        OUTPUT: call_records.call_sentiment (SmallInteger)
+          +1 = Positive (satisfaction, gratitude, resolved)
+           0 = Neutral  (transactional, informational)
+          -1 = Negative (frustration, complaint, dissatisfaction)
+        ENDPOINTS USING THIS:
+          GET /api/dashboard/summary           — avg_sentiment KPI
+          GET /api/dashboard/sentiment-trend   — daily counts and avg score
+          GET /api/dashboard/sentiment-monthly — monthly avg and breakdown
+          GET /api/analytics/sentiment/by-agent — per-agent, sorted ASC (worst first)
+          Friction Points: negative_pct weighted 40% of composite friction score
+        IMPACT: Call centre staff with persistent negative sentiment flagged for coaching.
+      </bpmn:documentation>
+      <bpmn:incoming>F_Fork_Sentiment</bpmn:incoming>
+      <bpmn:outgoing>F_Sentiment_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_ClassifyIntents" name="[UiPath Generative AI] Classify Call Intent(s) — up to 3">
+      <bpmn:documentation>
+        OUTPUT: call_records.call_intent1/2/3 (String(100)) — up to 3 in priority order.
+        CATEGORIES: Claims Registration (FNOL), Claims Status and Tracking,
+          Claims Status Billing, Policy Info and Coverage Clarity, Cancellations
+          and Retention, Billing and Amendments, New Business and Quoting,
+          Policy Renewals, Grievances and Complaints.
+        ENDPOINTS USING THIS:
+          GET /api/analytics/intents/pareto         — Pareto with cumulative_pct
+          GET /api/analytics/intents/trend          — daily volume per intent
+          GET /api/analytics/marketing-opportunities — cross-sell/upsell scoring
+          GET /api/analytics/friction-points        — composite frustration score
+          GET /api/analytics/escalations/root-cause — escalation by intent
+        IMPACT: Top intents drive staffing decisions and self-service priorities.
+      </bpmn:documentation>
+      <bpmn:incoming>F_Fork_Intents</bpmn:incoming>
+      <bpmn:outgoing>F_Intents_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_DetectTriggerWords" name="[UiPath Generative AI] Detect Trigger Words and Set Flag">
+      <bpmn:documentation>
+        WHAT: Scans for high-risk language indicating legal/regulatory/dissatisfaction risk.
+        EXAMPLES: "cancel", "complaint", "lawyer", "regulator", "MAS", "sue",
+          "unfair", "escalate", "formal complaint", "ombudsman"
+        OUTPUT:
+          call_records.triggerword_flag = 'Yes' or 'No'
+          call_records.triggerwords     = comma-separated list e.g. "cancel, complaint"
+        BENCHMARK: trigger_word_pct must be less than or equal to 3%
+          (config.py BENCHMARKS['trigger_word_pct'] = 3.0)
+        ENDPOINTS: GET /api/dashboard/summary, /analytics/trigger-words/counts,
+          /analytics/trigger-words/trend, /analytics/escalations/root-cause
+        IMPACT: Near-real-time alert to supervisors of escalating situations.
+      </bpmn:documentation>
+      <bpmn:incoming>F_Fork_TriggerWords</bpmn:incoming>
+      <bpmn:outgoing>F_TriggerWords_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_CheckCompliance" name="[UiPath Generative AI] Check Agent Compliance with MAS Protocol">
+      <bpmn:documentation>
+        CHECKS: Identity verification (NRIC + DOB confirmed before disclosure),
+          required disclosure scripts read, PDPA notice given,
+          MAS-mandated regulatory scripts completed, no unauthorised advice given.
+        OUTPUT: call_records.compliance_flag (String(3))
+          'Yes' = PASSED all required protocols
+          'No'  = FAILED — agent did NOT follow required protocols
+          IMPORTANT: 'No' means the AGENT failed, not the customer.
+        BENCHMARK: compliance_fail_pct must be less than or equal to 5%
+          (BENCHMARKS['compliance_fail_pct'] = 5.0)
+        ENDPOINTS: GET /api/dashboard/summary, /analytics/compliance/by-agent,
+          /analytics/compliance/trend
+        IMPACT: Persistent failures may trigger MAS regulatory reporting.
+      </bpmn:documentation>
+      <bpmn:incoming>F_Fork_Compliance</bpmn:incoming>
+      <bpmn:outgoing>F_Compliance_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_GenFollowups" name="[UiPath Generative AI] Generate Follow-up Action Items (up to 3)">
+      <bpmn:documentation>
+        WHAT: Identifies post-call actions the agent or operations team must complete.
+        EXAMPLES: "Send updated policy documents to customer via email.",
+          "Process partial claims reimbursement within 5 business days.",
+          "Escalate premium waiver request to underwriting team."
+        OUTPUT: call_records.followup_item1/2/3 (String(100)) — up to 3 items.
+        DOWNSTREAM: Items seeded into call_followups table (Task_SeedFollowups) as
+          source='ai_generated', status='pending'.
+          reason auto-extracted via _extract_reason() keyword match on transcript.
+        MANUAL ADDS: POST /api/calls/{call_id}/followups — auto-approved (source='manual').
+        IMPACT: Ensures no post-call customer commitments are forgotten.
+      </bpmn:documentation>
+      <bpmn:incoming>F_Fork_Followups</bpmn:incoming>
+      <bpmn:outgoing>F_Followups_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_DetermineResolution" name="[UiPath Generative AI] Determine Resolution, Escalation, Pre-Verified, Repeat Call">
+      <bpmn:documentation>
+        FOUR BINARY FLAGS (all String(3): 'Yes' or 'No'):
+
+        call_resolved_flag: 'Yes' = issue fully resolved during call.
+          BENCHMARK: resolution_pct greater than or equal to 80%
+          ENDPOINTS: /api/dashboard/summary, /analytics/resolution/overview, /resolution/trend
+
+        escalation_flag: 'Yes' = call escalated to supervisor or specialist.
+          BENCHMARK: escalation_pct less than or equal to 10%
+          ENDPOINTS: /api/analytics/escalations/by-agent, /escalations/trend
+
+        preverified_flag: 'Yes' = identity pre-verified before call (e.g. MyInfo/SingPass).
+          BENCHMARK: preverified_pct greater than or equal to 80%
+          ENDPOINT: /api/analytics/preverified/trend
+
+        repeatcall_flag: 'Yes' = customer calling again about the same unresolved issue.
+          BENCHMARK: repeat_call_pct less than or equal to 20%
+          ENDPOINTS: /api/analytics/repeat-calls/trend, /repeat-calls/by-agent
+      </bpmn:documentation>
+      <bpmn:incoming>F_Fork_Resolution</bpmn:incoming>
+      <bpmn:outgoing>F_Resolution_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_GenSummary" name="[UiPath Generative AI] Generate Natural Language Call Summary">
+      <bpmn:documentation>
+        WHAT: Writes a concise 2-4 sentence plain-English summary of the call.
+        COVERS: Who called, why they called, what the agent did, outcome.
+        EXAMPLE: "Mrs Lee called about her hospitalisation claim submitted two weeks ago.
+          Agent John confirmed the claim is under review with a 5-day timeline.
+          A follow-up call was scheduled. No escalation required."
+        OUTPUT: call_records.call_summary (Text column)
+        USED BY:
+          GET /api/calls/{call_id}  — call_summary in full detail response
+          GET /api/followups        — GlobalFollowupOut.call_summary (triage context)
+          Supervisor review panel — avoids reading the full transcript (UiPath Agent surfaces key details)
+        NOTE: UiPath Generative UiPath Generative AI Q&amp;A (ai_service.py) uses aggregated SQL statistics, NOT individual summaries.
+      </bpmn:documentation>
+      <bpmn:incoming>F_Fork_Summary</bpmn:incoming>
+      <bpmn:outgoing>F_Summary_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_ResolutionAnalytics" name="[Analytics] Resolution, Repeat Calls, Pre-Verified Trends">
+      <bpmn:documentation>
+        1. GET /api/analytics/resolution/overview:
+           total_calls, resolved/unresolved/repeat counts, resolution_pct, repeat_call_pct.
+        2. GET /api/analytics/resolution/trend (monthly):
+           date, total_calls, resolved_count, resolution_pct.
+        3. GET /api/analytics/repeat-calls/trend (monthly):
+           date, total_calls, repeat_count, repeat_pct.
+        4. GET /api/analytics/repeat-calls/by-agent:
+           GROUP BY agent_name ORDER BY repeat_pct DESC.
+        5. GET /api/analytics/preverified/trend (monthly):
+           date, total_calls, preverified_count, preverified_pct.
+        BENCHMARKS: resolution greater than or equal to 80%, preverified greater than or equal to 80%,
+          repeat calls less than or equal to 20%.
+        IMPACT: High repeat rates indicate persistent unresolved issues — targets for
+          self-service improvement or first-call resolution coaching.
+      </bpmn:documentation>
+      <bpmn:incoming>F_AnalyticsFork_Resolution</bpmn:incoming>
+      <bpmn:outgoing>F_ResolutionAnalytics_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_IntentAnalytics" name="[Analytics] Intent Pareto, Trends, Marketing Opportunities">
+      <bpmn:documentation>
+        1. GET /api/analytics/intents/pareto:
+           GROUP BY call_intent1 ORDER BY count DESC →
+           intent, count, pct, cumulative_pct, avg_sentiment, escalation_pct, repeat_call_pct.
+           cumulative_pct enables 80/20 Pareto analysis.
+        2. GET /api/analytics/intents/trend:
+           GROUP BY call_date + call_intent1 → date, intent, count.
+        3. GET /api/analytics/marketing-opportunities:
+           Covers: New Business, Renewals, Policy Info, Cancellations, Claims Status.
+           SCORE = (intent_base x 40%) + (positive_pct x 35%) + (resolved_pct x 25%)
+           BASE SCORES: New Business=100, Renewals=85, Policy Info=65, Cancellations=50, Claims=40.
+           LEVELS: High (score 65+), Medium (45-64), Low (below 45).
+           ACTIONS: New Business=CI/TPD/NCD riders, Renewals=sum increase+riders,
+             Policy Info=CI+hospitalisation upgrade, Cancellations=premium holiday/paid-up,
+             Claims=protection gap review/personal accident.
+        IMPACT: Identifies cross-sell and upsell windows during service interactions.
+      </bpmn:documentation>
+      <bpmn:incoming>F_AnalyticsFork_Intent</bpmn:incoming>
+      <bpmn:outgoing>F_IntentAnalytics_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_FrictionAnalytics" name="[Analytics] Friction Points and Trigger Word Frequency">
+      <bpmn:documentation>
+        1. GET /api/analytics/friction-points:
+           COMPOSITE SCORE per intent = (negative_pct x 40%) + (escalation_pct x 35%) + (repeat_call_pct x 25%)
+           GROUP BY call_intent1 HAVING COUNT(*) greater than or equal to 3 (statistical minimum).
+           Returns top 10 sorted by friction_score DESC:
+             intent, total_calls, avg_sentiment, negative_pct, escalation_pct,
+             repeat_call_pct, unresolved_pct, friction_score (0-100), rank.
+           HIGH-FRICTION INTENTS are targets for: automation, call centre staff training, process improvement.
+        2. GET /api/analytics/trigger-words/counts:
+           Parses triggerwords for all calls with triggerword_flag='Yes'. Python Counter top 20.
+           Returns: [{ word, count }]
+        3. GET /api/analytics/trigger-words/trend (monthly):
+           date, total_calls, trigger_count, trigger_pct. Benchmark less than or equal to 3%.
+        UiPath Generative AI CONTEXT: Top 5 friction points and top 10 trigger words included in
+          _build_context() payload sent to UiPath Generative AI for UiPath Generative UiPath Generative AI Q&amp;A grounding.
+      </bpmn:documentation>
+      <bpmn:incoming>F_AnalyticsFork_Friction</bpmn:incoming>
+      <bpmn:outgoing>F_FrictionAnalytics_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_GenerateAIResponse" name="[UiPath Generative AI] UiPath Generative AI Generates Contextual Analytics Response">
+      <bpmn:documentation>
+        FUNCTION: ai_service.ask(question, db) in backend/services/ai_service.py
+        STEPS:
+          1. _build_context(db): 6 SQL queries assembled into plain-text analytics snapshot.
+          2. Sends to UiPath Generative AI:
+               prompt = f"DATA CONTEXT:\n{context}\n\nQUESTION: {question}"
+          3. SYSTEM PROMPT instructs UiPath Generative AI to:
+               Act as expert call centre analytics AI for Acme.
+               Back every answer with specific numbers from the context.
+               Format in markdown: headers, bold key figures, bullet points.
+               Be direct and actionable for operational decision-making.
+               Apply business rules:
+                 compliance_flag='No' = AGENT failed (not the customer).
+                 call_sentiment: 1=Positive, 0=Neutral, -1=Negative.
+               Know agent specialisations:
+                 Sam=Claims/Grievances, John=Policy Services,
+                 David=Escalations/Quality, Mike=New Business/Renewals,
+                 Mary=Billing/Amendments.
+          4. _log_ai_call(model, endpoint='ask'): UPSERT into ai_usage
+             (ON CONFLICT DO UPDATE, day-aware counter reset).
+          5. Returns AiAnswer { question, answer (markdown), data_context (raw text) }.
+        MODEL: os.getenv("UIPATH_AI_MODEL", "uipath-generative-ai")
+        AUTH: UiPathAI.configure(api_key=os.getenv("UIPATH_AI_KEY"))
+        INSTANCE: Singleton _model_instance (lazy-loaded, reused across requests).
+      </bpmn:documentation>
+      <bpmn:incoming>F_QueryAI_GenerateResponse</bpmn:incoming>
+      <bpmn:outgoing>F_GenerateResponse_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Task_SupervisorReview" name="Supervisor Reviews Pending UiPath Generative AI follow-up Items">
+      <bpmn:documentation>
+        WHAT: Supervisor opens the Follow-ups panel in the UiPath Apps dashboard.
+        PER-CALL VIEW: GET /api/calls/{call_id}/followups
+          Returns: FollowupsResponse { call_id, summary, items[] }
+        GLOBAL QUEUE: GET /api/followups
+          Filters: status, source, priority, agent, overdue, start_date, end_date, search.
+          Sort: overdue first, then pending/in_progress/approved/completed/rejected, then by date.
+          Paginated (default 25/page).
+        GLOBAL SUMMARY: GET /api/followups/summary
+          Returns: total, pending, approved, in_progress, completed, rejected,
+                   overdue, due_soon (within next 3 days), completion_rate.
+        EACH ITEM SHOWS: text, reason, source, status, priority,
+          is_overdue (True if due_date past and not completed/rejected),
+          days_overdue, caller_name, policy_number, call_summary, call_intents,
+          escalation_flag, compliance_flag, call_resolved_flag.
+        MANUAL ITEM: POST /api/calls/{call_id}/followups — source='manual', auto-approved.
+        EDIT/DELETE: PATCH or DELETE /api/calls/{call_id}/followups/{id}
+      </bpmn:documentation>
+      <bpmn:incoming>F_HasFollowups_Yes</bpmn:incoming>
+      <bpmn:outgoing>F_Review_ApproveRejectGW</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="GW_ApproveReject" name="Supervisor Decision: Approve or Reject?">
+      <bpmn:documentation>
+        STATE MACHINE: pending -&gt; approved -&gt; in_progress -&gt; completed
+                       pending -&gt; rejected (terminal)
+        RULE: pending items CANNOT jump to in_progress or completed directly.
+          Enforced in followups.py: "Pending follow-ups must be approved or rejected first."
+
+        APPROVE: POST /api/calls/{call_id}/followups/{id}/approve
+          Body: { approved_by, priority?, assigned_to?, due_date? }
+          Sets: status='approved', approved_by, approved_at=UTC now.
+
+        REJECT: POST /api/calls/{call_id}/followups/{id}/reject
+          Body: { approved_by }
+          Sets: status='rejected', approved_by, approved_at=UTC now.
+          Stays in Data Fabric (UiPath) for audit. Excluded from completion_rate.
+          Queryable: GET /api/followups?status=rejected
+      </bpmn:documentation>
+      <bpmn:incoming>F_Review_ApproveRejectGW</bpmn:incoming>
+      <bpmn:outgoing>F_ApproveReject_Approve</bpmn:outgoing>
+      <bpmn:outgoing>F_ApproveReject_Reject</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_AssignDetails" name="Assign Priority, Agent, and Due Date to Approved Follow-up">
+      <bpmn:documentation>
+        FIELDS SET ON APPROVAL:
+          priority    : 'low' | 'medium' | 'high' — determines queue sort order
+          assigned_to : agent name responsible for the action
+          due_date    : target completion date
+            is_overdue = due_date is past AND status not in (completed, rejected)
+            days_overdue = today minus due_date (integer)
+        CAPTURED VIA: approve endpoint body OR subsequent PATCH (all optional fields).
+        STATUS TRANSITION: pending -&gt; approved.
+        AUDIT: approved_by (supervisor name), approved_at (UTC timestamp).
+        NOTE: Manual items (source='manual') are auto-approved — skip this task.
+      </bpmn:documentation>
+      <bpmn:incoming>F_ApproveReject_Approve</bpmn:incoming>
+      <bpmn:outgoing>F_AssignDetails_TrackProgress</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Task_RejectFollowup" name="Mark Follow-up Rejected (Audit Trail Preserved)">
+      <bpmn:documentation>
+        FIELDS SET: status='rejected', approved_by, approved_at=UTC now.
+        EFFECT:
+          Counted in GlobalSummary.rejected.
+          Excluded from completion_rate = completed / (approved + in_progress + completed) x 100.
+          Removed from overdue and due_soon active queues.
+          Preserved in Data Fabric (UiPath) for audit via GET /api/followups?status=rejected.
+        API: POST /api/calls/{call_id}/followups/{id}/reject — HTTP 200 with updated item.
+      </bpmn:documentation>
+      <bpmn:incoming>F_ApproveReject_Reject</bpmn:incoming>
+      <bpmn:outgoing>F_Reject_UpdateDashboard</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Task_TrackProgress" name="Agent Executes Follow-up Action (in_progress)">
+      <bpmn:documentation>
+        WHAT: assigned call centre staff member works on the approved follow-up action.
+        STATUS TRANSITION: approved -&gt; in_progress.
+        API: POST /api/calls/{call_id}/followups/{id}/status
+          Body: { "status": "in_progress" }
+          BLOCKED: pending -&gt; in_progress is rejected by state machine validation.
+        WHILE IN_PROGRESS:
+          is_overdue = True if due_date before today and not completed/rejected.
+          days_overdue = today minus due_date.
+          Overdue items surface first in GET /api/followups (ORDER BY is_overdue DESC).
+          GlobalSummary.overdue = count where past due and still active.
+          GlobalSummary.due_soon = count where due within next 3 days and active.
+        COMPLETION RATE: completed / (approved + in_progress + completed) x 100.
+        EXAMPLE ACTIONS: Email policy docs, process claim reimbursement,
+          schedule callback, escalate to underwriting team.
+      </bpmn:documentation>
+      <bpmn:incoming>F_AssignDetails_TrackProgress</bpmn:incoming>
+      <bpmn:outgoing>F_TrackProgress_ProgressGW</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="GW_ProgressStatus" name="Is the Follow-up Action Complete?">
+      <bpmn:documentation>
+        COMPLETED path: status becomes 'completed', capture completion_notes and timestamp.
+        STILL ACTIVE path: item remains 'in_progress', stays in queue, may become overdue.
+        GlobalSummary.due_soon: due within next 3 days AND status still active.
+        GlobalSummary.overdue:  due_date in the past AND status still active.
+      </bpmn:documentation>
+      <bpmn:incoming>F_TrackProgress_ProgressGW</bpmn:incoming>
+      <bpmn:outgoing>F_Progress_Done</bpmn:outgoing>
+      <bpmn:outgoing>F_Progress_Active</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Task_MarkCompleted" name="Mark Follow-up Completed — Record Notes and Timestamp">
+      <bpmn:documentation>
+        STATUS TRANSITION: in_progress -&gt; completed.
+        API: POST /api/calls/{call_id}/followups/{id}/status
+          Body: { "status": "completed", "completion_notes": "Description of action taken." }
+        FIELDS SET: status='completed', completed_at=UTC now, completion_notes.
+        EXAMPLE NOTES:
+          "Policy document emailed to customer on 2025-06-17."
+          "Claim reimbursement SGD 1,240 processed. Ref: CLM-2025-04521."
+          "Callback completed — customer confirmed receipt of amendment letter."
+        EFFECT: Increases GlobalSummary.completed, increases completion_rate,
+          removes from overdue/due_soon counts.
+        SUPERVISOR QA: Reads completion_notes to confirm all commitments fulfilled.
+      </bpmn:documentation>
+      <bpmn:incoming>F_Progress_Done</bpmn:incoming>
+      <bpmn:outgoing>F_Completed_UpdateDashboard</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Task_QueryAI" name="Supervisor Submits Question to UiPath Generative AI Insights panel">
+      <bpmn:documentation>
+        WHAT: Supervisor types or selects a question in the UiPath Generative AI Insights panel of the UiPath Apps dashboard.
+        ENDPOINT: POST /api/ai/ask  Body: { "question": "..." }
+        SUGGESTED QUESTIONS (GET /api/ai/suggested-questions):
+          "Why are customers calling most frequently?"
+          "Which agent has the highest escalation rate and why?"
+          "Are there automation opportunities based on call patterns?"
+          "What are the top drivers of negative sentiment?"
+          "Which call intents have the lowest resolution rate?"
+          "What compliance issues are most common?"
+          "Are there upsell or cross-sell opportunities in recent calls?"
+          "What are the top 3 friction points for customers?"
+          "How has call volume and sentiment trended month over month?"
+          "Which agent needs the most coaching and why?"
+        AI USAGE TRACKING (ai_usage table, single row id=1):
+          calls_today: increments per request; resets automatically when date changes.
+          total_calls: all-time cumulative count.
+          last_call_at, last_model, last_endpoint: most recent request metadata.
+        USAGE ENDPOINTS:
+          GET  /api/ai/usage        — current counters
+          POST /api/ai/usage/reset  — clear calls_today (does not affect total_calls)
+      </bpmn:documentation>
+      <bpmn:incoming>F_AnalyticsJoin_QueryAI</bpmn:incoming>
+      <bpmn:outgoing>F_QueryAI_GenerateResponse</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="F_Start_Record" sourceRef="Start_CallReceived" targetRef="Task_RecordCall" />
+    <bpmn:sequenceFlow id="F_Record_Ingest" sourceRef="Task_RecordCall" targetRef="Task_IngestTranscript" />
+    <bpmn:sequenceFlow id="F_Ingest_AIFork" sourceRef="Task_IngestTranscript" targetRef="GW_AIParallelFork" />
+    <bpmn:sequenceFlow id="F_Fork_Sentiment" sourceRef="GW_AIParallelFork" targetRef="Task_ExtractSentiment" />
+    <bpmn:sequenceFlow id="F_Fork_Intents" sourceRef="GW_AIParallelFork" targetRef="Task_ClassifyIntents" />
+    <bpmn:sequenceFlow id="F_Fork_TriggerWords" sourceRef="GW_AIParallelFork" targetRef="Task_DetectTriggerWords" />
+    <bpmn:sequenceFlow id="F_Fork_Compliance" sourceRef="GW_AIParallelFork" targetRef="Task_CheckCompliance" />
+    <bpmn:sequenceFlow id="F_Fork_Followups" sourceRef="GW_AIParallelFork" targetRef="Task_GenFollowups" />
+    <bpmn:sequenceFlow id="F_Fork_Resolution" sourceRef="GW_AIParallelFork" targetRef="Task_DetermineResolution" />
+    <bpmn:sequenceFlow id="F_Fork_Summary" sourceRef="GW_AIParallelFork" targetRef="Task_GenSummary" />
+    <bpmn:sequenceFlow id="F_Sentiment_Join" sourceRef="Task_ExtractSentiment" targetRef="GW_AIParallelJoin" />
+    <bpmn:sequenceFlow id="F_Intents_Join" sourceRef="Task_ClassifyIntents" targetRef="GW_AIParallelJoin" />
+    <bpmn:sequenceFlow id="F_TriggerWords_Join" sourceRef="Task_DetectTriggerWords" targetRef="GW_AIParallelJoin" />
+    <bpmn:sequenceFlow id="F_Compliance_Join" sourceRef="Task_CheckCompliance" targetRef="GW_AIParallelJoin" />
+    <bpmn:sequenceFlow id="F_Followups_Join" sourceRef="Task_GenFollowups" targetRef="GW_AIParallelJoin" />
+    <bpmn:sequenceFlow id="F_Resolution_Join" sourceRef="Task_DetermineResolution" targetRef="GW_AIParallelJoin" />
+    <bpmn:sequenceFlow id="F_Summary_Join" sourceRef="Task_GenSummary" targetRef="GW_AIParallelJoin" />
+    <bpmn:sequenceFlow id="F_Join_StoreRecord" sourceRef="GW_AIParallelJoin" targetRef="Task_StoreCallRecord" />
+    <bpmn:sequenceFlow id="F_StoreRecord_SeedFollowups" sourceRef="Task_StoreCallRecord" targetRef="Task_SeedFollowups" />
+    <bpmn:sequenceFlow id="F_Seed_HasFollowupsGW" sourceRef="Task_SeedFollowups" targetRef="GW_HasFollowups" />
+    <bpmn:sequenceFlow id="F_HasFollowups_Yes" name="Yes — Items Generated" sourceRef="GW_HasFollowups" targetRef="Task_SupervisorReview" />
+    <bpmn:sequenceFlow id="F_HasFollowups_No" name="No — Skip to Dashboard" sourceRef="GW_HasFollowups" targetRef="Task_UpdateDashboard" />
+    <bpmn:sequenceFlow id="F_Review_ApproveRejectGW" sourceRef="Task_SupervisorReview" targetRef="GW_ApproveReject" />
+    <bpmn:sequenceFlow id="F_ApproveReject_Approve" name="Approve" sourceRef="GW_ApproveReject" targetRef="Task_AssignDetails" />
+    <bpmn:sequenceFlow id="F_ApproveReject_Reject" name="Reject" sourceRef="GW_ApproveReject" targetRef="Task_RejectFollowup" />
+    <bpmn:sequenceFlow id="F_AssignDetails_TrackProgress" sourceRef="Task_AssignDetails" targetRef="Task_TrackProgress" />
+    <bpmn:sequenceFlow id="F_Reject_UpdateDashboard" sourceRef="Task_RejectFollowup" targetRef="Task_UpdateDashboard" />
+    <bpmn:sequenceFlow id="F_TrackProgress_ProgressGW" sourceRef="Task_TrackProgress" targetRef="GW_ProgressStatus" />
+    <bpmn:sequenceFlow id="F_Progress_Done" name="Completed" sourceRef="GW_ProgressStatus" targetRef="Task_MarkCompleted" />
+    <bpmn:sequenceFlow id="F_Progress_Active" name="Still In Progress" sourceRef="GW_ProgressStatus" targetRef="Task_UpdateDashboard" />
+    <bpmn:sequenceFlow id="F_Completed_UpdateDashboard" sourceRef="Task_MarkCompleted" targetRef="Task_UpdateDashboard" />
+    <bpmn:sequenceFlow id="F_UpdateDashboard_AnalyticsFork" sourceRef="Task_UpdateDashboard" targetRef="GW_AnalyticsFork" />
+    <bpmn:sequenceFlow id="F_AnalyticsFork_Sentiment" sourceRef="GW_AnalyticsFork" targetRef="Task_SentimentAnalytics" />
+    <bpmn:sequenceFlow id="F_AnalyticsFork_Escalation" sourceRef="GW_AnalyticsFork" targetRef="Task_EscalationAnalytics" />
+    <bpmn:sequenceFlow id="F_AnalyticsFork_Compliance" sourceRef="GW_AnalyticsFork" targetRef="Task_ComplianceAnalytics" />
+    <bpmn:sequenceFlow id="F_AnalyticsFork_Resolution" sourceRef="GW_AnalyticsFork" targetRef="Task_ResolutionAnalytics" />
+    <bpmn:sequenceFlow id="F_AnalyticsFork_Intent" sourceRef="GW_AnalyticsFork" targetRef="Task_IntentAnalytics" />
+    <bpmn:sequenceFlow id="F_AnalyticsFork_Friction" sourceRef="GW_AnalyticsFork" targetRef="Task_FrictionAnalytics" />
+    <bpmn:sequenceFlow id="F_SentimentAnalytics_Join" sourceRef="Task_SentimentAnalytics" targetRef="GW_AnalyticsJoin" />
+    <bpmn:sequenceFlow id="F_EscalationAnalytics_Join" sourceRef="Task_EscalationAnalytics" targetRef="GW_AnalyticsJoin" />
+    <bpmn:sequenceFlow id="F_ComplianceAnalytics_Join" sourceRef="Task_ComplianceAnalytics" targetRef="GW_AnalyticsJoin" />
+    <bpmn:sequenceFlow id="F_ResolutionAnalytics_Join" sourceRef="Task_ResolutionAnalytics" targetRef="GW_AnalyticsJoin" />
+    <bpmn:sequenceFlow id="F_IntentAnalytics_Join" sourceRef="Task_IntentAnalytics" targetRef="GW_AnalyticsJoin" />
+    <bpmn:sequenceFlow id="F_FrictionAnalytics_Join" sourceRef="Task_FrictionAnalytics" targetRef="GW_AnalyticsJoin" />
+    <bpmn:sequenceFlow id="F_AnalyticsJoin_QueryAI" sourceRef="GW_AnalyticsJoin" targetRef="Task_QueryAI" />
+    <bpmn:sequenceFlow id="F_QueryAI_GenerateResponse" sourceRef="Task_QueryAI" targetRef="Task_GenerateAIResponse" />
+    <bpmn:sequenceFlow id="F_GenerateResponse_End" sourceRef="Task_GenerateAIResponse" targetRef="End_Complete" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_CC_Full">
+      <bpmndi:BPMNShape id="S_Lane_System" bpmnElement="Lane_System" isHorizontal="true">
+        <dc:Bounds x="150" y="-26" width="3657" height="370" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="150" y="349" width="3657" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Lane_AI" bpmnElement="Lane_AI" isHorizontal="true">
+        <dc:Bounds x="150" y="344" width="3657" height="563" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="150" y="912" width="3657" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Lane_Supervisor" bpmnElement="Lane_Supervisor" isHorizontal="true">
+        <dc:Bounds x="150" y="907" width="3657" height="370" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="150" y="1282" width="3657" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Pool_CC" bpmnElement="Pool_CC" isHorizontal="true">
+        <dc:Bounds x="120" y="-26" width="3671" height="1303" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="120" y="1282" width="3671" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Start_CallReceived" bpmnElement="Start_CallReceived">
+        <dc:Bounds x="222" y="172" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="222" y="213" width="36" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_RecordCall" bpmnElement="Task_RecordCall">
+        <dc:Bounds x="310" y="150" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="310" y="235" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_IngestTranscript" bpmnElement="Task_IngestTranscript">
+        <dc:Bounds x="500" y="150" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="500" y="235" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_GW_AIParallelFork" bpmnElement="GW_AIParallelFork">
+        <dc:Bounds x="695" y="165" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="695" y="220" width="50" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_GW_AIParallelJoin" bpmnElement="GW_AIParallelJoin">
+        <dc:Bounds x="1897.238678625989" y="149.5471496995312" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1897.238678625989" y="204.5471496995312" width="50" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_StoreCallRecord" bpmnElement="Task_StoreCallRecord">
+        <dc:Bounds x="2007.238678625989" y="134.5471496995312" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2007.238678625989" y="219.5471496995312" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_SeedFollowups" bpmnElement="Task_SeedFollowups">
+        <dc:Bounds x="2197.238678625989" y="134.5471496995312" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2197.238678625989" y="219.5471496995312" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_GW_HasFollowups" bpmnElement="GW_HasFollowups">
+        <dc:Bounds x="2392.238678625989" y="149.5471496995312" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2392.238678625989" y="204.5471496995312" width="50" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_UpdateDashboard" bpmnElement="Task_UpdateDashboard">
+        <dc:Bounds x="2948" y="132.00000000000003" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2948" y="217.00000000000003" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_GW_AnalyticsFork" bpmnElement="GW_AnalyticsFork">
+        <dc:Bounds x="3144" y="147.00000000000003" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3144" y="202.00000000000003" width="50" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_SentimentAnalytics" bpmnElement="Task_SentimentAnalytics">
+        <dc:Bounds x="3254" y="38.00000000000003" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3254" y="123.00000000000003" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_EscalationAnalytics" bpmnElement="Task_EscalationAnalytics">
+        <dc:Bounds x="3254" y="132.00000000000003" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3254" y="217.00000000000003" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_ComplianceAnalytics" bpmnElement="Task_ComplianceAnalytics">
+        <dc:Bounds x="3254" y="226.00000000000006" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3254" y="311.00000000000006" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_GW_AnalyticsJoin" bpmnElement="GW_AnalyticsJoin">
+        <dc:Bounds x="3454" y="147.00000000000003" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3454" y="202.00000000000003" width="50" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_End_Complete" bpmnElement="End_Complete">
+        <dc:Bounds x="3702" y="172" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3702" y="213" width="36" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_ExtractSentiment" bpmnElement="Task_ExtractSentiment">
+        <dc:Bounds x="751.2152375993267" y="802.2141716744796" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="751.2152375993267" y="887.2141716744796" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_ClassifyIntents" bpmnElement="Task_ClassifyIntents">
+        <dc:Bounds x="912.5433706231704" y="730.720588679888" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="912.5433706231704" y="815.720588679888" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_DetectTriggerWords" bpmnElement="Task_DetectTriggerWords">
+        <dc:Bounds x="1248.2072454929673" y="597.704315364635" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1248.2072454929673" y="682.704315364635" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_CheckCompliance" bpmnElement="Task_CheckCompliance">
+        <dc:Bounds x="1076.3841237777613" y="665.8114012018751" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1076.3841237777613" y="750.8114012018751" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_GenFollowups" bpmnElement="Task_GenFollowups">
+        <dc:Bounds x="1410.9429939906233" y="529.3201915868732" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1410.9429939906233" y="614.3201915868732" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_DetermineResolution" bpmnElement="Task_DetermineResolution">
+        <dc:Bounds x="1572.6148102973912" y="468.6030897840606" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1572.6148102973912" y="553.6030897840606" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_GenSummary" bpmnElement="Task_GenSummary">
+        <dc:Bounds x="1739.1619599969224" y="409.5274370798413" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1739.1619599969224" y="494.5274370798413" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_ResolutionAnalytics" bpmnElement="Task_ResolutionAnalytics">
+        <dc:Bounds x="3260" y="352" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3260" y="437" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_IntentAnalytics" bpmnElement="Task_IntentAnalytics">
+        <dc:Bounds x="3260" y="444" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3260" y="529" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_FrictionAnalytics" bpmnElement="Task_FrictionAnalytics">
+        <dc:Bounds x="3260" y="536" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3260" y="621" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_GenerateAIResponse" bpmnElement="Task_GenerateAIResponse">
+        <dc:Bounds x="3609.9999999999995" y="444" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3609.9999999999995" y="529" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_SupervisorReview" bpmnElement="Task_SupervisorReview">
+        <dc:Bounds x="2148.6804920892273" y="1068.6021091295129" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2148.6804920892273" y="1153.6021091295129" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_GW_ApproveReject" bpmnElement="GW_ApproveReject">
+        <dc:Bounds x="2343.6804920892273" y="1083.6021091295129" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2343.6804920892273" y="1138.6021091295129" width="50" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_AssignDetails" bpmnElement="Task_AssignDetails">
+        <dc:Bounds x="2453.680492089227" y="989.6558876278718" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2453.680492089227" y="1074.6558876278718" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_RejectFollowup" bpmnElement="Task_RejectFollowup">
+        <dc:Bounds x="2542.087522111011" y="1118.1289983786924" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2542.087522111011" y="1203.1289983786924" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_TrackProgress" bpmnElement="Task_TrackProgress">
+        <dc:Bounds x="2643.3195079107727" y="989.6558876278718" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2643.3195079107727" y="1074.6558876278718" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_GW_ProgressStatus" bpmnElement="GW_ProgressStatus">
+        <dc:Bounds x="2838.2365553754103" y="1008.6558876278718" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2838.2365553754103" y="1063.6558876278718" width="50" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_MarkCompleted" bpmnElement="Task_MarkCompleted">
+        <dc:Bounds x="2948.2365553754103" y="993.6558876278718" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2948.2365553754103" y="1078.6558876278718" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_QueryAI" bpmnElement="Task_QueryAI">
+        <dc:Bounds x="3488" y="967" width="130" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3488" y="1052" width="130" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Start_Record" bpmnElement="F_Start_Record">
+        <di:waypoint x="258" y="190" />
+        <di:waypoint x="310" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Record_Ingest" bpmnElement="F_Record_Ingest">
+        <di:waypoint x="440" y="190" />
+        <di:waypoint x="500" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Ingest_AIFork" bpmnElement="F_Ingest_AIFork">
+        <di:waypoint x="630" y="190" />
+        <di:waypoint x="695" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Fork_Sentiment" bpmnElement="F_Fork_Sentiment">
+        <di:waypoint x="745" y="190" />
+        <di:waypoint x="816.2152375993267" y="190" />
+        <di:waypoint x="816.2152375993267" y="802.2141716744796" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Fork_Intents" bpmnElement="F_Fork_Intents">
+        <di:waypoint x="745" y="190" />
+        <di:waypoint x="977.5433706231704" y="190" />
+        <di:waypoint x="977.5433706231704" y="730.720588679888" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Fork_TriggerWords" bpmnElement="F_Fork_TriggerWords">
+        <di:waypoint x="745" y="190" />
+        <di:waypoint x="1313.2072454929673" y="190" />
+        <di:waypoint x="1313.2072454929673" y="597.704315364635" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Fork_Compliance" bpmnElement="F_Fork_Compliance">
+        <di:waypoint x="745" y="190" />
+        <di:waypoint x="1141.3841237777613" y="190" />
+        <di:waypoint x="1141.3841237777613" y="665.8114012018751" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Fork_Followups" bpmnElement="F_Fork_Followups">
+        <di:waypoint x="745" y="190" />
+        <di:waypoint x="1475.9429939906233" y="190" />
+        <di:waypoint x="1475.9429939906233" y="529.3201915868732" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Fork_Resolution" bpmnElement="F_Fork_Resolution">
+        <di:waypoint x="745" y="190" />
+        <di:waypoint x="1637.6148102973912" y="190" />
+        <di:waypoint x="1637.6148102973912" y="468.6030897840606" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Fork_Summary" bpmnElement="F_Fork_Summary">
+        <di:waypoint x="745" y="190" />
+        <di:waypoint x="1804.1619599969224" y="190" />
+        <di:waypoint x="1804.1619599969224" y="409.5274370798413" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Sentiment_Join" bpmnElement="F_Sentiment_Join">
+        <di:waypoint x="881.2152375993267" y="842.2141716744796" />
+        <di:waypoint x="1922.238678625989" y="842.2141716744796" />
+        <di:waypoint x="1922.238678625989" y="199.5471496995312" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Intents_Join" bpmnElement="F_Intents_Join">
+        <di:waypoint x="1042.5433706231704" y="770.720588679888" />
+        <di:waypoint x="1922.238678625989" y="770.720588679888" />
+        <di:waypoint x="1922.238678625989" y="199.5471496995312" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_TriggerWords_Join" bpmnElement="F_TriggerWords_Join">
+        <di:waypoint x="1378.2072454929673" y="637.704315364635" />
+        <di:waypoint x="1922.238678625989" y="637.704315364635" />
+        <di:waypoint x="1922.238678625989" y="199.5471496995312" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Compliance_Join" bpmnElement="F_Compliance_Join">
+        <di:waypoint x="1206.3841237777613" y="705.8114012018751" />
+        <di:waypoint x="1922.238678625989" y="705.8114012018751" />
+        <di:waypoint x="1922.238678625989" y="199.5471496995312" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Followups_Join" bpmnElement="F_Followups_Join">
+        <di:waypoint x="1540.9429939906233" y="569.3201915868732" />
+        <di:waypoint x="1922.238678625989" y="569.3201915868732" />
+        <di:waypoint x="1922.238678625989" y="199.5471496995312" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Resolution_Join" bpmnElement="F_Resolution_Join">
+        <di:waypoint x="1702.6148102973912" y="508.6030897840606" />
+        <di:waypoint x="1922.238678625989" y="508.6030897840606" />
+        <di:waypoint x="1922.238678625989" y="199.5471496995312" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Summary_Join" bpmnElement="F_Summary_Join">
+        <di:waypoint x="1869.1619599969224" y="449.5274370798413" />
+        <di:waypoint x="1922.238678625989" y="449.5274370798413" />
+        <di:waypoint x="1922.238678625989" y="199.5471496995312" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Join_StoreRecord" bpmnElement="F_Join_StoreRecord">
+        <di:waypoint x="1947.238678625989" y="174.5471496995312" />
+        <di:waypoint x="2007.238678625989" y="174.5471496995312" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_StoreRecord_SeedFollowups" bpmnElement="F_StoreRecord_SeedFollowups">
+        <di:waypoint x="2137.238678625989" y="174.5471496995312" />
+        <di:waypoint x="2197.238678625989" y="174.5471496995312" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Seed_HasFollowupsGW" bpmnElement="F_Seed_HasFollowupsGW">
+        <di:waypoint x="2327.238678625989" y="174.5471496995312" />
+        <di:waypoint x="2392.238678625989" y="174.5471496995312" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_HasFollowups_Yes" bpmnElement="F_HasFollowups_Yes">
+        <di:waypoint x="2417.238678625989" y="199.5471496995312" />
+        <di:waypoint x="2417.238678625989" y="219.5471496995312" />
+        <di:waypoint x="2128.6804920892273" y="219.5471496995312" />
+        <di:waypoint x="2128.6804920892273" y="1108.6021091295129" />
+        <di:waypoint x="2148.6804920892273" y="1108.6021091295129" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_HasFollowups_No" bpmnElement="F_HasFollowups_No">
+        <di:waypoint x="2442.238678625989" y="174.5471496995312" />
+        <di:waypoint x="2695.1193393129943" y="174.5471496995312" />
+        <di:waypoint x="2695.1193393129943" y="172.00000000000003" />
+        <di:waypoint x="2948" y="172.00000000000003" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Review_ApproveRejectGW" bpmnElement="F_Review_ApproveRejectGW">
+        <di:waypoint x="2278.6804920892273" y="1108.6021091295129" />
+        <di:waypoint x="2343.6804920892273" y="1108.6021091295129" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_ApproveReject_Approve" bpmnElement="F_ApproveReject_Approve">
+        <di:waypoint x="2368.6804920892273" y="1083.6021091295129" />
+        <di:waypoint x="2368.6804920892273" y="1029.6558876278718" />
+        <di:waypoint x="2453.680492089227" y="1029.6558876278718" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_ApproveReject_Reject" bpmnElement="F_ApproveReject_Reject">
+        <di:waypoint x="2368.6804920892273" y="1133.6021091295129" />
+        <di:waypoint x="2368.6804920892273" y="1158.1289983786924" />
+        <di:waypoint x="2542.087522111011" y="1158.1289983786924" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_AssignDetails_TrackProgress" bpmnElement="F_AssignDetails_TrackProgress">
+        <di:waypoint x="2583.680492089227" y="1029.6558876278718" />
+        <di:waypoint x="2643.3195079107727" y="1029.6558876278718" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Reject_UpdateDashboard" bpmnElement="F_Reject_UpdateDashboard">
+        <di:waypoint x="2607.087522111011" y="1118.1289983786924" />
+        <di:waypoint x="2607.087522111011" y="172.00000000000003" />
+        <di:waypoint x="2948" y="172.00000000000003" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_TrackProgress_ProgressGW" bpmnElement="F_TrackProgress_ProgressGW">
+        <di:waypoint x="2773.3195079107727" y="1029.6558876278718" />
+        <di:waypoint x="2805.7780316430917" y="1029.6558876278718" />
+        <di:waypoint x="2805.7780316430917" y="1033.6558876278718" />
+        <di:waypoint x="2838.2365553754103" y="1033.6558876278718" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Progress_Done" bpmnElement="F_Progress_Done">
+        <di:waypoint x="2888.2365553754103" y="1033.6558876278718" />
+        <di:waypoint x="2948.2365553754103" y="1033.6558876278718" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Progress_Active" bpmnElement="F_Progress_Active">
+        <di:waypoint x="2863.2365553754103" y="1008.6558876278718" />
+        <di:waypoint x="2863.2365553754103" y="172.00000000000003" />
+        <di:waypoint x="2948" y="172.00000000000003" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_Completed_UpdateDashboard" bpmnElement="F_Completed_UpdateDashboard">
+        <di:waypoint x="3013.2365553754103" y="993.6558876278718" />
+        <di:waypoint x="3013" y="212.00000000000003" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_UpdateDashboard_AnalyticsFork" bpmnElement="F_UpdateDashboard_AnalyticsFork">
+        <di:waypoint x="3078" y="172.00000000000003" />
+        <di:waypoint x="3144" y="172.00000000000003" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_AnalyticsFork_Sentiment" bpmnElement="F_AnalyticsFork_Sentiment">
+        <di:waypoint x="3169" y="147.00000000000003" />
+        <di:waypoint x="3169" y="78.00000000000003" />
+        <di:waypoint x="3254" y="78.00000000000003" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_AnalyticsFork_Escalation" bpmnElement="F_AnalyticsFork_Escalation">
+        <di:waypoint x="3194" y="172.00000000000003" />
+        <di:waypoint x="3254" y="172.00000000000003" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_AnalyticsFork_Compliance" bpmnElement="F_AnalyticsFork_Compliance">
+        <di:waypoint x="3169" y="197.00000000000003" />
+        <di:waypoint x="3169" y="266.00000000000006" />
+        <di:waypoint x="3254" y="266.00000000000006" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_AnalyticsFork_Resolution" bpmnElement="F_AnalyticsFork_Resolution">
+        <di:waypoint x="3169" y="197.00000000000003" />
+        <di:waypoint x="3169" y="392" />
+        <di:waypoint x="3260" y="392" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_AnalyticsFork_Intent" bpmnElement="F_AnalyticsFork_Intent">
+        <di:waypoint x="3169" y="197.00000000000003" />
+        <di:waypoint x="3169" y="484" />
+        <di:waypoint x="3260" y="484" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_AnalyticsFork_Friction" bpmnElement="F_AnalyticsFork_Friction">
+        <di:waypoint x="3169" y="197.00000000000003" />
+        <di:waypoint x="3169" y="576" />
+        <di:waypoint x="3260" y="576" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_SentimentAnalytics_Join" bpmnElement="F_SentimentAnalytics_Join">
+        <di:waypoint x="3384" y="78.00000000000003" />
+        <di:waypoint x="3479" y="78.00000000000003" />
+        <di:waypoint x="3479" y="147.00000000000003" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_EscalationAnalytics_Join" bpmnElement="F_EscalationAnalytics_Join">
+        <di:waypoint x="3384" y="172.00000000000003" />
+        <di:waypoint x="3454" y="172.00000000000003" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_ComplianceAnalytics_Join" bpmnElement="F_ComplianceAnalytics_Join">
+        <di:waypoint x="3384" y="266.00000000000006" />
+        <di:waypoint x="3479" y="266.00000000000006" />
+        <di:waypoint x="3479" y="197.00000000000003" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_ResolutionAnalytics_Join" bpmnElement="F_ResolutionAnalytics_Join">
+        <di:waypoint x="3390" y="392" />
+        <di:waypoint x="3479" y="392" />
+        <di:waypoint x="3479" y="197.00000000000003" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_IntentAnalytics_Join" bpmnElement="F_IntentAnalytics_Join">
+        <di:waypoint x="3390" y="484" />
+        <di:waypoint x="3479" y="484" />
+        <di:waypoint x="3479" y="197.00000000000003" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_FrictionAnalytics_Join" bpmnElement="F_FrictionAnalytics_Join">
+        <di:waypoint x="3390" y="576" />
+        <di:waypoint x="3479" y="576" />
+        <di:waypoint x="3479" y="197.00000000000003" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_AnalyticsJoin_QueryAI" bpmnElement="F_AnalyticsJoin_QueryAI">
+        <di:waypoint x="3504" y="172.00000000000003" />
+        <di:waypoint x="3553" y="172.00000000000003" />
+        <di:waypoint x="3553" y="967" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_QueryAI_GenerateResponse" bpmnElement="F_QueryAI_GenerateResponse">
+        <di:waypoint x="3618" y="1007" />
+        <di:waypoint x="3674.9999999999995" y="1007" />
+        <di:waypoint x="3674.9999999999995" y="524" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_F_GenerateResponse_End" bpmnElement="F_GenerateResponse_End">
+        <di:waypoint x="3674.9999999999995" y="444" />
+        <di:waypoint x="3674.9999999999995" y="190" />
+        <di:waypoint x="3702" y="190" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
+
