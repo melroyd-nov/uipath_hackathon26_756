@@ -49,66 +49,89 @@
         <bpmn:flowNodeRef>Task_QueryAI</bpmn:flowNodeRef>
       </bpmn:lane>
     </bpmn:laneSet>
-    <bpmn:startEvent id="Start_CallReceived" name="Customer Call Received at Acme">
+    <bpmn:startEvent id="Start_CallReceived" name="JSON Analysis Result Arrives">
       <bpmn:documentation>
-        TRIGGER: A customer contacts the Acme call centre.
-        This event starts the full analytics pipeline:
-          1. Transcript recording and ingestion (load_transcripts.py)
-          2. 7-way UiPath Generative AI UiPath Generative AI analysis (parallel)
-          3. Data Fabric (UiPath) persistence (call_records table, Data Fabric (UiPath))
-          4. Follow-up seeding (call_followups table)
-          5. Supervisor review workflow (approve / reject / track / complete)
-          6. 8-KPI dashboard refresh (vs benchmarks from config.py)
-          7. 6 analytics modules (parallel fan-out)
-          8. UiPath Generative UiPath Generative AI Q&amp;A via UiPath Generative AI (grounded in live Data Fabric (UiPath) data)
-        CALL TYPES: Claims FNOL, Policy Info, Cancellations, Billing, Grievances, New Business.
-        AGENTS: Sam=Claims/Grievances, John=Policy Services, David=Escalations/Quality,
-                Mike=New Business/Renewals, Mary=Billing/Amendments.
+        TRIGGER: Friend's analysis system produces a JSON file per call recording.
+        INPUT: JSON object containing transcript analysis results (not raw .txt).
+        JSON TOP-LEVEL FIELDS:
+          recording (string): MP3 filename
+          duration_sec (decimal): Call duration
+          summary (string): Call summary
+          intent (string): Single call intent
+          resolution (string): "resolved" or "unresolved"
+          fraud_risk (string): Risk level
+          fraud_reason (string): Risk explanation
+          is_followup (boolean): Is this a follow-up call?
+          followup_evidence (string): Why it is/isn't a follow-up
+          sentiment_avg {agent, customer} (decimal): Sentiment scores
+          talk_ratio_pct {AGENT, CUSTOMER} (decimal): Talk time %
+          audio_emotion {AGENT, CUSTOMER} (string): Audio emotion
+          compliance (array): 8 compliance rules with PASS/FAIL/NA
+          compliance_violations (array): Failed rule IDs
+          pii_digits_detected (boolean): PII detection flag
+          triggers (array): Trigger events with timestamps
+        
+        This JSON is fed into the Flow, which maps fields to Data Fabric CallRecord.
+        The 7 parallel branches extract/process different sections of the JSON.
+        
+        DATA FABRIC ENTITIES:
+          - CallRecord (beac40ee-bd6b-f111-8fcb-000d3ab36606)
+          - CallFollowup (993c2c06-be6b-f111-8fcb-000d3ab36606)
+          - AiUsage (45af032d-bb6b-f111-8fcb-000d3ab36606)
       </bpmn:documentation>
       <bpmn:extensionElements>
         <uipath:entryPointId value="c76ae006-619b-4257-8fac-4eee852c97c8" />
       </bpmn:extensionElements>
       <bpmn:outgoing>F_Start_Record</bpmn:outgoing>
     </bpmn:startEvent>
-    <bpmn:serviceTask id="Task_RecordCall" name="Record Call and Capture Transcript File">
+    <bpmn:serviceTask id="Task_RecordCall" name="Receive JSON Analysis from Friend's System">
       <bpmn:documentation>
-        WHAT: Telephony system records the call and produces a plain-text transcript file.
-        FILE NAMING by intent: Claims_Registration_FNOL.txt, Cancellations_Retention.txt,
-          Claims_Status_and_Tracking.txt, Grievances_Complaints.txt, etc.
-        HEADER FIELDS: Call Date, Call Start/End Time, Caller Name, Caller NRIC,
-          Caller DOB, Caller Phone, Agent Name, Policy Number.
-        STORAGE: Files may be bundled as transcripts.zip for batch processing.
-        UIPATH: UiPath Agent authenticates to UiPath Orchestrator storage bucket,
-          reads files from incoming/ folder on a scheduled daily trigger.
-        DURATION: Computed later as EXTRACT(EPOCH FROM (call_end_time - call_start_time)).
+        WHAT: Friend's analysis system processes call recording (MP3) and produces JSON.
+        INPUT: Call recording file (e.g. tmpi70znh6_.mp3)
+        OUTPUT: JSON analysis file with fields:
+          recording, duration_sec, summary, intent, resolution, fraud_risk,
+          fraud_reason, is_followup, followup_evidence, sentiment_avg,
+          talk_ratio_pct, audio_emotion, compliance, compliance_violations,
+          pii_digits_detected, triggers.
+        DELIVERY: JSON dropped to Orchestrator Storage Bucket or sent via API.
+        UIPATH FLOW: Trigger fires on JSON arrival, passes to Ingest node.
       </bpmn:documentation>
       <bpmn:incoming>F_Start_Record</bpmn:incoming>
       <bpmn:outgoing>F_Record_Ingest</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_IngestTranscript" name="Load and Parse Transcript (load_transcripts.py)">
+    <bpmn:serviceTask id="Task_IngestTranscript" name="Ingest JSON Analysis Result">
       <bpmn:documentation>
-        WHAT: load_transcripts.py reads the .txt file; generate_summaries.py handles
-          batch ingestion from transcripts.zip.
+        SOURCE: Friend's analysis system — JSON file per call recording.
+        INPUT: JSON object (see Start_CallReceived documentation for full field list).
         STEPS:
-          1. Parse header: extract caller metadata (name, NRIC, DOB, phone, agent, policy#, timestamps).
-          2. Parse body: isolate speaker-labelled dialogue lines.
-          3. Attach file_name for source traceability.
-        OUTPUT: Structured payload { metadata, dialogue_text, file_name } ready for AI.
-        UIPATH AGENT: downloads from storage bucket, reads into String variable, passes to AI.
-        API RETRIEVAL ENDPOINTS:
-          GET /api/calls                — paginated list with filters
-          GET /api/calls/{call_id}      — full detail including raw transcript
+          1. Read JSON file from Storage Bucket or receive via webhook/API.
+          2. Parse JSON into structured object.
+          3. Validate required fields exist (recording, duration_sec, compliance array).
+          4. Extract metadata: recording filename, duration.
+          5. Pass JSON object to parallel fork for field extraction.
+        OUTPUT: JSON object ready for 7 parallel extraction branches.
+        NOTE: Unlike original design which parsed raw .txt transcripts,
+          this flow receives PRE-ANALYZED JSON. The AI/ML work is done
+          by friend's system; UiPath Flow maps JSON fields to Data Fabric.
       </bpmn:documentation>
       <bpmn:incoming>F_Record_Ingest</bpmn:incoming>
       <bpmn:outgoing>F_Ingest_AIFork</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:parallelGateway id="GW_AIParallelFork" name="Fan-out: 7 Parallel UiPath Generative AI analysis Tasks">
+    <bpmn:parallelGateway id="GW_AIParallelFork" name="Fan-out: 7 Parallel JSON Field Extraction Branches">
       <bpmn:documentation>
-        WHAT: Dispatches transcript simultaneously to 7 UiPath Generative UiPath Generative AI analysis tasks.
-        WHY: Parallel execution maximises throughput. All 7 use the same model:
-          UiPathAI.GenerativeModel(model_name=os.getenv("UIPATH_AI_MODEL","uipath-generative-ai"),
-                               system_instruction=SYSTEM_PROMPT)
-        SYNCHRONISATION: GW_AIParallelJoin waits for all 7 before any DB writes.
+        WHAT: Dispatches JSON object simultaneously to 7 extraction/processing branches.
+        INPUT: Friend's analysis JSON (pre-computed transcript analysis).
+        WHY: Parallel processing maximises throughput. All 7 branches read from
+          the same JSON object — no external AI calls needed here.
+        BRANCHES:
+          1. Sentiment + Audio Emotion  ← sentiment_avg + audio_emotion
+          2. Intent Classification      ← intent
+          3. Trigger Events + PII       ← triggers[] + pii_digits_detected
+          4. Compliance Rules           ← compliance[] + compliance_violations[]
+          5. Follow-up Detection        ← is_followup + followup_evidence
+          6. Resolution + Fraud Risk    ← resolution + fraud_risk + fraud_reason
+          7. Summary + Talk Ratio       ← summary + talk_ratio_pct + duration_sec + recording
+        SYNCHRONISATION: GW_AIParallelJoin waits for all 7 before Data Fabric write.
       </bpmn:documentation>
       <bpmn:incoming>F_Ingest_AIFork</bpmn:incoming>
       <bpmn:outgoing>F_Fork_Sentiment</bpmn:outgoing>
@@ -119,13 +142,15 @@
       <bpmn:outgoing>F_Fork_Resolution</bpmn:outgoing>
       <bpmn:outgoing>F_Fork_Summary</bpmn:outgoing>
     </bpmn:parallelGateway>
-    <bpmn:parallelGateway id="GW_AIParallelJoin" name="Synchronise: All 7 AI Results Ready">
+    <bpmn:parallelGateway id="GW_AIParallelJoin" name="Synchronise: All 7 JSON Branches Complete">
       <bpmn:documentation>
-        WHAT: Waits for all 7 AI branches before advancing.
-        WHY: Prevents partial records in Data Fabric (UiPath). All call_records fields
-          must be populated in one atomic INSERT (db.add() then db.commit()).
-        BRANCHES WAITED FOR: sentiment, intents x3, trigger words, compliance,
-          follow-up items x3, resolution flags x4, call summary.
+        WHAT: Waits for all 7 JSON field extraction branches before advancing.
+        WHY: Prevents partial records in Data Fabric. All CallRecord fields
+          must be populated in one atomic insert via records.insert.
+        BRANCHES WAITED FOR: sentiment, intents, triggers, compliance,
+          follow-up detection, resolution/fraud, summary/talk ratio.
+        OUTPUT: Aggregated result object passed to Task_StoreCallRecord for
+          single atomic Data Fabric write.
       </bpmn:documentation>
       <bpmn:incoming>F_Sentiment_Join</bpmn:incoming>
       <bpmn:incoming>F_Intents_Join</bpmn:incoming>
@@ -136,50 +161,90 @@
       <bpmn:incoming>F_Summary_Join</bpmn:incoming>
       <bpmn:outgoing>F_Join_StoreRecord</bpmn:outgoing>
     </bpmn:parallelGateway>
-    <bpmn:serviceTask id="Task_StoreCallRecord" name="Persist Call Record to Data Fabric (UiPath) (call_records table)">
+    <bpmn:serviceTask id="Task_StoreCallRecord" name="Persist Call Record to Data Fabric — Atomic Insert">
       <bpmn:documentation>
-        DATABASE: Data Fabric (UiPath)
-        CONNECTION: DB_URL env var, Data Fabric (UiPath) connector
-        ORM: SQLAlchemy — class CallRecord, __tablename__='call_records'
-        KEY COLUMNS:
-          call_id (BigInteger PK, 8-digit auto), call_date, call_start/end_time,
+        PRODUCT: Data Fabric (Native Entity)
+        ENTITY: CallRecord
+        ENTITY ID: beac40ee-bd6b-f111-8fcb-000d3ab36606
+        PRIMARY KEY: System Id (UUID auto-generated by Data Fabric)
+        BUSINESS KEY: callid (STRING(20), isUnique=true, required) — telephony correlation ID
+        OPERATION: records.insert — single atomic write of ALL fields after AIParallelJoin.
+          Partial writes are prevented by the join: all 7 JSON branches must complete first.
+        FIELD COUNT: 27 original + ~10 NEW JSON fields = 37+ total
+        
+        ORIGINAL FIELDS (from header + AI):
+          callid, call_date, call_start_time, call_end_time,
           caller_name, caller_nric, caller_dob, caller_number, agent_name, policy_number,
-          call_sentiment (SmallInteger -1/0/+1), call_intent1/2/3, followup_item1/2/3,
-          escalation_flag, compliance_flag ('No'=FAIL), call_resolved_flag, preverified_flag,
-          triggerword_flag, triggerwords, call_summary, file_name, repeatcall_flag, transcript.
-        STARTUP: Base.metadata.create_all(bind=engine) in main.py.
-          ALTER TABLE ADD COLUMN IF NOT EXISTS for idempotent implementations.
-        API ENDPOINTS: GET /api/calls (list+filters), GET /api/calls/{call_id} (full detail)
+          call_sentiment (INTEGER), call_intent1/2/3 (STRING 100),
+          followup_item1/2/3 (STRING 100),
+          escalation_flag, compliance_flag, call_resolved_flag, preverified_flag,
+          triggerword_flag (CHOICE_SET_SINGLE → YesNoFlag),
+          triggerwords (STRING 100), call_summary (MULTILINE_TEXT 10000),
+          file_name (STRING 100), repeatcall_flag (CHOICE_SET_SINGLE),
+          transcript (MULTILINE_TEXT 10000).
+        
+        NEW FIELDS FROM FRIEND'S JSON (to add to CallRecord entity):
+          agent_sentiment (DECIMAL)      ← sentiment_avg.agent
+          customer_sentiment (DECIMAL)   ← sentiment_avg.customer
+          agent_audio_emotion (STRING 20)   ← audio_emotion.agent
+          customer_audio_emotion (STRING 20)← audio_emotion.customer
+          agent_talk_pct (DECIMAL)       ← talk_ratio_pct.AGENT
+          customer_talk_pct (DECIMAL)    ← talk_ratio_pct.CUSTOMER
+          duration_seconds (DECIMAL)     ← duration_sec
+          fraud_risk (STRING 20)         ← fraud_risk
+          fraud_reason (MULTILINE_TEXT)  ← fraud_reason
+          pii_digits_detected (CHOICE_SET_SINGLE → YesNoFlag) ← pii_digits_detected
+          is_followup_call (CHOICE_SET_SINGLE → YesNoFlag) ← is_followup
+          followup_call_evidence (MULTILINE_TEXT) ← followup_evidence
+          compliance_detail (MULTILINE_TEXT 10000) ← full compliance JSON
+          compliance_fail_count (INTEGER) ← compliance_violations.length
+          trigger_count (INTEGER)        ← triggers.length
+        
+        CHOICE SET VALUES (YesNoFlag): Yes(NumberId=0), No(NumberId=1)
+        DATA FABRIC QUERY: records.query with filterGroup on any field; groupBy + aggregates for KPIs.
+        CONFLICT HANDLING: callid isUnique=true prevents duplicates.
       </bpmn:documentation>
       <bpmn:incoming>F_Join_StoreRecord</bpmn:incoming>
       <bpmn:outgoing>F_StoreRecord_SeedFollowups</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_SeedFollowups" name="Seed UiPath Generative AI follow-up Items into call_followups Table">
+    <bpmn:serviceTask id="Task_SeedFollowups" name="Seed AI Follow-ups into Data Fabric CallFollowup">
       <bpmn:documentation>
-        FUNCTION: _seed_ai_items(db, call_id) in backend/routers/followups.py
+        PRODUCT: Data Fabric (Native Entity)
+        ENTITY: CallFollowup
+        ENTITY ID: 993c2c06-be6b-f111-8fcb-000d3ab36606
+        PARENT ENTITY: CallRecord (beac40ee-bd6b-f111-8fcb-000d3ab36606)
         LOGIC:
-          1. Check if ai_generated rows already exist for this call_id.
-          2. If NOT: create up to 3 CallFollowup rows from followup_item1/2/3.
-             source='ai_generated', status='pending'
-             reason = _extract_reason(transcript, item_text) — keyword match, top 3 lines
-          3. If YES but reason is None: backfill reason only (no duplicate inserts)
-        BATCH: _seed_all_missing() seeds up to 100 un-seeded calls per request.
-        CALL_FOLLOWUPS COLUMNS:
-          id (PK), call_id (FK indexed), text (String 500), reason (Text),
-          source ('ai_generated'|'manual'), status ('pending'|'approved'|'rejected'|'in_progress'|'completed'),
-          priority ('low'|'medium'|'high'), assigned_to, due_date, approved_by, approved_at,
-          completed_at, completion_notes, created_at, updated_at.
-        DEDUP: Startup implementation removes duplicate ai_generated rows (keeps MIN(id)).
+          1. Read CallRecord just inserted; inspect followup_item1, followup_item2, followup_item3.
+          2. Also check CallRecord.is_followup_call — if Yes, this call was itself
+             a follow-up to a prior interaction (from JSON is_followup field).
+          3. For each non-empty followup_itemN:
+             a. Query CallFollowup to check if an ai_generated row exists for this callid + text.
+             b. If NOT: insert new CallFollowup row:
+                - callid = CallRecord.callid (STRING, required)
+                - call_record = RELATIONSHIP → CallRecord (system Id UUID)
+                - text = followup_itemN (STRING 500, required)
+                - reason = keyword-extracted snippet from transcript (MULTILINE_TEXT 2000)
+                - source = CHOICE_SET_SINGLE → FollowupSource, value = ai_generated (NumberId=0)
+                - status = CHOICE_SET_SINGLE → FollowupStatus, value = pending (NumberId=0)
+                - priority, assigned_to, due_date = null (set later by supervisor)
+          4. If row exists but reason is empty: update reason field only.
+        CHOICE SETS:
+          - FollowupSource: ai_generated(0), manual(1)
+          - FollowupStatus: pending(0), approved(1), rejected(2), in_progress(3), completed(4)
+          - FollowupPriority: low(0), medium(1), high(2)
+        RELATIONSHIP: call_record field is RELATIONSHIP type pointing to CallRecord.
+        DEDUP: Unique constraint on (callid + text + source=ai_generated) enforced by Flow logic.
       </bpmn:documentation>
       <bpmn:incoming>F_StoreRecord_SeedFollowups</bpmn:incoming>
       <bpmn:outgoing>F_Seed_HasFollowupsGW</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:exclusiveGateway id="GW_HasFollowups" name="Were Follow-up Action Items Generated?">
       <bpmn:documentation>
-        CONDITION: At least one of followup_item1/2/3 is non-null and non-empty.
+        CONDITION: At least one of CallRecord.followup_item1/2/3 is non-null and non-empty.
         YES path: supervisor review workflow needed (Task_SupervisorReview).
         NO path:  skip to dashboard refresh (purely informational calls).
         WHY: Prevents empty workflow tasks for calls with no outstanding commitments.
+        DATA FABRIC: Condition checked by Flow expression reading the just-inserted CallRecord.
       </bpmn:documentation>
       <bpmn:incoming>F_Seed_HasFollowupsGW</bpmn:incoming>
       <bpmn:outgoing>F_HasFollowups_Yes</bpmn:outgoing>
@@ -187,27 +252,28 @@
     </bpmn:exclusiveGateway>
     <bpmn:serviceTask id="Task_UpdateDashboard" name="Refresh Analytics Dashboard — 8 KPI Summary">
       <bpmn:documentation>
-        ENDPOINT: GET /api/dashboard/summary (filters: start_date, end_date, agent)
-        8 KPI METRICS (SQL aggregations on call_records):
-          total_calls         = COUNT(*)
+        DATA SOURCE: Data Fabric CallRecord entity (beac40ee-bd6b-f111-8fcb-000d3ab36606)
+        QUERY METHOD: records.query with aggregates and groupBy (no SQL — Data Fabric native).
+        8 KPI METRICS (Data Fabric aggregations):
+          total_calls         = COUNT(Id)
           avg_sentiment       = AVG(call_sentiment)  range -1.0 to +1.0
-          escalation_pct      = 100 * SUM(escalation_flag='Yes') / COUNT(*)
-          compliance_fail_pct = 100 * SUM(compliance_flag='No') / COUNT(*)
-          resolution_pct      = 100 * SUM(call_resolved_flag='Yes') / COUNT(*)
-          preverified_pct     = 100 * SUM(preverified_flag='Yes') / COUNT(*)
-          trigger_word_pct    = 100 * SUM(triggerword_flag='Yes') / COUNT(*)
-          repeat_call_pct     = 100 * SUM(repeatcall_flag='Yes') / COUNT(*)
-        BENCHMARKS (config.py BENCHMARKS dict returned alongside each metric):
+          escalation_pct      = 100 * COUNT(escalation_flag=Yes) / COUNT(Id)
+          compliance_fail_pct = 100 * COUNT(compliance_flag=No) / COUNT(Id)
+          resolution_pct      = 100 * COUNT(call_resolved_flag=Yes) / COUNT(Id)
+          preverified_pct     = 100 * COUNT(preverified_flag=Yes) / COUNT(Id)
+          trigger_word_pct    = 100 * COUNT(triggerword_flag=Yes) / COUNT(Id)
+          repeat_call_pct     = 100 * COUNT(repeatcall_flag=Yes) / COUNT(Id)
+        BENCHMARKS (from backend/config.py, preserved in dashboard code):
           escalation_pct      must be less than or equal to 10.0%
           compliance_fail_pct must be less than or equal to  5.0%
           resolution_pct      must be greater than or equal to 80.0%
           preverified_pct     must be greater than or equal to 80.0%
           trigger_word_pct    must be less than or equal to  3.0%
           repeat_call_pct     must be less than or equal to 20.0%
-        UiPath Apps: RAG (Red/Amber/Green) indicators vs benchmarks.
+        Coded App: RAG (Red/Amber/Green) indicators vs benchmarks.
         ALSO REFRESHES:
-          GET /api/dashboard/kpi-trends    — monthly KPI trend (YYYY-MM grouping)
-          GET /api/dashboard/agent-summary — per-agent leaderboard (all KPIs + avg duration)
+          KPI trends    — groupBy call_date (YYYY-MM) + aggregates
+          Agent summary — groupBy agent_name + all KPI aggregates + avg duration
       </bpmn:documentation>
       <bpmn:incoming>F_HasFollowups_No</bpmn:incoming>
       <bpmn:incoming>F_Reject_UpdateDashboard</bpmn:incoming>
@@ -238,11 +304,13 @@
     </bpmn:parallelGateway>
     <bpmn:serviceTask id="Task_SentimentAnalytics" name="[Analytics] Sentiment Trends and Per-Agent Breakdown">
       <bpmn:documentation>
-        1. GET /api/dashboard/sentiment-trend (daily):
+        DATA SOURCE: Data Fabric CallRecord entity
+        QUERIES (records.query with aggregates and groupBy):
+        1. Sentiment trend (daily):
            GROUP BY call_date → date, positive_count, neutral_count, negative_count, avg_score.
-        2. GET /api/dashboard/sentiment-monthly:
+        2. Sentiment monthly:
            GROUP BY YYYY-MM → month, avg_score, positive/neutral/negative counts, total_calls.
-        3. GET /api/analytics/sentiment/by-agent:
+        3. Sentiment by agent:
            GROUP BY agent_name ORDER BY avg_sentiment ASC (worst first) →
            agent_name, total_calls, positive/neutral/negative counts, avg_sentiment, negative_pct.
         IMPACT: Identifies call centre staff needing coaching based on persistent negative sentiment.
@@ -252,14 +320,16 @@
     </bpmn:serviceTask>
     <bpmn:serviceTask id="Task_EscalationAnalytics" name="[Analytics] Escalations by Agent, Trend, Root Cause">
       <bpmn:documentation>
-        1. GET /api/analytics/escalations/by-agent:
+        DATA SOURCE: Data Fabric CallRecord entity
+        QUERIES (records.query with aggregates and groupBy):
+        1. Escalations by agent:
            GROUP BY agent_name ORDER BY escalation_pct DESC →
            agent_name, total_calls, escalation_count, escalation_pct.
-        2. GET /api/analytics/escalations/trend:
+        2. Escalations trend:
            GROUP BY YYYY-MM → date, total_calls, escalation_count, escalation_pct.
-        3. GET /api/analytics/escalations/root-cause:
-           Parses triggerwords (comma-separated) for escalated calls (escalation_flag='Yes').
-           Python Counter for top 10. Returns: trigger_words[{word,count}], by_intent[{intent,count}].
+        3. Escalation root-cause:
+           Query CallRecord where escalation_flag=Yes. Parse triggerwords field.
+           Returns top 10 trigger words and top intents by count.
         BENCHMARK: escalation_pct must be less than or equal to 10%.
         IMPACT: Root cause links trigger words to escalation drivers for targeted coaching.
       </bpmn:documentation>
@@ -268,12 +338,14 @@
     </bpmn:serviceTask>
     <bpmn:serviceTask id="Task_ComplianceAnalytics" name="[Analytics] Compliance Failures by Agent and Trend">
       <bpmn:documentation>
-        1. GET /api/analytics/compliance/by-agent:
+        DATA SOURCE: Data Fabric CallRecord entity
+        QUERIES (records.query with aggregates and groupBy):
+        1. Compliance by agent:
            GROUP BY agent_name ORDER BY compliance_fail_pct DESC →
-           agent_name, total_calls, fail_count (compliance_flag='No'), compliance_fail_pct.
-        2. GET /api/analytics/compliance/trend:
+           agent_name, total_calls, fail_count (compliance_flag=No), compliance_fail_pct.
+        2. Compliance trend:
            GROUP BY YYYY-MM → date, total_calls, fail_count, compliance_fail_pct.
-        KEY RULE: compliance_flag='No' = AGENT FAILED. 'Yes' = passed.
+        KEY RULE: compliance_flag=No = AGENT FAILED. Yes = passed.
         BENCHMARK: compliance_fail_pct must be less than or equal to 5%.
         IMPACT: Persistent failures trigger re-training; high rates may need MAS reporting.
           Monthly trend validates whether coaching interventions are effective.
@@ -283,18 +355,19 @@
     </bpmn:serviceTask>
     <bpmn:parallelGateway id="GW_AnalyticsJoin" name="Synchronise: All 6 Analytics Modules Complete">
       <bpmn:documentation>
-        WHAT: Waits for all 6 analytics modules. Then _build_context(db) in ai_service.py
-          assembles the live analytics snapshot for UiPath Generative AI grounding.
-        CONTEXT FORMAT SENT TO UiPath Generative AI:
+        WHAT: Waits for all 6 analytics modules. Then _build_context() in Coded Agent
+          assembles the live analytics snapshot from Data Fabric for LLM Gateway grounding.
+        CONTEXT FORMAT SENT TO AI:
           === Acme CALL CENTER — LIVE ANALYTICS CONTEXT ===
           Data range: [MIN(call_date)] to [MAX(call_date)] | Total calls: [N]
           --- OVERALL KPIs --- (8 metrics with benchmark values)
           --- TOP CALL INTENTS --- (top 8 by volume)
           --- AGENT PERFORMANCE --- (all agents: sentiment, escalation, resolution, compliance, repeat)
           --- MONTHLY TREND --- (by YYYY-MM: volume, sentiment, escalation, resolution)
-          --- TOP TRIGGER WORDS --- (top 10 from Counter)
+          --- TOP TRIGGER WORDS --- (top 10 by frequency)
           --- TOP FRICTION POINTS --- (top 5 composite-scored intents)
-        This grounding ensures every UiPath Generative AI answer references real, current Data Fabric (UiPath) figures.
+        This grounding ensures every AI answer references real, current Data Fabric figures.
+        DATA SOURCE: All queries run against CallRecord entity (beac40ee-bd6b-f111-8fcb-000d3ab36606).
       </bpmn:documentation>
       <bpmn:incoming>F_SentimentAnalytics_Join</bpmn:incoming>
       <bpmn:incoming>F_EscalationAnalytics_Join</bpmn:incoming>
@@ -307,166 +380,222 @@
     <bpmn:endEvent id="End_Complete" name="Call Analytics Process Complete">
       <bpmn:documentation>
         ALL STEPS COMPLETED:
-          Transcript recorded and ingested (load_transcripts.py / generate_summaries.py).
-          7 UiPath Generative UiPath Generative AI analyses: sentiment, intents x3, trigger words, compliance,
-            follow-up items x3, resolution flags x4, call summary.
-          call_records row persisted to Data Fabric (UiPath).
-          UiPath Generative AI follow-ups seeded to call_followups (source='ai_generated', status='pending').
-          Supervisor workflow actioned (approved/rejected/in_progress/completed).
-          8-KPI dashboard refreshed vs 6 benchmarks.
-          6 analytics modules computed (sentiment, escalation, compliance, resolution,
-            intents+marketing, friction+trigger-words).
-          UiPath Generative UiPath Generative AI Q&amp;A response returned in markdown format, grounded in live Data Fabric (UiPath) data.
-          ai_usage counters incremented (calls_today, total_calls).
-        SYSTEM HEALTH:
-          FastAPI backend: Cloud Run (uvicorn, backend/Dockerfile).
-          Frontend: UiPath Apps.conf.template).
-          Health: GET /health or /api/health returns { status:'ok', records: N }.
-          Docs: GET /docs — Swagger UI with full interactive API documentation.
-        READY: System immediately accepts the next incoming customer call.
+          JSON analysis result ingested from friend's system.
+          7 parallel JSON field extraction branches processed.
+          CallRecord persisted to Data Fabric (atomic insert, 37+ fields including new JSON fields).
+          CallFollowup rows seeded (if post-call action items generated).
+          Supervisor workflow started fire-and-forget (Maestro BPMN).
+          8-KPI dashboard refreshed via Data Fabric aggregations vs 6 benchmarks.
+          6 analytics modules computed from Data Fabric queries.
+          Grounded Q&amp;A response returned (markdown, context from live Data Fabric).
+          AiUsage counters incremented.
+        JSON FIELDS MAPPED:
+          sentiment_avg → agent_sentiment, customer_sentiment
+          audio_emotion → agent_audio_emotion, customer_audio_emotion
+          talk_ratio_pct → agent_talk_pct, customer_talk_pct
+          duration_sec → duration_seconds
+          resolution → call_resolved_flag
+          fraud_risk, fraud_reason → fraud_risk, fraud_reason
+          compliance[] → compliance_flag, compliance_detail, compliance_fail_count
+          triggers[] → triggerword_flag, triggerwords, trigger_count
+          is_followup → is_followup_call, followup_call_evidence
+          pii_digits_detected → pii_digits_detected
+          summary → call_summary
+          intent → call_intent1
+        READY: System immediately accepts the next incoming JSON analysis result.
       </bpmn:documentation>
       <bpmn:incoming>F_GenerateResponse_End</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:serviceTask id="Task_ExtractSentiment" name="[UiPath Generative AI] Extract Call Sentiment Score">
+    <bpmn:serviceTask id="Task_ExtractSentiment" name="[JSON] Extract Sentiment + Audio Emotion">
       <bpmn:documentation>
-        OUTPUT: call_records.call_sentiment (SmallInteger)
-          +1 = Positive (satisfaction, gratitude, resolved)
-           0 = Neutral  (transactional, informational)
-          -1 = Negative (frustration, complaint, dissatisfaction)
-        ENDPOINTS USING THIS:
-          GET /api/dashboard/summary           — avg_sentiment KPI
-          GET /api/dashboard/sentiment-trend   — daily counts and avg score
-          GET /api/dashboard/sentiment-monthly — monthly avg and breakdown
-          GET /api/analytics/sentiment/by-agent — per-agent, sorted ASC (worst first)
-          Friction Points: negative_pct weighted 40% of composite friction score
-        IMPACT: Call centre staff with persistent negative sentiment flagged for coaching.
+        SOURCE: Friend's JSON output — sentiment_avg + audio_emotion fields
+        INPUT FIELDS:
+          sentiment_avg.agent    (decimal, e.g. 0.21)
+          sentiment_avg.customer (decimal, e.g. 0.07)
+          audio_emotion.agent    (string, e.g. "neutral")
+          audio_emotion.customer (string, e.g. "neutral")
+        MAPPING TO DATA FABRIC CallRecord:
+          — NEW FIELD: agent_sentiment     (DECIMAL or STRING) ← sentiment_avg.agent
+          — NEW FIELD: customer_sentiment  (DECIMAL or STRING) ← sentiment_avg.customer
+          — NEW FIELD: agent_audio_emotion    (STRING 20) ← audio_emotion.agent
+          — NEW FIELD: customer_audio_emotion (STRING 20) ← audio_emotion.customer
+        NOTE: BPMN originally expected single INTEGER call_sentiment (-1/0/1).
+          JSON provides per-speaker decimal sentiment + audio emotion.
+          Recommend adding 4 new fields to CallRecord entity.
+        USED BY: Dashboard KPIs, agent coaching, customer satisfaction tracking.
       </bpmn:documentation>
       <bpmn:incoming>F_Fork_Sentiment</bpmn:incoming>
       <bpmn:outgoing>F_Sentiment_Join</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_ClassifyIntents" name="[UiPath Generative AI] Classify Call Intent(s) — up to 3">
+    <bpmn:serviceTask id="Task_ClassifyIntents" name="[JSON] Extract Call Intent">
       <bpmn:documentation>
-        OUTPUT: call_records.call_intent1/2/3 (String(100)) — up to 3 in priority order.
-        CATEGORIES: Claims Registration (FNOL), Claims Status and Tracking,
-          Claims Status Billing, Policy Info and Coverage Clarity, Cancellations
-          and Retention, Billing and Amendments, New Business and Quoting,
-          Policy Renewals, Grievances and Complaints.
-        ENDPOINTS USING THIS:
-          GET /api/analytics/intents/pareto         — Pareto with cumulative_pct
-          GET /api/analytics/intents/trend          — daily volume per intent
-          GET /api/analytics/marketing-opportunities — cross-sell/upsell scoring
-          GET /api/analytics/friction-points        — composite frustration score
-          GET /api/analytics/escalations/root-cause — escalation by intent
-        IMPACT: Top intents drive staffing decisions and self-service priorities.
+        SOURCE: Friend's JSON output — intent field
+        INPUT FIELD:
+          intent (string, e.g. "Claims Status" or empty)
+        MAPPING TO DATA FABRIC CallRecord:
+          call_intent1 (STRING 100) ← intent
+          call_intent2, call_intent3 = null (JSON provides single intent only)
+        NOTE: BPMN originally expected up to 3 intents in priority order.
+          JSON provides single intent field.
+          If multi-intent classification is needed, consider enhancing friend's JSON
+          OR using Coded Agent to infer secondary intents from transcript.
+        USED BY: Intent Pareto, trends, marketing opportunities, friction points.
       </bpmn:documentation>
       <bpmn:incoming>F_Fork_Intents</bpmn:incoming>
       <bpmn:outgoing>F_Intents_Join</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_DetectTriggerWords" name="[UiPath Generative AI] Detect Trigger Words and Set Flag">
+    <bpmn:serviceTask id="Task_DetectTriggerWords" name="[JSON] Process Trigger Events + PII Detection">
       <bpmn:documentation>
-        WHAT: Scans for high-risk language indicating legal/regulatory/dissatisfaction risk.
-        EXAMPLES: "cancel", "complaint", "lawyer", "regulator", "MAS", "sue",
-          "unfair", "escalate", "formal complaint", "ombudsman"
-        OUTPUT:
-          call_records.triggerword_flag = 'Yes' or 'No'
-          call_records.triggerwords     = comma-separated list e.g. "cancel, complaint"
-        BENCHMARK: trigger_word_pct must be less than or equal to 3%
-          (config.py BENCHMARKS['trigger_word_pct'] = 3.0)
-        ENDPOINTS: GET /api/dashboard/summary, /analytics/trigger-words/counts,
-          /analytics/trigger-words/trend, /analytics/escalations/root-cause
+        SOURCE: Friend's JSON output — triggers array + pii_digits_detected
+        INPUT FIELDS:
+          triggers (array of objects):
+            - time (float): timestamp in call
+            - from/to (int): speaker transition
+            - customer_text (string): what customer said
+            - trigger_time (float): when trigger occurred
+            - trigger_agent_text (string): agent text that triggered
+          pii_digits_detected (boolean): true/false
+        MAPPING TO DATA FABRIC CallRecord:
+          triggerword_flag (CHOICE_SET_SINGLE → YesNoFlag):
+            Yes(0) if triggers.length &gt; 0, else No(1)
+          triggerwords (STRING 100):
+            Extract keywords from triggers[].customer_text, comma-separated
+          — NEW FIELD: pii_digits_detected (CHOICE_SET_SINGLE → YesNoFlag or BOOLEAN)
+          — NEW FIELD: trigger_count (INTEGER): triggers.length
+        NOTE: JSON provides rich trigger context (timestamps, speaker, exact text).
+          Current Data Fabric schema only stores flag + word list.
+          Consider adding trigger_detail (MULTILINE_TEXT) to store JSON array as text
+          if full audit trail is needed.
+        BENCHMARK: trigger_word_pct ≤ 3%
         IMPACT: Near-real-time alert to supervisors of escalating situations.
       </bpmn:documentation>
       <bpmn:incoming>F_Fork_TriggerWords</bpmn:incoming>
       <bpmn:outgoing>F_TriggerWords_Join</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_CheckCompliance" name="[UiPath Generative AI] Check Agent Compliance with MAS Protocol">
+    <bpmn:serviceTask id="Task_CheckCompliance" name="[JSON] Process Compliance Rules">
       <bpmn:documentation>
-        CHECKS: Identity verification (NRIC + DOB confirmed before disclosure),
-          required disclosure scripts read, PDPA notice given,
-          MAS-mandated regulatory scripts completed, no unauthorised advice given.
-        OUTPUT: call_records.compliance_flag (String(3))
-          'Yes' = PASSED all required protocols
-          'No'  = FAILED — agent did NOT follow required protocols
-          IMPORTANT: 'No' means the AGENT failed, not the customer.
-        BENCHMARK: compliance_fail_pct must be less than or equal to 5%
-          (BENCHMARKS['compliance_fail_pct'] = 5.0)
-        ENDPOINTS: GET /api/dashboard/summary, /analytics/compliance/by-agent,
-          /analytics/compliance/trend
+        SOURCE: Friend's JSON output — compliance array + compliance_violations
+        INPUT FIELDS:
+          compliance (array of 8 rule objects):
+            - id: rule identifier (purpose_disclosure, recording_disclosure,
+              identity_verification, no_guarantees, no_sensitive_data_insecure,
+              no_remote_access, no_fund_movement, professional_conduct)
+            - rule: human-readable description
+            - status: PASS / FAIL / NA
+            - evidence: supporting text from transcript
+            - reason: explanation of failure
+          compliance_violations (array of failed rule IDs):
+            e.g. ["purpose_disclosure", "identity_verification"]
+        MAPPING TO DATA FABRIC CallRecord:
+          compliance_flag (CHOICE_SET_SINGLE → YesNoFlag):
+            Yes(0) if compliance_violations.length == 0
+            No(1)  if compliance_violations.length &gt; 0
+          — NEW FIELD: compliance_detail (MULTILINE_TEXT 10000):
+            Store full compliance JSON array as text for audit trail
+          — NEW FIELD: compliance_fail_count (INTEGER):
+            compliance_violations.length
+        KEY RULES FROM JSON:
+          purpose_disclosure: Agent identified self + stated call purpose
+          recording_disclosure: Agent disclosed call may be recorded
+          identity_verification: Agent verified customer identity
+          no_guarantees: No promised returns/profits
+          no_sensitive_data_insecure: No full card/PIN/OTP read aloud
+          no_remote_access: No AnyDesk/TeamViewer instructions
+          no_fund_movement: No pressure to transfer money
+          professional_conduct: Professional, non-abusive behaviour
+        BENCHMARK: compliance_fail_pct ≤ 5%
         IMPACT: Persistent failures may trigger MAS regulatory reporting.
+          Per-rule audit trail enables targeted coaching.
       </bpmn:documentation>
       <bpmn:incoming>F_Fork_Compliance</bpmn:incoming>
       <bpmn:outgoing>F_Compliance_Join</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_GenFollowups" name="[UiPath Generative AI] Generate Follow-up Action Items (up to 3)">
+    <bpmn:serviceTask id="Task_GenFollowups" name="[JSON] Detect Follow-up Call + Generate Action Items">
       <bpmn:documentation>
-        WHAT: Identifies post-call actions the agent or operations team must complete.
-        EXAMPLES: "Send updated policy documents to customer via email.",
-          "Process partial claims reimbursement within 5 business days.",
-          "Escalate premium waiver request to underwriting team."
-        OUTPUT: call_records.followup_item1/2/3 (String(100)) — up to 3 items.
-        DOWNSTREAM: Items seeded into call_followups table (Task_SeedFollowups) as
-          source='ai_generated', status='pending'.
-          reason auto-extracted via _extract_reason() keyword match on transcript.
-        MANUAL ADDS: POST /api/calls/{call_id}/followups — auto-approved (source='manual').
-        IMPACT: Ensures no post-call customer commitments are forgotten.
+        SOURCE: Friend's JSON output — is_followup + followup_evidence
+        INPUT FIELDS:
+          is_followup (boolean): Is this call itself a follow-up to prior interaction?
+          followup_evidence (string): Explanation of why it is/isn't a follow-up
+        PLUS: Coded Agent infers post-call action items from transcript content
+        MAPPING TO DATA FABRIC CallRecord:
+          — NEW FIELD: is_followup_call (CHOICE_SET_SINGLE → YesNoFlag):
+            Yes(0) if is_followup == true, else No(1)
+          — NEW FIELD: followup_call_evidence (MULTILINE_TEXT 2000):
+            ← followup_evidence
+          followup_item1/2/3 (STRING 100):
+            Generated by Coded Agent analyzing transcript for post-call commitments
+            e.g. "Send updated policy documents", "Process claim reimbursement"
+        DOWNSTREAM: Non-empty followup_itemN seeded into CallFollowup entity
+          (source=ai_generated, status=pending).
+        NOTE: JSON detects if call IS a follow-up (looking backward).
+          BPMN also generates action items going forward (post-call commitments).
+          These are complementary concepts.
       </bpmn:documentation>
       <bpmn:incoming>F_Fork_Followups</bpmn:incoming>
       <bpmn:outgoing>F_Followups_Join</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_DetermineResolution" name="[UiPath Generative AI] Determine Resolution, Escalation, Pre-Verified, Repeat Call">
+    <bpmn:serviceTask id="Task_DetermineResolution" name="[JSON] Extract Resolution + Fraud Risk">
       <bpmn:documentation>
-        FOUR BINARY FLAGS (all String(3): 'Yes' or 'No'):
-
-        call_resolved_flag: 'Yes' = issue fully resolved during call.
-          BENCHMARK: resolution_pct greater than or equal to 80%
-          ENDPOINTS: /api/dashboard/summary, /analytics/resolution/overview, /resolution/trend
-
-        escalation_flag: 'Yes' = call escalated to supervisor or specialist.
-          BENCHMARK: escalation_pct less than or equal to 10%
-          ENDPOINTS: /api/analytics/escalations/by-agent, /escalations/trend
-
-        preverified_flag: 'Yes' = identity pre-verified before call (e.g. MyInfo/SingPass).
-          BENCHMARK: preverified_pct greater than or equal to 80%
-          ENDPOINT: /api/analytics/preverified/trend
-
-        repeatcall_flag: 'Yes' = customer calling again about the same unresolved issue.
-          BENCHMARK: repeat_call_pct less than or equal to 20%
-          ENDPOINTS: /api/analytics/repeat-calls/trend, /repeat-calls/by-agent
+        SOURCE: Friend's JSON output — resolution + fraud_risk + fraud_reason
+        INPUT FIELDS:
+          resolution (string): "resolved" or "unresolved"
+          fraud_risk (string): e.g. "low", "medium", "high"
+          fraud_reason (string): explanation of fraud assessment
+        MAPPING TO DATA FABRIC CallRecord:
+          call_resolved_flag (CHOICE_SET_SINGLE → YesNoFlag):
+            Yes(0) if resolution == "resolved"
+            No(1)  if resolution == "unresolved"
+          — NEW FIELD: fraud_risk (STRING 20): ← fraud_risk
+          — NEW FIELD: fraud_reason (MULTILINE_TEXT 2000): ← fraud_reason
+        NOTE: JSON provides single resolution field (resolved/unresolved).
+          BPMN originally expected 4 flags (resolved, escalation, preverified, repeat).
+          Escalation, preverified, and repeat_call flags are NOT in the JSON
+          and must be inferred by Coded Agent from transcript if needed.
+        BENCHMARKS: resolution_pct ≥ 80%
+        IMPACT: Unresolved calls + high fraud risk trigger supervisor alerts.
       </bpmn:documentation>
       <bpmn:incoming>F_Fork_Resolution</bpmn:incoming>
       <bpmn:outgoing>F_Resolution_Join</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_GenSummary" name="[UiPath Generative AI] Generate Natural Language Call Summary">
+    <bpmn:serviceTask id="Task_GenSummary" name="[JSON] Extract Call Summary + Talk Ratio">
       <bpmn:documentation>
-        WHAT: Writes a concise 2-4 sentence plain-English summary of the call.
-        COVERS: Who called, why they called, what the agent did, outcome.
-        EXAMPLE: "Mrs Lee called about her hospitalisation claim submitted two weeks ago.
-          Agent John confirmed the claim is under review with a 5-day timeline.
-          A follow-up call was scheduled. No escalation required."
-        OUTPUT: call_records.call_summary (Text column)
-        USED BY:
-          GET /api/calls/{call_id}  — call_summary in full detail response
-          GET /api/followups        — GlobalFollowupOut.call_summary (triage context)
-          Supervisor review panel — avoids reading the full transcript (UiPath Agent surfaces key details)
-        NOTE: UiPath Generative UiPath Generative AI Q&amp;A (ai_service.py) uses aggregated SQL statistics, NOT individual summaries.
+        SOURCE: Friend's JSON output — summary + talk_ratio_pct + duration_sec + recording
+        INPUT FIELDS:
+          summary (string): Plain-English call summary (may be empty)
+          talk_ratio_pct.AGENT (decimal): % of time agent spoke, e.g. 28.7
+          talk_ratio_pct.CUSTOMER (decimal): % of time customer spoke, e.g. 71.3
+          duration_sec (decimal): Call duration in seconds, e.g. 689.6
+          recording (string): MP3 filename, e.g. "tmpi70znh6_.mp3"
+        MAPPING TO DATA FABRIC CallRecord:
+          call_summary (MULTILINE_TEXT 10000): ← summary
+          file_name (STRING 100): ← recording (mp3 filename)
+          — NEW FIELD: agent_talk_pct (DECIMAL): ← talk_ratio_pct.AGENT
+          — NEW FIELD: customer_talk_pct (DECIMAL): ← talk_ratio_pct.CUSTOMER
+          — NEW FIELD: duration_seconds (DECIMAL): ← duration_sec
+        NOTE: If summary is empty, Coded Agent can generate one from transcript.
+          Talk ratio is valuable for coaching — dominant customer talk time
+          may indicate agent passivity or customer frustration.
+        USED BY: Call detail page, supervisor review, follow-up triage.
       </bpmn:documentation>
       <bpmn:incoming>F_Fork_Summary</bpmn:incoming>
       <bpmn:outgoing>F_Summary_Join</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:serviceTask id="Task_ResolutionAnalytics" name="[Analytics] Resolution, Repeat Calls, Pre-Verified Trends">
       <bpmn:documentation>
-        1. GET /api/analytics/resolution/overview:
-           total_calls, resolved/unresolved/repeat counts, resolution_pct, repeat_call_pct.
-        2. GET /api/analytics/resolution/trend (monthly):
-           date, total_calls, resolved_count, resolution_pct.
-        3. GET /api/analytics/repeat-calls/trend (monthly):
-           date, total_calls, repeat_count, repeat_pct.
-        4. GET /api/analytics/repeat-calls/by-agent:
+        DATA SOURCE: Data Fabric CallRecord entity
+        QUERIES (records.query with aggregates and groupBy):
+        1. Resolution overview:
+           COUNT(Id), COUNT(call_resolved_flag=Yes), COUNT(repeatcall_flag=Yes),
+           resolution_pct, repeat_call_pct.
+        2. Resolution trend (monthly):
+           GROUP BY YYYY-MM of call_date → date, total_calls, resolved_count, resolution_pct.
+        3. Repeat calls trend (monthly):
+           GROUP BY YYYY-MM → date, total_calls, repeat_count, repeat_pct.
+        4. Repeat calls by agent:
            GROUP BY agent_name ORDER BY repeat_pct DESC.
-        5. GET /api/analytics/preverified/trend (monthly):
-           date, total_calls, preverified_count, preverified_pct.
-        BENCHMARKS: resolution greater than or equal to 80%, preverified greater than or equal to 80%,
-          repeat calls less than or equal to 20%.
+        5. Pre-verified trend (monthly):
+           GROUP BY YYYY-MM → date, total_calls, preverified_count, preverified_pct.
+        BENCHMARKS: resolution ≥ 80%, preverified ≥ 80%, repeat calls ≤ 20%.
         IMPACT: High repeat rates indicate persistent unresolved issues — targets for
           self-service improvement or first-call resolution coaching.
       </bpmn:documentation>
@@ -475,13 +604,15 @@
     </bpmn:serviceTask>
     <bpmn:serviceTask id="Task_IntentAnalytics" name="[Analytics] Intent Pareto, Trends, Marketing Opportunities">
       <bpmn:documentation>
-        1. GET /api/analytics/intents/pareto:
-           GROUP BY call_intent1 ORDER BY count DESC →
+        DATA SOURCE: Data Fabric CallRecord entity
+        QUERIES (records.query with aggregates and groupBy):
+        1. Intent Pareto:
+           GROUP BY call_intent1 ORDER BY COUNT DESC →
            intent, count, pct, cumulative_pct, avg_sentiment, escalation_pct, repeat_call_pct.
            cumulative_pct enables 80/20 Pareto analysis.
-        2. GET /api/analytics/intents/trend:
+        2. Intent trend:
            GROUP BY call_date + call_intent1 → date, intent, count.
-        3. GET /api/analytics/marketing-opportunities:
+        3. Marketing opportunities:
            Covers: New Business, Renewals, Policy Info, Cancellations, Claims Status.
            SCORE = (intent_base x 40%) + (positive_pct x 35%) + (resolved_pct x 25%)
            BASE SCORES: New Business=100, Renewals=85, Policy Info=65, Cancellations=50, Claims=40.
@@ -496,32 +627,41 @@
     </bpmn:serviceTask>
     <bpmn:serviceTask id="Task_FrictionAnalytics" name="[Analytics] Friction Points and Trigger Word Frequency">
       <bpmn:documentation>
-        1. GET /api/analytics/friction-points:
+        DATA SOURCE: Data Fabric CallRecord entity
+        QUERIES (records.query with aggregates and groupBy):
+        1. Friction Points:
            COMPOSITE SCORE per intent = (negative_pct x 40%) + (escalation_pct x 35%) + (repeat_call_pct x 25%)
-           GROUP BY call_intent1 HAVING COUNT(*) greater than or equal to 3 (statistical minimum).
+           GROUP BY call_intent1 HAVING COUNT(*) ≥ 3 (statistical minimum).
            Returns top 10 sorted by friction_score DESC:
              intent, total_calls, avg_sentiment, negative_pct, escalation_pct,
              repeat_call_pct, unresolved_pct, friction_score (0-100), rank.
            HIGH-FRICTION INTENTS are targets for: automation, call centre staff training, process improvement.
-        2. GET /api/analytics/trigger-words/counts:
-           Parses triggerwords for all calls with triggerword_flag='Yes'. Python Counter top 20.
-           Returns: [{ word, count }]
-        3. GET /api/analytics/trigger-words/trend (monthly):
-           date, total_calls, trigger_count, trigger_pct. Benchmark less than or equal to 3%.
-        UiPath Generative AI CONTEXT: Top 5 friction points and top 10 trigger words included in
-          _build_context() payload sent to UiPath Generative AI for UiPath Generative UiPath Generative AI Q&amp;A grounding.
+        2. Trigger word counts:
+           Query CallRecord where triggerword_flag=Yes. Parse triggerwords field.
+           Returns top 20 words by frequency.
+        3. Trigger word trend (monthly):
+           GROUP BY YYYY-MM → date, total_calls, trigger_count, trigger_pct. Benchmark ≤ 3%.
+        AI CONTEXT: Top 5 friction points and top 10 trigger words included in
+          _build_context() payload sent to Coded Agent for Q&amp;A grounding.
       </bpmn:documentation>
       <bpmn:incoming>F_AnalyticsFork_Friction</bpmn:incoming>
       <bpmn:outgoing>F_FrictionAnalytics_Join</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_GenerateAIResponse" name="[UiPath Generative AI] UiPath Generative AI Generates Contextual Analytics Response">
+    <bpmn:serviceTask id="Task_GenerateAIResponse" name="[Coded Agent] Generate Contextual Analytics Response">
       <bpmn:documentation>
-        FUNCTION: ai_service.ask(question, db) in backend/services/ai_service.py
+        PRODUCT: Coded Agent (call-center-ai-agent)
+        TOOL: ask(question, context) — grounded Q&amp;A over live Data Fabric data
         STEPS:
-          1. _build_context(db): 6 SQL queries assembled into plain-text analytics snapshot.
-          2. Sends to UiPath Generative AI:
+          1. _build_context(): 6 Data Fabric queries assembled into plain-text analytics snapshot:
+             - Total calls, date range
+             - 8 KPIs with benchmark comparisons
+             - Top call intents by volume
+             - Per-agent performance (sentiment, escalation, resolution, compliance, repeat)
+             - Monthly trends (volume, sentiment, escalation, resolution)
+             - Top trigger words and top 5 friction points
+          2. Sends to LLM Gateway via UiPath AI:
                prompt = f"DATA CONTEXT:\n{context}\n\nQUESTION: {question}"
-          3. SYSTEM PROMPT instructs UiPath Generative AI to:
+          3. SYSTEM PROMPT instructs the AI to:
                Act as expert call centre analytics AI for Acme.
                Back every answer with specific numbers from the context.
                Format in markdown: headers, bold key figures, bullet points.
@@ -533,54 +673,66 @@
                  Sam=Claims/Grievances, John=Policy Services,
                  David=Escalations/Quality, Mike=New Business/Renewals,
                  Mary=Billing/Amendments.
-          4. _log_ai_call(model, endpoint='ask'): UPSERT into ai_usage
-             (ON CONFLICT DO UPDATE, day-aware counter reset).
-          5. Returns AiAnswer { question, answer (markdown), data_context (raw text) }.
-        MODEL: os.getenv("UIPATH_AI_MODEL", "uipath-generative-ai")
-        AUTH: UiPathAI.configure(api_key=os.getenv("UIPATH_AI_KEY"))
-        INSTANCE: Singleton _model_instance (lazy-loaded, reused across requests).
+           4. _log_ai_call(): UPSERT into AiUsage Data Fabric entity
+              ENTITY: AiUsage (45af032d-bb6b-f111-8fcb-000d3ab36606)
+              PATTERN: Query by record_key='singleton'. If exists → update. If not → insert.
+              FIELDS UPDATED:
+                - calls_today: increment by 1; reset to 1 if period_date != today
+                - total_calls: increment by 1 (never reset)
+                - period_date: set to today if changed
+                - last_call_at: UTC now
+                - last_model: model name used
+                - last_endpoint: 'ask'
+           5. Returns: { question, answer (markdown), data_context (raw text) }.
+         MODEL: UiPath LLM Gateway [DEFAULT] (gemini-2.5-flash-equivalent)
+         AUTH: Inherited from UiPath LLM Gateway connection (no API key in code).
       </bpmn:documentation>
       <bpmn:incoming>F_QueryAI_GenerateResponse</bpmn:incoming>
       <bpmn:outgoing>F_GenerateResponse_End</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:userTask id="Task_SupervisorReview" name="Supervisor Reviews Pending UiPath Generative AI follow-up Items">
+    <bpmn:userTask id="Task_SupervisorReview" name="Supervisor Reviews Pending AI Follow-up Items">
       <bpmn:documentation>
-        WHAT: Supervisor opens the Follow-ups panel in the UiPath Apps dashboard.
-        PER-CALL VIEW: GET /api/calls/{call_id}/followups
-          Returns: FollowupsResponse { call_id, summary, items[] }
-        GLOBAL QUEUE: GET /api/followups
-          Filters: status, source, priority, agent, overdue, start_date, end_date, search.
-          Sort: overdue first, then pending/in_progress/approved/completed/rejected, then by date.
-          Paginated (default 25/page).
-        GLOBAL SUMMARY: GET /api/followups/summary
-          Returns: total, pending, approved, in_progress, completed, rejected,
-                   overdue, due_soon (within next 3 days), completion_rate.
+        WHAT: Supervisor opens the Follow-ups panel in the Coded App dashboard.
+        DATA SOURCE: Data Fabric CallFollowup entity (993c2c06-be6b-f111-8fcb-000d3ab36606)
+        PER-CALL VIEW: Query CallFollowup filtered by callid + join CallRecord for caller context.
+        GLOBAL QUEUE: Query CallFollowup with filters:
+          - status (CHOICE_SET_SINGLE → FollowupStatus)
+          - source (CHOICE_SET_SINGLE → FollowupSource)
+          - priority (CHOICE_SET_SINGLE → FollowupPriority)
+          - assigned_to, due_date ranges, search on text/reason.
+          Sort: overdue first, then status order, then date.
+        GLOBAL SUMMARY: Aggregated query on CallFollowup:
+          total, pending, approved, in_progress, completed, rejected,
+          overdue (due_date past + status active), due_soon (within 3 days),
+          completion_rate = completed / (approved + in_progress + completed) * 100.
         EACH ITEM SHOWS: text, reason, source, status, priority,
-          is_overdue (True if due_date past and not completed/rejected),
-          days_overdue, caller_name, policy_number, call_summary, call_intents,
-          escalation_flag, compliance_flag, call_resolved_flag.
-        MANUAL ITEM: POST /api/calls/{call_id}/followups — source='manual', auto-approved.
-        EDIT/DELETE: PATCH or DELETE /api/calls/{call_id}/followups/{id}
+          is_overdue, days_overdue, caller_name, policy_number, call_summary,
+          call_intents, escalation_flag, compliance_flag, call_resolved_flag.
+        MANUAL ITEM: Coded App allows adding manual follow-ups (source=manual, auto-approved).
+        EDIT/DELETE: Coded App updates/deletes CallFollowup records directly.
       </bpmn:documentation>
       <bpmn:incoming>F_HasFollowups_Yes</bpmn:incoming>
       <bpmn:outgoing>F_Review_ApproveRejectGW</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:exclusiveGateway id="GW_ApproveReject" name="Supervisor Decision: Approve or Reject?">
       <bpmn:documentation>
-        STATE MACHINE: pending -&gt; approved -&gt; in_progress -&gt; completed
-                       pending -&gt; rejected (terminal)
+        STATE MACHINE: pending(0) -&gt; approved(1) -&gt; in_progress(3) -&gt; completed(4)
+                       pending(0) -&gt; rejected(2) (terminal)
         RULE: pending items CANNOT jump to in_progress or completed directly.
-          Enforced in followups.py: "Pending follow-ups must be approved or rejected first."
+          Enforced by Coded App / Maestro BPMN validation.
 
-        APPROVE: POST /api/calls/{call_id}/followups/{id}/approve
-          Body: { approved_by, priority?, assigned_to?, due_date? }
-          Sets: status='approved', approved_by, approved_at=UTC now.
+        APPROVE: Update CallFollowup record:
+          status = approved (FollowupStatus NumberId=1)
+          approved_by = supervisor name
+          approved_at = UTC now
+          priority, assigned_to, due_date = captured from form
 
-        REJECT: POST /api/calls/{call_id}/followups/{id}/reject
-          Body: { approved_by }
-          Sets: status='rejected', approved_by, approved_at=UTC now.
-          Stays in Data Fabric (UiPath) for audit. Excluded from completion_rate.
-          Queryable: GET /api/followups?status=rejected
+        REJECT: Update CallFollowup record:
+          status = rejected (FollowupStatus NumberId=2)
+          approved_by = supervisor name
+          approved_at = UTC now
+          Stays in Data Fabric for audit. Excluded from completion_rate.
+          Queryable: records.query with filter status=rejected.
       </bpmn:documentation>
       <bpmn:incoming>F_Review_ApproveRejectGW</bpmn:incoming>
       <bpmn:outgoing>F_ApproveReject_Approve</bpmn:outgoing>
@@ -588,44 +740,49 @@
     </bpmn:exclusiveGateway>
     <bpmn:userTask id="Task_AssignDetails" name="Assign Priority, Agent, and Due Date to Approved Follow-up">
       <bpmn:documentation>
-        FIELDS SET ON APPROVAL:
-          priority    : 'low' | 'medium' | 'high' — determines queue sort order
-          assigned_to : agent name responsible for the action
-          due_date    : target completion date
+        DATA SOURCE: Data Fabric CallFollowup entity
+        FIELDS SET ON APPROVAL (update record):
+          status      = approved (FollowupStatus NumberId=1)
+          priority    : low(0) | medium(1) | high(2) — determines queue sort order
+          assigned_to : agent name responsible for the action (STRING 50)
+          due_date    : target completion date (DATE)
             is_overdue = due_date is past AND status not in (completed, rejected)
             days_overdue = today minus due_date (integer)
-        CAPTURED VIA: approve endpoint body OR subsequent PATCH (all optional fields).
-        STATUS TRANSITION: pending -&gt; approved.
-        AUDIT: approved_by (supervisor name), approved_at (UTC timestamp).
-        NOTE: Manual items (source='manual') are auto-approved — skip this task.
+          approved_by : supervisor name (STRING 50)
+          approved_at : UTC now (DATETIME)
+        CAPTURED VIA: Coded App form OR HITL task form in Maestro BPMN.
+        STATUS TRANSITION: pending(0) -&gt; approved(1).
+        AUDIT: approved_by + approved_at tracked on CallFollowup record.
+        NOTE: Manual items (source=manual) are auto-approved — skip this task.
       </bpmn:documentation>
       <bpmn:incoming>F_ApproveReject_Approve</bpmn:incoming>
       <bpmn:outgoing>F_AssignDetails_TrackProgress</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:serviceTask id="Task_RejectFollowup" name="Mark Follow-up Rejected (Audit Trail Preserved)">
       <bpmn:documentation>
-        FIELDS SET: status='rejected', approved_by, approved_at=UTC now.
+        DATA SOURCE: Data Fabric CallFollowup entity
+        FIELDS SET: status=rejected (FollowupStatus NumberId=2), approved_by, approved_at=UTC now.
         EFFECT:
           Counted in GlobalSummary.rejected.
           Excluded from completion_rate = completed / (approved + in_progress + completed) x 100.
           Removed from overdue and due_soon active queues.
-          Preserved in Data Fabric (UiPath) for audit via GET /api/followups?status=rejected.
-        API: POST /api/calls/{call_id}/followups/{id}/reject — HTTP 200 with updated item.
+          Preserved in Data Fabric for audit (queryable by status=rejected).
+        OPERATION: Coded App or Maestro BPMN task updates the CallFollowup record directly.
       </bpmn:documentation>
       <bpmn:incoming>F_ApproveReject_Reject</bpmn:incoming>
       <bpmn:outgoing>F_Reject_UpdateDashboard</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:userTask id="Task_TrackProgress" name="Agent Executes Follow-up Action (in_progress)">
       <bpmn:documentation>
-        WHAT: assigned call centre staff member works on the approved follow-up action.
-        STATUS TRANSITION: approved -&gt; in_progress.
-        API: POST /api/calls/{call_id}/followups/{id}/status
-          Body: { "status": "in_progress" }
-          BLOCKED: pending -&gt; in_progress is rejected by state machine validation.
+        WHAT: Assigned call centre staff member works on the approved follow-up action.
+        DATA SOURCE: Data Fabric CallFollowup entity
+        STATUS TRANSITION: approved(1) -&gt; in_progress(3).
+        OPERATION: Coded App or Maestro BPMN updates CallFollowup.status to in_progress.
+        VALIDATION: pending(0) -&gt; in_progress(3) is rejected by state machine.
         WHILE IN_PROGRESS:
           is_overdue = True if due_date before today and not completed/rejected.
           days_overdue = today minus due_date.
-          Overdue items surface first in GET /api/followups (ORDER BY is_overdue DESC).
+          Overdue items surface first in CallFollowup queries (ORDER BY is_overdue DESC).
           GlobalSummary.overdue = count where past due and still active.
           GlobalSummary.due_soon = count where due within next 3 days and active.
         COMPLETION RATE: completed / (approved + in_progress + completed) x 100.
@@ -648,10 +805,12 @@
     </bpmn:exclusiveGateway>
     <bpmn:serviceTask id="Task_MarkCompleted" name="Mark Follow-up Completed — Record Notes and Timestamp">
       <bpmn:documentation>
-        STATUS TRANSITION: in_progress -&gt; completed.
-        API: POST /api/calls/{call_id}/followups/{id}/status
-          Body: { "status": "completed", "completion_notes": "Description of action taken." }
-        FIELDS SET: status='completed', completed_at=UTC now, completion_notes.
+        DATA SOURCE: Data Fabric CallFollowup entity
+        STATUS TRANSITION: in_progress(3) -&gt; completed(4).
+        OPERATION: Coded App or Maestro BPMN updates CallFollowup record:
+          status = completed (FollowupStatus NumberId=4)
+          completed_at = UTC now (DATETIME)
+          completion_notes = description of action taken (MULTILINE_TEXT 2000)
         EXAMPLE NOTES:
           "Policy document emailed to customer on 2025-06-17."
           "Claim reimbursement SGD 1,240 processed. Ref: CLM-2025-04521."
@@ -663,11 +822,11 @@
       <bpmn:incoming>F_Progress_Done</bpmn:incoming>
       <bpmn:outgoing>F_Completed_UpdateDashboard</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:userTask id="Task_QueryAI" name="Supervisor Submits Question to UiPath Generative AI Insights panel">
+    <bpmn:userTask id="Task_QueryAI" name="Supervisor Submits Question to AI Insights Panel">
       <bpmn:documentation>
-        WHAT: Supervisor types or selects a question in the UiPath Generative AI Insights panel of the UiPath Apps dashboard.
-        ENDPOINT: POST /api/ai/ask  Body: { "question": "..." }
-        SUGGESTED QUESTIONS (GET /api/ai/suggested-questions):
+        WHAT: Supervisor types or selects a question in the AI Insights panel of the Coded App dashboard.
+        ENDPOINT: Direct call to Coded Agent ask() tool via LLM Gateway.
+        SUGGESTED QUESTIONS:
           "Why are customers calling most frequently?"
           "Which agent has the highest escalation rate and why?"
           "Are there automation opportunities based on call patterns?"
@@ -678,13 +837,13 @@
           "What are the top 3 friction points for customers?"
           "How has call volume and sentiment trended month over month?"
           "Which agent needs the most coaching and why?"
-        AI USAGE TRACKING (ai_usage table, single row id=1):
-          calls_today: increments per request; resets automatically when date changes.
-          total_calls: all-time cumulative count.
+        AI USAGE TRACKING (AiUsage Data Fabric entity, singleton row):
+          ENTITY: AiUsage (45af032d-bb6b-f111-8fcb-000d3ab36606)
+          PATTERN: Query record_key='singleton'. Update or insert.
+          calls_today: increments per request; resets when period_date changes.
+          total_calls: all-time cumulative count (never reset).
           last_call_at, last_model, last_endpoint: most recent request metadata.
-        USAGE ENDPOINTS:
-          GET  /api/ai/usage        — current counters
-          POST /api/ai/usage/reset  — clear calls_today (does not affect total_calls)
+        USAGE QUERY: Data Fabric records.query on AiUsage entity.
       </bpmn:documentation>
       <bpmn:incoming>F_AnalyticsJoin_QueryAI</bpmn:incoming>
       <bpmn:outgoing>F_QueryAI_GenerateResponse</bpmn:outgoing>
