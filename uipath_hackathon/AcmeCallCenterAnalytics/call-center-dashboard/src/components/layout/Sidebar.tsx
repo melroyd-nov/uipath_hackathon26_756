@@ -1,40 +1,57 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { navGroups } from '../../config/navigation';
+import { ChevronLeft } from 'lucide-react';
+import { NAV_ITEMS } from '../../config/navigation';
+import AiUsageBadge from '../ai/AiUsageBadge';
 
 export default function Sidebar() {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
-    <aside className="flex h-screen w-60 flex-col border-r border-slate-200 bg-white">
-      <div className="flex h-16 items-center px-6 text-lg font-semibold text-slate-900">
-        Call Center
+    <aside
+      className={`flex h-screen shrink-0 flex-col overflow-hidden border-r border-silver bg-obsidian transition-all ${
+        collapsed ? 'w-16' : 'w-60'
+      }`}
+    >
+      <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-4 py-4">
+        <span className={`font-editorial text-white ${collapsed ? 'text-base' : 'text-xl'}`}>n.</span>
       </div>
-      <nav className="flex-1 overflow-y-auto px-3 pb-4">
-        {navGroups.map((group) => (
-          <div key={group.label} className="mb-4">
-            <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              {group.label}
-            </p>
-            <ul className="space-y-0.5">
-              {group.items.map((item) => (
-                <li key={item.path}>
-                  <NavLink
-                    to={item.path}
-                    end={item.path === '/'}
-                    className={({ isActive }) =>
-                      `block rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                        isActive
-                          ? 'bg-slate-900 text-white'
-                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                      }`
-                    }
-                  >
-                    {item.label}
-                  </NavLink>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+
+      <nav className="flex min-h-0 flex-1 flex-col overflow-hidden py-3">
+        {NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.path === '/'}
+              className={({ isActive }) =>
+                `mx-2 flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm transition-colors ${
+                  isActive ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <Icon size={18} className={`shrink-0 ${isActive ? 'text-lilac-bloom' : 'text-gray-500'}`} />
+                  {!collapsed && <span className="truncate">{item.label}</span>}
+                </>
+              )}
+            </NavLink>
+          );
+        })}
       </nav>
+
+      <AiUsageBadge collapsed={collapsed} />
+
+      <button
+        type="button"
+        onClick={() => setCollapsed((v) => !v)}
+        className="mx-3 mb-3 flex h-9 shrink-0 items-center gap-2 rounded-lg px-2 text-gray-400 transition-colors hover:bg-white/5 hover:text-gray-100"
+      >
+        <ChevronLeft size={16} className={`transition-transform ${collapsed ? 'rotate-180' : ''}`} />
+        {!collapsed && <span className="text-xs">Collapse</span>}
+      </button>
     </aside>
   );
 }

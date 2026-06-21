@@ -5,9 +5,9 @@ interface PlaceholderPageProps {
 
 export default function PlaceholderPage({ title, description }: PlaceholderPageProps) {
   return (
-    <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8">
-      <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
-      <p className="mt-2 text-sm text-slate-500">
+    <div className="rounded-card-elevated border border-dashed border-mist bg-paper p-8 shadow-card">
+      <h1 className="font-editorial text-2xl text-obsidian">{title}</h1>
+      <p className="mt-2 text-sm text-slate">
         {description ?? 'Content for this page has not been built yet.'}
       </p>
     </div>
