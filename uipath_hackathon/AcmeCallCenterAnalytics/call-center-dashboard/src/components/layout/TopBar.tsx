@@ -1,35 +1,103 @@
-import { useFilters } from '../../context/FilterContext';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Trash2, Moon, Sun, LogOut } from 'lucide-react';
+import { NAV_ITEMS } from '../../config/navigation';
+import { getHealth } from '../../api/health';
+
+function derivePageTitle(pathname: string): string {
+  if (pathname === '/') return 'Dashboard';
+  const exact = NAV_ITEMS.find((item) => item.path === pathname);
+  if (exact) return exact.label;
+  const prefixMatch = NAV_ITEMS.filter((item) => item.path !== '/' && pathname.startsWith(item.path))
+    .sort((a, b) => b.path.length - a.path.length)[0];
+  return prefixMatch?.label ?? 'Call Center Analytics';
+}
 
 export default function TopBar() {
-  const { startDate, endDate, agentFilter, setStartDate, setEndDate, setAgentFilter } =
-    useFilters();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [dbOnline, setDbOnline] = useState<boolean | null>(null);
+  const [theme, setTheme] = useState<'light' | 'dark'>(
+    () => (localStorage.getItem('cc_theme') as 'light' | 'dark') ?? 'light',
+  );
+
+  useEffect(() => {
+    const checkHealth = () => {
+      getHealth()
+        .then(() => setDbOnline(true))
+        .catch(() => setDbOnline(false));
+    };
+    checkHealth();
+    const interval = setInterval(checkHealth, 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('cc_theme', theme);
+  }, [theme]);
+
+  const clearAiCache = () => {
+    Object.keys(localStorage)
+      .filter((key) => key.startsWith('ai_cache_v1_'))
+      .forEach((key) => localStorage.removeItem(key));
+  };
+
+  const logout = () => {
+    localStorage.removeItem('cc_auth');
+    navigate('/login');
+  };
+
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
+    <header className="flex h-14 items-center justify-between border-b border-silver bg-paper px-6">
+      <h1 className="font-editorial text-lg text-obsidian">{derivePageTitle(location.pathname)}</h1>
+
       <div className="flex items-center gap-3">
-        <input
-          type="date"
-          value={startDate ?? ''}
-          onChange={(e) => setStartDate(e.target.value || null)}
-          className="rounded-md border border-slate-300 px-2 py-1 text-sm text-slate-700"
-        />
-        <span className="text-sm text-slate-400">to</span>
-        <input
-          type="date"
-          value={endDate ?? ''}
-          onChange={(e) => setEndDate(e.target.value || null)}
-          className="rounded-md border border-slate-300 px-2 py-1 text-sm text-slate-700"
-        />
-        <input
-          type="text"
-          placeholder="Filter by agent"
-          value={agentFilter ?? ''}
-          onChange={(e) => setAgentFilter(e.target.value || null)}
-          className="rounded-md border border-slate-300 px-2 py-1 text-sm text-slate-700"
-        />
-      </div>
-      <div className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
-        AI Usage: placeholder
+        <span
+          className={`flex items-center gap-1.5 rounded-pill px-3 py-1 text-xs font-medium ${
+            dbOnline ? 'bg-status-live-bg text-status-live' : 'bg-status-escalated-bg text-status-escalated'
+          }`}
+        >
+          <span className={`h-1.5 w-1.5 rounded-full bg-current`} />
+          {dbOnline === null ? 'Checking…' : dbOnline ? 'DB Online' : 'DB Offline'}
+        </span>
+
+        <span className="text-xs text-slate">{today}</span>
+
+        <button
+          type="button"
+          onClick={clearAiCache}
+          title="Clear AI insight cache"
+          className="rounded-button p-1.5 text-slate hover:bg-bone hover:text-obsidian"
+        >
+          <Trash2 size={16} />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
+          title="Toggle theme"
+          className="rounded-button p-1.5 text-slate hover:bg-bone hover:text-obsidian"
+        >
+          {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+        </button>
+
+        <span className="rounded-pill bg-lilac-bloom px-3 py-1 text-xs font-medium text-obsidian">Admin</span>
+
+        <button
+          type="button"
+          onClick={logout}
+          title="Logout"
+          className="rounded-button p-1.5 text-slate hover:bg-bone hover:text-obsidian"
+        >
+          <LogOut size={16} />
+        </button>
       </div>
     </header>
   );

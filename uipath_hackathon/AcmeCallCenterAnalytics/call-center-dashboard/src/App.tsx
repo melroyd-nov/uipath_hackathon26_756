@@ -1,48 +1,57 @@
+import { lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { FilterProvider } from './context/FilterContext';
 import MainLayout from './components/layout/MainLayout';
+import RequireAuth from './components/auth/RequireAuth';
 import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import CallLogPage from './pages/CallLogPage';
-import CallDetailPage from './pages/CallDetailPage';
-import AgentsPage from './pages/AgentsPage';
-import AgentDetailPage from './pages/AgentDetailPage';
-import SentimentPage from './pages/SentimentPage';
-import EscalationsPage from './pages/EscalationsPage';
-import CompliancePage from './pages/CompliancePage';
-import ResolutionPage from './pages/ResolutionPage';
-import IntentsPage from './pages/IntentsPage';
-import TriggerWordsPage from './pages/TriggerWordsPage';
-import FrictionPage from './pages/FrictionPage';
-import FollowupsPage from './pages/FollowupsPage';
-import FollowupsOverviewPage from './pages/FollowupsOverviewPage';
-import AIInsightsPage from './pages/AIInsightsPage';
-import LiveCallPage from './pages/LiveCallPage';
-import MarketingPage from './pages/MarketingPage';
+
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const SentimentPage = lazy(() => import('./pages/SentimentPage'));
+const IntentsPage = lazy(() => import('./pages/IntentsPage'));
+const EscalationsPage = lazy(() => import('./pages/EscalationsPage'));
+const CompliancePage = lazy(() => import('./pages/CompliancePage'));
+const ResolutionPage = lazy(() => import('./pages/ResolutionPage'));
+const TriggerWordsPage = lazy(() => import('./pages/TriggerWordsPage'));
+const FrictionPage = lazy(() => import('./pages/FrictionPage'));
+const MarketingPage = lazy(() => import('./pages/MarketingPage'));
+const AgentsPage = lazy(() => import('./pages/AgentsPage'));
+const AgentDetailPage = lazy(() => import('./pages/AgentDetailPage'));
+const CallLogPage = lazy(() => import('./pages/CallLogPage'));
+const CallDetailPage = lazy(() => import('./pages/CallDetailPage'));
+const FollowupsPage = lazy(() => import('./pages/FollowupsPage'));
+const FollowupsOverviewPage = lazy(() => import('./pages/FollowupsOverviewPage'));
+const AIInsightsPage = lazy(() => import('./pages/AIInsightsPage'));
+const LiveCallPage = lazy(() => import('./pages/LiveCallPage'));
 
 export default function App() {
   return (
     <FilterProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route element={<MainLayout />}>
+        <Route
+          element={
+            <RequireAuth>
+              <MainLayout />
+            </RequireAuth>
+          }
+        >
           <Route path="/" element={<DashboardPage />} />
-          <Route path="/calls" element={<CallLogPage />} />
-          <Route path="/calls/:id" element={<CallDetailPage />} />
-          <Route path="/agents" element={<AgentsPage />} />
-          <Route path="/agents/:name" element={<AgentDetailPage />} />
           <Route path="/sentiment" element={<SentimentPage />} />
+          <Route path="/intents" element={<IntentsPage />} />
           <Route path="/escalations" element={<EscalationsPage />} />
           <Route path="/compliance" element={<CompliancePage />} />
           <Route path="/resolution" element={<ResolutionPage />} />
-          <Route path="/intents" element={<IntentsPage />} />
-          <Route path="/trigger-words" element={<TriggerWordsPage />} />
+          <Route path="/triggers" element={<TriggerWordsPage />} />
           <Route path="/friction" element={<FrictionPage />} />
-          <Route path="/followups" element={<FollowupsPage />} />
-          <Route path="/followups/overview" element={<FollowupsOverviewPage />} />
-          <Route path="/ai-insights" element={<AIInsightsPage />} />
-          <Route path="/live" element={<LiveCallPage />} />
           <Route path="/marketing" element={<MarketingPage />} />
+          <Route path="/agents" element={<AgentsPage />} />
+          <Route path="/agents/:name" element={<AgentDetailPage />} />
+          <Route path="/calls" element={<CallLogPage />} />
+          <Route path="/calls/:id" element={<CallDetailPage />} />
+          <Route path="/calls/:id/followups" element={<FollowupsPage />} />
+          <Route path="/followups" element={<FollowupsOverviewPage />} />
+          <Route path="/ai" element={<AIInsightsPage />} />
+          <Route path="/call" element={<LiveCallPage />} />
         </Route>
       </Routes>
     </FilterProvider>
