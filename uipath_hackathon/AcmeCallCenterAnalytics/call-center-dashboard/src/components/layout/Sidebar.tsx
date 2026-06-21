@@ -10,7 +10,7 @@ export default function Sidebar() {
   return (
     <aside
       className={`flex h-screen shrink-0 flex-col overflow-hidden border-r border-silver bg-obsidian transition-all ${
-        collapsed ? 'w-16' : 'w-60'
+        collapsed ? 'w-16' : 'w-48'
       }`}
     >
       <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-4 py-4">
@@ -26,14 +26,14 @@ export default function Sidebar() {
               to={item.path}
               end={item.path === '/'}
               className={({ isActive }) =>
-                `mx-2 flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm transition-colors ${
+                `mx-1.5 flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm transition-colors ${
                   isActive ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={18} className={`shrink-0 ${isActive ? 'text-lilac-bloom' : 'text-gray-500'}`} />
+                  <Icon size={16} className={`shrink-0 ${isActive ? 'text-lilac-bloom' : 'text-gray-500'}`} />
                   {!collapsed && <span className="truncate">{item.label}</span>}
                 </>
               )}
