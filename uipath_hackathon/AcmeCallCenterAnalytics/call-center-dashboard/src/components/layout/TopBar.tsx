@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Trash2, Moon, Sun, LogOut } from 'lucide-react';
+import { Trash2, Moon, Sun, LogOut, FlaskConical } from 'lucide-react';
 import { NAV_ITEMS } from '../../config/navigation';
 import { getHealth } from '../../api/health';
+import { useDummyDataContext } from '../../context/DummyDataContext';
 
 function derivePageTitle(pathname: string): string {
   if (pathname === '/') return 'Dashboard';
@@ -16,6 +17,7 @@ function derivePageTitle(pathname: string): string {
 export default function TopBar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { useDummyData, toggleDummyData } = useDummyDataContext();
   const [dbOnline, setDbOnline] = useState<boolean | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(
     () => (localStorage.getItem('cc_theme') as 'light' | 'dark') ?? 'light',
@@ -38,8 +40,9 @@ export default function TopBar() {
   }, [theme]);
 
   const clearAiCache = () => {
+    const AI_PREFIXES = ['ai_cache_v1_', 'ai_cmd_v3_'];
     Object.keys(localStorage)
-      .filter((key) => key.startsWith('ai_cache_v1_'))
+      .filter((key) => AI_PREFIXES.some((p) => key.startsWith(p)))
       .forEach((key) => localStorage.removeItem(key));
   };
 
@@ -61,7 +64,11 @@ export default function TopBar() {
       <div className="flex items-center gap-3">
         <span
           className={`flex items-center gap-1.5 rounded-pill px-3 py-1 text-xs font-medium ${
-            dbOnline ? 'bg-status-live-bg text-status-live' : 'bg-status-escalated-bg text-status-escalated'
+            dbOnline === null
+              ? 'bg-bone text-slate'
+              : dbOnline
+                ? 'bg-status-live-bg text-status-live'
+                : 'bg-status-escalated-bg text-status-escalated'
           }`}
         >
           <span className={`h-1.5 w-1.5 rounded-full bg-current`} />
@@ -69,6 +76,21 @@ export default function TopBar() {
         </span>
 
         <span className="text-xs text-slate">{today}</span>
+
+        <button
+          type="button"
+          onClick={toggleDummyData}
+          aria-pressed={useDummyData}
+          title="Toggle dummy data across all pages"
+          className={`flex items-center gap-1.5 rounded-pill border px-3 py-1.5 text-xs font-medium transition-colors ${
+            useDummyData
+              ? 'border-amber-400 bg-amber-100 text-amber-700'
+              : 'border-silver bg-paper text-slate hover:text-obsidian'
+          }`}
+        >
+          <FlaskConical size={14} />
+          {useDummyData ? 'Dummy Data: On' : 'Dummy Data: Off'}
+        </button>
 
         <button
           type="button"

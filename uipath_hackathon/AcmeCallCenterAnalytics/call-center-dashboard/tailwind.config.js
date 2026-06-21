@@ -14,6 +14,8 @@ export default {
         paper: 'var(--color-paper)',
         'lilac-bloom': 'var(--color-lilac-bloom)',
         'sky-veil': 'var(--color-sky-veil)',
+        'sage-bloom': 'var(--color-sage-bloom)',
+        'moss-veil': 'var(--color-moss-veil)',
         status: {
           live: 'var(--color-status-live)',
           'live-bg': 'var(--color-status-live-bg)',

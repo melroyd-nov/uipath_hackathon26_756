@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { FilterProvider } from './context/FilterContext';
+import { DummyDataProvider } from './context/DummyDataContext';
 import MainLayout from './components/layout/MainLayout';
 import RequireAuth from './components/auth/RequireAuth';
 import LoginPage from './pages/LoginPage';
@@ -25,35 +26,37 @@ const LiveCallPage = lazy(() => import('./pages/LiveCallPage'));
 
 export default function App() {
   return (
-    <FilterProvider>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route
-          element={
-            <RequireAuth>
-              <MainLayout />
-            </RequireAuth>
-          }
-        >
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/sentiment" element={<SentimentPage />} />
-          <Route path="/intents" element={<IntentsPage />} />
-          <Route path="/escalations" element={<EscalationsPage />} />
-          <Route path="/compliance" element={<CompliancePage />} />
-          <Route path="/resolution" element={<ResolutionPage />} />
-          <Route path="/triggers" element={<TriggerWordsPage />} />
-          <Route path="/friction" element={<FrictionPage />} />
-          <Route path="/marketing" element={<MarketingPage />} />
-          <Route path="/agents" element={<AgentsPage />} />
-          <Route path="/agents/:name" element={<AgentDetailPage />} />
-          <Route path="/calls" element={<CallLogPage />} />
-          <Route path="/calls/:id" element={<CallDetailPage />} />
-          <Route path="/calls/:id/followups" element={<FollowupsPage />} />
-          <Route path="/followups" element={<FollowupsOverviewPage />} />
-          <Route path="/ai" element={<AIInsightsPage />} />
-          <Route path="/call" element={<LiveCallPage />} />
-        </Route>
-      </Routes>
-    </FilterProvider>
+    <DummyDataProvider>
+      <FilterProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            element={
+              <RequireAuth>
+                <MainLayout />
+              </RequireAuth>
+            }
+          >
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/sentiment" element={<SentimentPage />} />
+            <Route path="/intents" element={<IntentsPage />} />
+            <Route path="/escalations" element={<EscalationsPage />} />
+            <Route path="/compliance" element={<CompliancePage />} />
+            <Route path="/resolution" element={<ResolutionPage />} />
+            <Route path="/triggers" element={<TriggerWordsPage />} />
+            <Route path="/friction" element={<FrictionPage />} />
+            <Route path="/marketing" element={<MarketingPage />} />
+            <Route path="/agents" element={<AgentsPage />} />
+            <Route path="/agents/:name" element={<AgentDetailPage />} />
+            <Route path="/calls" element={<CallLogPage />} />
+            <Route path="/calls/:id" element={<CallDetailPage />} />
+            <Route path="/calls/:id/followups" element={<FollowupsPage />} />
+            <Route path="/followups" element={<FollowupsOverviewPage />} />
+            <Route path="/ai" element={<AIInsightsPage />} />
+            <Route path="/call" element={<LiveCallPage />} />
+          </Route>
+        </Routes>
+      </FilterProvider>
+    </DummyDataProvider>
   );
 }
