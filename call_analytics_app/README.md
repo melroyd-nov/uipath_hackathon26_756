@@ -32,22 +32,40 @@ src/call_analytics/
   api/main.py      FastAPI;  cli.py  CLI
 ```
 
-## Setup
+## Setup (local ML server)
+
+This package is dual-purpose: a **light UiPath cloud orchestrator** (the deps in `pyproject.toml`)
+and the **local ML server** that actually runs the audio models. The heavy ML stack is deliberately
+**kept out of `pyproject.toml`** so the cloud package stays small — it lives in the tracked, pinned
+`requirements-local-ml.txt`. A plain `uv sync` gives you only the light cloud deps; recreate the full
+GPU runtime with:
 
 ```powershell
-# from the repo root (reuses the existing .venv with cu128 torch)
-.venv\Scripts\python.exe -m pip install -e call_analytics_app --no-deps
-# deps (already present in this env): langgraph langchain-core langchain-ollama langchain-anthropic
-#   pydantic pydantic-settings faster-whisper pyannote.audio transformers torchaudio librosa
-#   matplotlib fastapi uvicorn python-multipart
-# IMPORTANT: torchcodec must stay uninstalled (its DLLs break the transformers audio pipeline).
+cd call_analytics_app
+
+# Python 3.13 venv (matches the tested runtime; audioop-lts on 3.13)
+uv venv --python 3.13 --clear
+
+# project (light deps) + the pinned ML stack, via the CUDA cu128 torch index
+uv pip install -e . -r requirements-local-ml.txt `
+  --extra-index-url https://download.pytorch.org/whl/cu128 `
+  --index-strategy unsafe-best-match
+
+# torchcodec must stay uninstalled — its DLLs break the transformers/pyannote audio path
+uv pip uninstall torchcodec
 
 ollama pull llama3.2          # default LLM
-# optional, sharper compliance/rollup:  ollama pull qwen2.5:7b  -> set JUDGE_MODEL=qwen2.5:7b
+ollama pull qwen2.5:7b        # sharper compliance/rollup -> set JUDGE_MODEL=qwen2.5:7b
 ```
 
-Config via env / project-root `.env` (has `HF_TOKEN`). See `.env.example`. Provider swap:
+Then provide a local **`.env`** (gitignored — never committed). Copy `.env.example` and fill in
+`HF_TOKEN`, `API_KEY`, the proprietary `*_PROMPT` / `RUBRIC_*` blocks, and `DATA_DIR` (absolute path
+to your audio dir, needed when the package lives outside the data workspace). Provider swap:
 `LLM_PROVIDER=ollama` (default) or `anthropic` (set `ANTHROPIC_API_KEY`).
+
+> Verified end-to-end on RTX 5060 (Blackwell, cu128), Python 3.13, torch 2.11.0+cu128 — one real
+> call through the full graph (ASR → diarize → roles → sentiment → emotion → compliance → followup
+> → rollup) producing a complete `CallReport`.
 
 ## Run
 
@@ -58,8 +76,8 @@ Config via env / project-root `.env` (has `HF_TOKEN`). See `.env.example`. Provi
 # Library
 python -c "from call_analytics import analyze_call; print(analyze_call('data/audio_samples/call_00.mp3').model_dump())"
 
-# FastAPI
-.venv\Scripts\python.exe -m uvicorn call_analytics.api.main:app --port 8000
+# FastAPI (host 0.0.0.0 so ngrok can expose it to the UiPath cloud agent)
+uv run uvicorn call_analytics.api.main:app --host 0.0.0.0 --port 8000
 #   POST /analyze      (multipart file upload)
 #   POST /analyze-path {"path": "data/audio_samples/call_00.mp3"}
 #   GET  /health
