@@ -89,7 +89,7 @@ export default function IntentsPage() {
         <button
           type="button"
           onClick={() => setShowMetricInfo((prev) => !prev)}
-          className="flex items-center gap-1.5 text-xs font-medium text-purple-400 hover:text-purple-500"
+          className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-700"
         >
           <Info size={14} />
           How are these columns calculated?
@@ -97,7 +97,7 @@ export default function IntentsPage() {
         </button>
 
         {showMetricInfo && (
-          <div className="mt-3 grid grid-cols-1 gap-3 rounded-xl border border-white/8 bg-white/3 p-4 md:grid-cols-2">
+          <div className="mt-3 grid grid-cols-1 gap-3 rounded-xl border border-silver bg-bone p-4 md:grid-cols-2">
             <div className="flex gap-3">
               <BarChart2 size={16} className="mt-0.5 shrink-0 text-sage-bloom" />
               <div>
@@ -108,7 +108,7 @@ export default function IntentsPage() {
               </div>
             </div>
             <div className="flex gap-3">
-              <BarChart2 size={16} className="mt-0.5 shrink-0 text-gray-400" />
+              <BarChart2 size={16} className="mt-0.5 shrink-0 text-slate" />
               <div>
                 <p className="text-sm font-medium text-obsidian">Cumulative %</p>
                 <p className="mt-0.5 text-xs text-slate">
@@ -179,7 +179,7 @@ export default function IntentsPage() {
             </thead>
             <tbody>
               {sortedRows.map((row, i) => (
-                <tr key={row.intent} className="border-t border-silver hover:bg-white/3">
+                <tr key={row.intent} className="border-t border-silver hover:bg-bone">
                   <td className="py-2">
                     <span className="mr-1.5 text-xs text-slate">#{i + 1}</span>
                     <span className="font-medium text-obsidian">{row.intent}</span>

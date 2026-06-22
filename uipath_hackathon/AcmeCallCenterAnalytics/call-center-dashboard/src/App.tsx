@@ -22,7 +22,7 @@ const CallDetailPage = lazy(() => import('./pages/CallDetailPage'));
 const FollowupsPage = lazy(() => import('./pages/FollowupsPage'));
 const FollowupsOverviewPage = lazy(() => import('./pages/FollowupsOverviewPage'));
 const AIInsightsPage = lazy(() => import('./pages/AIInsightsPage'));
-const LiveCallPage = lazy(() => import('./pages/LiveCallPage'));
+const AiUsagePage = lazy(() => import('./pages/AiUsagePage'));
 
 export default function App() {
   return (
@@ -53,7 +53,7 @@ export default function App() {
             <Route path="/calls/:id/followups" element={<FollowupsPage />} />
             <Route path="/followups" element={<FollowupsOverviewPage />} />
             <Route path="/ai" element={<AIInsightsPage />} />
-            <Route path="/call" element={<LiveCallPage />} />
+            <Route path="/ai-usage" element={<AiUsagePage />} />
           </Route>
         </Routes>
       </FilterProvider>

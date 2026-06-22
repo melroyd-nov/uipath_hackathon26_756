@@ -13,6 +13,7 @@ export default {
         bone: 'var(--color-bone)',
         paper: 'var(--color-paper)',
         'lilac-bloom': 'var(--color-lilac-bloom)',
+        blush: 'var(--color-blush)',
         'sky-veil': 'var(--color-sky-veil)',
         'sage-bloom': 'var(--color-sage-bloom)',
         'moss-veil': 'var(--color-moss-veil)',

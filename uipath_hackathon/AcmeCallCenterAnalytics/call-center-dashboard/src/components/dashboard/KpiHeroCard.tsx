@@ -18,7 +18,7 @@ const STATUS_STYLES: Record<KpiStatus, string> = {
   good: 'bg-status-live-bg text-status-live',
   watch: 'bg-status-hold-bg text-status-hold',
   critical: 'bg-status-escalated-bg text-status-escalated',
-  neutral: 'bg-bone text-slate',
+  neutral: 'bg-bone text-graphite',
 };
 
 const STATUS_LABELS: Record<KpiStatus, string> = {
@@ -86,7 +86,7 @@ export default function KpiHeroCard({
       <div className="mt-3 flex items-center gap-1.5">
         <span className="truncate text-xs font-medium text-slate">{label}</span>
         {tooltip && (
-          <span title={tooltip} className="shrink-0 text-mist hover:text-slate">
+          <span title={tooltip} className="shrink-0 text-slate hover:text-graphite">
             <Info size={12} />
           </span>
         )}
@@ -100,7 +100,7 @@ export default function KpiHeroCard({
           </span>
         )}
       </div>
-      <p className="mt-2 truncate text-[11px] text-mist">{benchmark ?? footer}</p>
+      <p className="mt-2 truncate text-[11px] text-slate">{benchmark ?? footer}</p>
     </div>
   );
 }

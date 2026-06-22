@@ -65,7 +65,7 @@ export default function TopBar() {
         <span
           className={`flex items-center gap-1.5 rounded-pill px-3 py-1 text-xs font-medium ${
             dbOnline === null
-              ? 'bg-bone text-slate'
+              ? 'bg-bone text-graphite'
               : dbOnline
                 ? 'bg-status-live-bg text-status-live'
                 : 'bg-status-escalated-bg text-status-escalated'

@@ -12,7 +12,7 @@ import {
   PhoneCall,
   ListChecks,
   Brain,
-  Phone,
+  Gauge,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -37,5 +37,5 @@ export const NAV_ITEMS: NavItem[] = [
   { icon: PhoneCall, label: 'Call Log', path: '/calls' },
   { icon: ListChecks, label: 'Follow-ups', path: '/followups' },
   { icon: Brain, label: 'AI Insights', path: '/ai' },
-  { icon: Phone, label: 'Call', path: '/call' },
+  { icon: Gauge, label: 'AI Usage', path: '/ai-usage' },
 ];

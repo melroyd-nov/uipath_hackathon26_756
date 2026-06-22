@@ -60,7 +60,7 @@ function HealthScoreInfo() {
       onMouseEnter={() => setShow(true)}
       onMouseLeave={() => setShow(false)}
     >
-      <Info size={14} className="text-mist hover:text-slate" />
+      <Info size={14} className="text-slate hover:text-graphite" />
       {show && (
         <div className="absolute right-0 top-6 z-20 w-64 rounded-card border border-silver bg-paper p-3 text-xs text-graphite shadow-card">
           <p className="font-medium text-obsidian">Health Score formula</p>
@@ -68,7 +68,7 @@ function HealthScoreInfo() {
             Starts at 50: +0.5/% resolution above 70, −1.5/% escalation above 10, −2/% compliance-fail
             above 5, −0.8/% repeat-call above 15, +15× avg sentiment.
           </p>
-          <p className="mt-2 text-mist">75+ Healthy · 50–74 Attention · &lt;50 Critical</p>
+          <p className="mt-2 text-slate">75+ Healthy · 50–74 Attention · &lt;50 Critical</p>
         </div>
       )}
     </span>
@@ -344,13 +344,15 @@ export default function DashboardPage() {
                       {[topAgents[1], topAgents[0], topAgents[2]].map((agent, i) => {
                         const isFirst = agent === topAgents[0];
                         const podiumHeight = isFirst ? 'h-24' : i === 0 ? 'h-16' : 'h-12';
+                        const avatarSize = isFirst ? 'h-20 w-20' : 'h-16 w-16';
+                        const avatarPx = isFirst ? 80 : 64;
                         return (
                           <div key={agent.agent} className="flex flex-col items-center gap-2">
                             {isFirst && <Crown size={16} className="text-status-hold" />}
                             <img
-                              src={`https://i.pravatar.cc/64?u=${encodeURIComponent(agent.agent)}`}
+                              src={`https://i.pravatar.cc/${avatarPx}?u=${encodeURIComponent(agent.agent)}`}
                               alt={agent.agent}
-                              className="h-12 w-12 rounded-full border-2 border-paper shadow-subtle"
+                              className={`${avatarSize} rounded-full border-2 border-paper shadow-subtle object-cover`}
                             />
                             <span className="max-w-[80px] truncate text-xs font-medium text-obsidian">
                               {agent.agent}
@@ -381,7 +383,7 @@ export default function DashboardPage() {
                             <Link to={`/agents/${encodeURIComponent(agent.agent)}`} className="font-medium text-obsidian hover:underline">
                               {agent.agent}
                             </Link>
-                            <span className="ml-1 text-xs text-mist">({agent.call_count})</span>
+                            <span className="ml-1 text-xs text-slate">({agent.call_count})</span>
                           </td>
                           <td className="py-2">
                             <div className="h-1.5 w-20 rounded-pill bg-bone">

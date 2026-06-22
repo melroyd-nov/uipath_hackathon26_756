@@ -17,7 +17,7 @@ import { num } from '../utils/num';
 const BENCHMARK = 5;
 
 function failRateClass(pct: number): string {
-  return pct > BENCHMARK ? 'text-red-400' : 'text-emerald-400';
+  return pct > BENCHMARK ? 'text-red-600' : 'text-emerald-600';
 }
 
 export default function CompliancePage() {
@@ -52,7 +52,7 @@ export default function CompliancePage() {
         <button
           type="button"
           onClick={() => setShowMetricInfo((prev) => !prev)}
-          className="flex items-center gap-1.5 text-xs font-medium text-purple-400 hover:text-purple-300"
+          className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-700"
         >
           <Info size={12} />
           How are compliance metrics calculated?
@@ -60,30 +60,30 @@ export default function CompliancePage() {
         </button>
 
         {showMetricInfo && (
-          <div className="mt-3 space-y-3 rounded-xl border border-white/8 bg-white/3 p-4 text-xs">
+          <div className="mt-3 space-y-3 rounded-xl border border-silver bg-bone p-4 text-xs">
             <div className="flex gap-3">
-              <ShieldCheck size={14} className="mt-0.5 shrink-0 text-red-400" />
+              <ShieldCheck size={14} className="mt-0.5 shrink-0 text-red-600" />
               <div>
-                <p className="font-semibold text-white">Compliance Fail Rate</p>
+                <p className="font-semibold text-obsidian">Compliance Fail Rate</p>
                 <p className="mt-0.5 text-slate">
-                  <span className="font-mono text-amber-300">compliance_flag = 'No' ÷ total calls × 100</span>
+                  <span className="font-mono text-amber-700">compliance_flag = 'No' ÷ total calls × 100</span>
                   {' — '}
-                  <span className="font-medium text-white">"No"</span> = failed;{' '}
-                  <span className="font-medium text-white">"Yes"</span> = passed. Benchmark:{' '}
-                  <span className="text-emerald-400">≤5%</span>. Exceeding this threshold indicates regulatory risk
+                  <span className="font-medium text-obsidian">"No"</span> = failed;{' '}
+                  <span className="font-medium text-obsidian">"Yes"</span> = passed. Benchmark:{' '}
+                  <span className="text-emerald-600">≤5%</span>. Exceeding this threshold indicates regulatory risk
                   and requires immediate coaching or process review.
                 </p>
               </div>
             </div>
-            <div className="border-t border-white/5 pt-3 flex gap-3">
-              <TrendingUp size={14} className="mt-0.5 shrink-0 text-amber-400" />
+            <div className="border-t border-silver pt-3 flex gap-3">
+              <TrendingUp size={14} className="mt-0.5 shrink-0 text-amber-600" />
               <div>
-                <p className="font-semibold text-white">vs Benchmark column</p>
+                <p className="font-semibold text-obsidian">vs Benchmark column</p>
                 <p className="mt-0.5 text-slate">
                   Shows how far each agent is from the{' '}
-                  <span className="text-emerald-400">≤5%</span> target.{' '}
-                  <span className="font-mono text-amber-300">+X% over</span> = percentage points above 5%.{' '}
-                  <span className="text-emerald-400">On target</span> = at or below 5%.
+                  <span className="text-emerald-600">≤5%</span> target.{' '}
+                  <span className="font-mono text-amber-700">+X% over</span> = percentage points above 5%.{' '}
+                  <span className="text-emerald-600">On target</span> = at or below 5%.
                 </p>
               </div>
             </div>
@@ -157,7 +157,7 @@ export default function CompliancePage() {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5 text-left text-xs uppercase tracking-wide text-gray-400">
+              <tr className="border-b border-silver text-left text-xs uppercase tracking-wide text-slate">
                 <th className="py-2 pr-4">Agent</th>
                 <th className="py-2 pr-4 text-right">Total Calls</th>
                 <th className="py-2 pr-4 text-right">Failures</th>
@@ -170,20 +170,20 @@ export default function CompliancePage() {
                 const pct = num(row.compliance_fail_pct);
                 const over = pct - BENCHMARK;
                 return (
-                  <tr key={row.agent_name} className="border-b border-white/5 hover:bg-white/3">
-                    <td className="py-2 pr-4 font-medium text-white">{row.agent_name}</td>
-                    <td className="py-2 pr-4 text-right text-gray-300">{num(row.total_calls)}</td>
-                    <td className="py-2 pr-4 text-right text-red-400">{num(row.fail_count)}</td>
+                  <tr key={row.agent_name} className="border-b border-silver hover:bg-bone">
+                    <td className="py-2 pr-4 font-medium text-obsidian">{row.agent_name}</td>
+                    <td className="py-2 pr-4 text-right text-graphite">{num(row.total_calls)}</td>
+                    <td className="py-2 pr-4 text-right text-red-600">{num(row.fail_count)}</td>
                     <td className={`py-2 pr-4 text-right text-xs font-medium ${failRateClass(pct)}`}>
                       {pct.toFixed(1)}%
                     </td>
                     <td className="py-2 text-right">
                       {pct > BENCHMARK ? (
-                        <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-xs text-red-400">
+                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-700">
                           +{over.toFixed(1)}% over
                         </span>
                       ) : (
-                        <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-400">
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">
                           On target
                         </span>
                       )}

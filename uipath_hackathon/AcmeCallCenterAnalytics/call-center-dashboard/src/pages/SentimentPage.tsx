@@ -102,7 +102,7 @@ export default function SentimentPage() {
         <button
           type="button"
           onClick={() => setShowMetricInfo((prev) => !prev)}
-          className="flex items-center gap-1.5 text-xs font-medium text-purple-400 hover:text-purple-500"
+          className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-700"
         >
           <Info size={14} />
           How are sentiment metrics calculated?
@@ -110,7 +110,7 @@ export default function SentimentPage() {
         </button>
 
         {showMetricInfo && (
-          <div className="mt-3 divide-y divide-white/8 rounded-xl border border-white/8 bg-white/3 p-4">
+          <div className="mt-3 divide-y divide-silver rounded-xl border border-silver bg-bone p-4">
             <div className="flex gap-3 pb-3">
               <TrendingUp size={16} className="mt-0.5 shrink-0 text-emerald-500" />
               <div>
@@ -225,7 +225,7 @@ export default function SentimentPage() {
             </thead>
             <tbody>
               {agentRows.map((row) => (
-                <tr key={row.agent} className="border-t border-silver hover:bg-white/3">
+                <tr key={row.agent} className="border-t border-silver hover:bg-bone">
                   <td className="py-2 font-medium text-obsidian">{row.agent}</td>
                   <td className="py-2 text-slate">{num(row.total_calls)}</td>
                   <td className="py-2 text-emerald-500">{num(row.positive_count)}</td>
