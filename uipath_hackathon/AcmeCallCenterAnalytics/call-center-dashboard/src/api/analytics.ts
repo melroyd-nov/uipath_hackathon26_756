@@ -52,8 +52,21 @@ export const getEscalationsByAgent = (f?: Pick<AnalyticsFilters, 'start_date' | 
   get<EscalationByAgent[]>('/escalations/by-agent', f);
 export const getEscalationsTrend = (f?: AnalyticsFilters) => get<TrendPoint[]>('/escalations/trend', f);
 export const getEscalationsRootCause = (f?: AnalyticsFilters) => get<EscalationRootCause>('/escalations/root-cause', f);
-export const getComplianceByAgent = (f?: AnalyticsFilters) => get('/compliance/by-agent', f);
-export const getComplianceTrend = (f?: AnalyticsFilters) => get('/compliance/trend', f);
+export interface ComplianceByAgent {
+  agent_name: string;
+  total_calls: number;
+  fail_count: number;
+  compliance_fail_pct: number;
+}
+
+export interface ComplianceTrendPoint {
+  date: string;
+  compliance_fail_pct: number;
+}
+
+export const getComplianceByAgent = (f?: Pick<AnalyticsFilters, 'start_date' | 'end_date'>) =>
+  get<ComplianceByAgent[]>('/compliance/by-agent', f);
+export const getComplianceTrend = (f?: AnalyticsFilters) => get<ComplianceTrendPoint[]>('/compliance/trend', f);
 export const getResolutionOverview = (f?: AnalyticsFilters) => get('/resolution/overview', f);
 export const getResolutionTrend = (f?: AnalyticsFilters) => get('/resolution/trend', f);
 export const getTriggerWordCounts = (f?: AnalyticsFilters) => get('/trigger-words/counts', f);
