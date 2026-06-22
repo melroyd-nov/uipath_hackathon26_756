@@ -634,7 +634,7 @@ Data range: [MIN(call_date)] to [MAX(call_date)] | Total calls: [N]
 **Event:** `Call Analytics Process Complete`
 
 **System State:**
-- CallRecord persisted with all 27 fields
+- CallRecord persisted with all **42 fields** (27 original + 15 JSON-derived)
 - CallFollowup rows seeded (if any follow-ups)
 - BPMN follow-up process started (if applicable, fire-and-forget)
 - Dashboard KPIs refreshed
@@ -655,7 +655,7 @@ Data range: [MIN(call_date)] to [MAX(call_date)] | Total calls: [N]
 | **CallFollowup** | `993c2c06-be6b-f111-8fcb-000d3ab36606` | Action items per call | 0-3 per CallRecord |
 | **AiUsage** | `45af032d-bb6b-f111-8fcb-000d3ab36606` | Singleton usage tracker | Exactly 1 |
 
-### 5.2 CallRecord (27 user-defined fields)
+### 5.2 CallRecord (42 user-defined fields)
 
 **System fields (auto-generated):** `Id` (UUID), `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy`
 
@@ -688,6 +688,23 @@ Data range: [MIN(call_date)] to [MAX(call_date)] | Total calls: [N]
 | 25 | `file_name` | STRING | — | 100 | — | Source transcript filename |
 | 26 | `repeatcall_flag` | CHOICE_SET_SINGLE | — | — | — | Is this a repeat call? |
 | 27 | `transcript` | MULTILINE_TEXT | — | 10000 | — | Full dialogue text |
+| 28 | `duration_seconds` | DECIMAL | — | — | — | Call duration in seconds |
+| 29 | `agent_sentiment` | DECIMAL | — | — | — | Agent sentiment score |
+| 30 | `customer_sentiment` | DECIMAL | — | — | — | Customer sentiment score |
+| 31 | `agent_audio_emotion` | STRING | — | 20 | — | Agent audio emotion |
+| 32 | `customer_audio_emotion` | STRING | — | 20 | — | Customer audio emotion |
+| 33 | `agent_talk_pct` | DECIMAL | — | — | — | Agent talk percentage |
+| 34 | `customer_talk_pct` | DECIMAL | — | — | — | Customer talk percentage |
+| 35 | `fraud_risk` | STRING | — | 20 | — | Fraud risk level |
+| 36 | `fraud_reason` | MULTILINE_TEXT | — | 2000 | — | Fraud risk explanation |
+| 37 | `pii_digits_detected` | CHOICE_SET_SINGLE | — | — | — | PII digits detected? |
+| 38 | `is_followup_call` | CHOICE_SET_SINGLE | — | — | — | Is this a follow-up call? |
+| 39 | `followup_call_evidence` | MULTILINE_TEXT | — | 2000 | — | Evidence for follow-up classification |
+| 40 | `compliance_detail` | MULTILINE_TEXT | — | 10000 | — | Full compliance audit JSON |
+| 41 | `compliance_fail_count` | INTEGER | — | — | — | Number of compliance failures |
+| 42 | `trigger_count` | INTEGER | — | — | — | Number of trigger events |
+
+> **Schema updated:** 2026-06-22 — Added 15 fields to support JSON analysis output from friend's agent.
 
 ### 5.3 CallFollowup (13 user-defined fields)
 
@@ -1056,7 +1073,7 @@ Telephony ──► Storage Bucket ──► Maestro Flow ──► Coded Agent 
 
 ---
 
-*Document Version: 1.0*
-*Last Updated: 2026-06-19*
+*Document Version: 1.1*
+*Last Updated: 2026-06-22*
 *Author: OpenCode (kimi-k2.6)*
-*Status: Draft — reflects current design, some components not yet implemented*
+*Status: Draft — CallRecord schema updated with 15 JSON-derived fields (now 42 total)*
