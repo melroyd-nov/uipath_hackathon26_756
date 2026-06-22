@@ -141,7 +141,7 @@ All Data Fabric entities and choice sets have been **provisioned in staging** vi
 
 | Entity | ID | Fields | System `Id` of first record |
 |---|---|---|---|
-| **CallRecord** | `beac40ee-bd6b-f111-8fcb-000d3ab36606` | 29 (27 user + 2 system) | `0fa6a931-dfd6-4726-948b-5fbab681bbcd` |
+| **CallRecord** | `beac40ee-bd6b-f111-8fcb-000d3ab36606` | **43** (27 original + 15 JSON + 1 agent_id + 5 system) | `0fa6a931-dfd6-4726-948b-5fbab681bbcd` |
 | **CallFollowup** | `993c2c06-be6b-f111-8fcb-000d3ab36606` | 18 (13 user + 5 system) | — |
 | **AiUsage** | `45af032d-bb6b-f111-8fcb-000d3ab36606` | 13 (8 user + 5 system) | — |
 
@@ -156,34 +156,56 @@ All Data Fabric entities and choice sets have been **provisioned in staging** vi
 
 #### 4.4 Field Definitions
 
-**CallRecord** (27 user-defined fields):
+**CallRecord** (43 user-defined fields):
+
+*Original 27 fields:*
 1. `callid` — STRING(20), required, unique
-2. `call_date` — DATE
-3. `call_start_time` — DATETIME
-4. `call_end_time` — DATETIME
-5. `caller_name` — STRING(50)
+2. `call_date` — DATE ← `call_metadata.Call_Date` (populated)
+3. `call_start_time` — DATETIME ← `call_metadata.Call_Start_Time` (populated)
+4. `call_end_time` — DATETIME ← `call_metadata.Call_End_Time` (populated)
+5. `caller_name` — STRING(50) ← `call_metadata.Caller_Name` (populated)
 6. `caller_nric` — STRING(15)
 7. `caller_dob` — DATE
-8. `caller_number` — STRING(15)
-9. `agent_name` — STRING(30)
-10. `policy_number` — STRING(25)
-11. `call_sentiment` — INTEGER (optional, values: -1, 0, 1)
-12. `call_intent1` — STRING(100)
-13. `call_intent2` — STRING(100)
-14. `call_intent3` — STRING(100)
-15. `followup_item1` — STRING(100)
-16. `followup_item2` — STRING(100)
-17. `followup_item3` — STRING(100)
-18. `escalation_flag` — CHOICE_SET_SINGLE (YesNoFlag)
-19. `compliance_flag` — CHOICE_SET_SINGLE (YesNoFlag)
-20. `call_resolved_flag` — CHOICE_SET_SINGLE (YesNoFlag)
-21. `preverified_flag` — CHOICE_SET_SINGLE (YesNoFlag)
-22. `triggerword_flag` — CHOICE_SET_SINGLE (YesNoFlag)
-23. `triggerwords` — STRING(100)
-24. `call_summary` — MULTILINE_TEXT(10000)
-25. `file_name` — STRING(100)
-26. `repeatcall_flag` — CHOICE_SET_SINGLE (YesNoFlag)
-27. `transcript` — MULTILINE_TEXT(10000)
+8. `caller_number` — STRING(15) ← `call_metadata.Caller_Number` (populated)
+9. `agent_name` — STRING(30) ← `call_metadata.Agent_Name` (populated)
+10. `agent_id` — STRING(10) ← `call_metadata.Agent_Id` (populated)
+11. `policy_number` — STRING(25)
+12. `call_sentiment` — INTEGER (optional, values: -1, 0, 1)
+13. `call_intent1` — STRING(100)
+14. `call_intent2` — STRING(100)
+15. `call_intent3` — STRING(100)
+16. `followup_item1` — STRING(100)
+17. `followup_item2` — STRING(100)
+18. `followup_item3` — STRING(100)
+19. `escalation_flag` — CHOICE_SET_SINGLE (YesNoFlag)
+20. `compliance_flag` — CHOICE_SET_SINGLE (YesNoFlag)
+21. `call_resolved_flag` — CHOICE_SET_SINGLE (YesNoFlag)
+22. `preverified_flag` — CHOICE_SET_SINGLE (YesNoFlag)
+23. `triggerword_flag` — CHOICE_SET_SINGLE (YesNoFlag)
+24. `triggerwords` — STRING(100)
+25. `call_summary` — MULTILINE_TEXT(10000)
+26. `file_name` — STRING(100)
+27. `repeatcall_flag` — CHOICE_SET_SINGLE (YesNoFlag)
+28. `transcript` — MULTILINE_TEXT(10000)
+
+*New fields added (from friend's JSON output):*
+29. `duration_seconds` — DECIMAL ← `duration_sec`
+30. `agent_sentiment` — DECIMAL ← `sentiment_avg.agent`
+31. `customer_sentiment` — DECIMAL ← `sentiment_avg.customer`
+32. `agent_audio_emotion` — STRING(20) ← `audio_emotion.agent`
+33. `customer_audio_emotion` — STRING(20) ← `audio_emotion.customer`
+34. `agent_talk_pct` — DECIMAL ← `talk_ratio_pct.AGENT`
+35. `customer_talk_pct` — DECIMAL ← `talk_ratio_pct.CUSTOMER`
+36. `fraud_risk` — STRING(20) ← `fraud_risk`
+37. `fraud_reason` — MULTILINE_TEXT(2000) ← `fraud_reason`
+38. `pii_digits_detected` — CHOICE_SET_SINGLE (YesNoFlag) ← `pii_digits_detected`
+39. `is_followup_call` — CHOICE_SET_SINGLE (YesNoFlag) ← `is_followup`
+40. `followup_call_evidence` — MULTILINE_TEXT(2000) ← `followup_evidence`
+41. `compliance_detail` — MULTILINE_TEXT(10000) ← `compliance` array
+42. `compliance_fail_count` — INTEGER ← `compliance_violations.length`
+43. `trigger_count` — INTEGER ← `triggers.length`
+
+> **Schema update date:** 2026-06-22 — Added 15 fields + agent_id. `call_metadata` now populates call_date, call_start_time, call_end_time, caller_number, caller_name, agent_name.
 
 **CallFollowup** (13 user-defined fields):
 1. `callid` — STRING(20), required
@@ -212,9 +234,9 @@ All Data Fabric entities and choice sets have been **provisioned in staging** vi
 
 #### 4.5 Test Data Seeded
 
-- **AiUsage singleton:** One record inserted with `record_key: "singleton"`, `calls_today: 0`, `total_calls: 0`, `period_date: "2026-06-19"`.
-- **CallRecord test:** One test record inserted successfully (callid `"12345678"`, agent `"John"`, etc.).
-- **Cleanup:** 11 test entities created during debugging were deleted.
+- **AiUsage singleton:** Re-seeded on 2026-06-22 with `record_key: "singleton"`, `calls_today: 0`, `total_calls: 0`, `period_date: "2026-06-19"`.
+- **CallRecord test:** Cleared on 2026-06-22 (all test records deleted to prepare for JSON-based inserts).
+- **Cleanup:** 11 test entities created during debugging were deleted earlier.
 
 ---
 
@@ -382,17 +404,19 @@ The BPMN was **re-updated** to reflect that the system receives **pre-analyzed J
 | **Task_StoreCallRecord** | Updated to 37+ fields including all new JSON-derived fields. |
 | **End_Complete** | Lists all JSON-to-Data Fabric field mappings. |
 
-### New CallRecord Fields Needed (from JSON)
+### New CallRecord Fields Added (from JSON)
+
+**Status:** ✅ Added to Data Fabric entity on 2026-06-22 via `uip df entities update`.
 
 | Field | Type | Source JSON Field |
 |---|---|---|
+| `duration_seconds` | DECIMAL | duration_sec |
 | `agent_sentiment` | DECIMAL | sentiment_avg.agent |
 | `customer_sentiment` | DECIMAL | sentiment_avg.customer |
 | `agent_audio_emotion` | STRING(20) | audio_emotion.agent |
 | `customer_audio_emotion` | STRING(20) | audio_emotion.customer |
 | `agent_talk_pct` | DECIMAL | talk_ratio_pct.AGENT |
 | `customer_talk_pct` | DECIMAL | talk_ratio_pct.CUSTOMER |
-| `duration_seconds` | DECIMAL | duration_sec |
 | `fraud_risk` | STRING(20) | fraud_risk |
 | `fraud_reason` | MULTILINE_TEXT | fraud_reason |
 | `pii_digits_detected` | CHOICE_SET_SINGLE | pii_digits_detected |
@@ -416,6 +440,8 @@ The BPMN was **re-updated** to reflect that the system receives **pre-analyzed J
 | 2026-06-19 | OpenCode (kimi-k2.6) | Created `Claude.md` and `PROCESS_SPECIFICATION.md` |
 | 2026-06-19 | OpenCode (kimi-k2.6) | ✅ Updated BPMN documentation for Data Fabric + Coded Agent architecture |
 | 2026-06-19 | OpenCode (kimi-k2.6) | ✅ Re-updated BPMN to reflect friend's JSON input structure (15 new fields mapped) |
+| 2026-06-22 | OpenCode (kimi-k2.6) | ✅ Added 15 fields to CallRecord entity via CLI. Cleared all test records. Re-seeded AiUsage singleton. Updated all docs. |
+| 2026-06-22 | OpenCode (kimi-k2.6) | ✅ Added `agent_id` field. `call_metadata` now structured JSON (not raw string). Populated call_date, call_start_time, call_end_time, caller_number, caller_name, agent_name from metadata. Inserted Scenario 1 record successfully. |
 
 ---
 
