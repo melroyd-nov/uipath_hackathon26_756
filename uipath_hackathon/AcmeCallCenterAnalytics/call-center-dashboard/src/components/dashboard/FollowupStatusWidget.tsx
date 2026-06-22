@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ClipboardList, CheckCircle2, Loader2, CheckCheck, AlarmClock, Percent } from 'lucide-react';
 import GlassPanel from '../shared/GlassPanel';
 import LoadingSpinner from '../shared/LoadingSpinner';
-import { getFollowupsSummary } from '../../api/followups';
+import { followupsApi } from '../../api/followups';
 
 const TILES: { key: string; label: string; icon: typeof ClipboardList; isPercent?: boolean }[] = [
   { key: 'pending', label: 'Needs Review', icon: ClipboardList },
@@ -17,7 +17,7 @@ const TILES: { key: string; label: string; icon: typeof ClipboardList; isPercent
 export default function FollowupStatusWidget() {
   const { data, isLoading } = useQuery({
     queryKey: ['followups-summary'],
-    queryFn: getFollowupsSummary,
+    queryFn: followupsApi.summary,
   });
 
   return (

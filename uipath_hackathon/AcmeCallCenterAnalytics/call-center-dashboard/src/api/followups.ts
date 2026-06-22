@@ -1,31 +1,69 @@
 import { apiClient } from './client';
 
-export type FollowupStatus = 'pending' | 'approved' | 'in_progress' | 'completed' | 'rejected';
+export type FollowupStatus = 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed';
+export type FollowupSource = 'ai_generated' | 'manual';
+export type FollowupPriority = 'low' | 'medium' | 'high';
 
-export interface FollowupOut {
-  id: string;
-  call_id: string;
+export interface Followup {
+  id: number;
+  call_id: number;
+  text: string;
+  reason: string | null;
+  source: FollowupSource;
   status: FollowupStatus;
-  priority: string;
-  agent: string;
-  due_date?: string | null;
-  [field: string]: unknown;
+  priority: FollowupPriority | null;
+  assigned_to: string | null;
+  due_date: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  completed_at: string | null;
+  completion_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FollowupSummary {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  in_progress: number;
+  completed: number;
+  completion_rate: number;
 }
 
 export interface FollowupsResponse {
-  call_id: string;
-  summary: string;
-  items: FollowupOut[];
+  call_id: number;
+  summary: FollowupSummary;
+  items: Followup[];
+}
+
+export interface GlobalFollowup extends Followup {
+  agent_name: string | null;
+  call_date: string | null;
+  is_overdue: boolean;
+  days_overdue: number | null;
+  caller_name: string | null;
+  policy_number: string | null;
+  call_intent1: string | null;
+  call_intent2: string | null;
+  call_intent3: string | null;
+  call_summary: string | null;
+  call_sentiment: number | null;
+  escalation_flag: string | null;
+  compliance_flag: string | null;
+  call_resolved_flag: string | null;
 }
 
 export interface PaginatedFollowups {
-  items: FollowupOut[];
+  items: GlobalFollowup[];
   total: number;
   page: number;
-  limit: number;
+  pages: number;
 }
 
-export interface GlobalSummary {
+export interface GlobalFollowupSummary {
+  total: number;
   pending: number;
   approved: number;
   in_progress: number;
@@ -37,85 +75,62 @@ export interface GlobalSummary {
 }
 
 export interface GlobalFollowupFilters {
-  status?: FollowupStatus;
-  source?: string;
-  priority?: string;
-  agent?: string;
-  overdue?: boolean;
-  start_date?: string;
-  end_date?: string;
-  search?: string;
+  status?: string | null;
+  source?: string | null;
+  priority?: string | null;
+  agent?: string | null;
+  overdue?: boolean | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  search?: string | null;
   page?: number;
   limit?: number;
 }
 
-export interface NewFollowup {
-  description: string;
-  priority?: string;
+export interface FollowupCreate {
+  text: string;
+  reason?: string;
+  priority?: FollowupPriority;
+  assigned_to?: string;
   due_date?: string;
-  [field: string]: unknown;
 }
 
-export async function listCallFollowups(callId: string): Promise<FollowupsResponse> {
-  const { data } = await apiClient.get<FollowupsResponse>(`/calls/${callId}/followups`);
-  return data;
+export interface FollowupApprove {
+  approved_by: string;
+  priority?: FollowupPriority;
+  assigned_to?: string;
+  due_date?: string;
 }
 
-export async function createFollowup(callId: string, followup: NewFollowup): Promise<FollowupOut> {
-  const { data } = await apiClient.post<FollowupOut>(`/calls/${callId}/followups`, followup);
-  return data;
+export interface FollowupStatusUpdate {
+  status: FollowupStatus;
+  actor?: string;
+  completion_notes?: string;
 }
 
-export async function updateFollowup(
-  callId: string,
-  followupId: string,
-  patch: Partial<NewFollowup>,
-): Promise<FollowupOut> {
-  const { data } = await apiClient.patch<FollowupOut>(
-    `/calls/${callId}/followups/${followupId}`,
-    patch,
-  );
-  return data;
+function clean(params: GlobalFollowupFilters): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== null && value !== undefined && value !== '') out[key] = value;
+  }
+  return out;
 }
 
-export async function approveFollowup(callId: string, followupId: string): Promise<FollowupOut> {
-  const { data } = await apiClient.post<FollowupOut>(
-    `/calls/${callId}/followups/${followupId}/approve`,
-  );
-  return data;
-}
-
-export async function rejectFollowup(callId: string, followupId: string): Promise<FollowupOut> {
-  const { data } = await apiClient.post<FollowupOut>(
-    `/calls/${callId}/followups/${followupId}/reject`,
-  );
-  return data;
-}
-
-export async function setFollowupStatus(
-  callId: string,
-  followupId: string,
-  status: 'in_progress' | 'completed',
-): Promise<FollowupOut> {
-  const { data } = await apiClient.post<FollowupOut>(
-    `/calls/${callId}/followups/${followupId}/status`,
-    { status },
-  );
-  return data;
-}
-
-export async function deleteFollowup(callId: string, followupId: string): Promise<void> {
-  await apiClient.delete(`/calls/${callId}/followups/${followupId}`);
-}
-
-export async function listAllFollowups(
-  filters: GlobalFollowupFilters = {},
-): Promise<PaginatedFollowups> {
-  const { data } = await apiClient.get<PaginatedFollowups>('/followups', { params: filters });
-  return data;
-}
-
-export async function getFollowupsSummary(): Promise<GlobalSummary> {
-  const { data } = await apiClient.get<GlobalSummary>('/followups/summary');
-  return data;
-}
+export const followupsApi = {
+  list: (callId: number): Promise<FollowupsResponse> =>
+    apiClient.get<FollowupsResponse>(`/calls/${callId}/followups`).then((r) => r.data),
+  listAll: (filters: GlobalFollowupFilters = {}): Promise<PaginatedFollowups> =>
+    apiClient.get<PaginatedFollowups>('/followups', { params: clean(filters) }).then((r) => r.data),
+  summary: (): Promise<GlobalFollowupSummary> =>
+    apiClient.get<GlobalFollowupSummary>('/followups/summary').then((r) => r.data),
+  create: (callId: number, body: FollowupCreate): Promise<Followup> =>
+    apiClient.post<Followup>(`/calls/${callId}/followups`, body).then((r) => r.data),
+  approve: (callId: number, id: number, body: FollowupApprove): Promise<Followup> =>
+    apiClient.post<Followup>(`/calls/${callId}/followups/${id}/approve`, body).then((r) => r.data),
+  reject: (callId: number, id: number, body: FollowupApprove): Promise<Followup> =>
+    apiClient.post<Followup>(`/calls/${callId}/followups/${id}/reject`, body).then((r) => r.data),
+  changeStatus: (callId: number, id: number, body: FollowupStatusUpdate): Promise<Followup> =>
+    apiClient.post<Followup>(`/calls/${callId}/followups/${id}/status`, body).then((r) => r.data),
+  remove: (callId: number, id: number): Promise<void> =>
+    apiClient.delete(`/calls/${callId}/followups/${id}`).then(() => undefined),
+};

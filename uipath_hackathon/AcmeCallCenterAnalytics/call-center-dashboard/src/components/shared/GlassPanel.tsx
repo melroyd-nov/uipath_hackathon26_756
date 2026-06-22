@@ -32,7 +32,7 @@ export default function GlassPanel({ title, subtitle, tooltip, onExport, childre
               </button>
             )}
             {tooltip && (
-              <span title={tooltip} className="mt-0.5 text-mist hover:text-slate">
+              <span title={tooltip} className="mt-0.5 text-slate hover:text-graphite">
                 <Info size={16} />
               </span>
             )}

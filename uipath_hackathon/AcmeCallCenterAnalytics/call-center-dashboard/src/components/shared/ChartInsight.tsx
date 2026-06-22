@@ -68,7 +68,7 @@ export default function ChartInsight({ text, prompt, cacheKey }: ChartInsightPro
       type="button"
       onClick={requestInsight}
       disabled={loading}
-      className="mt-3 flex w-full items-center justify-center gap-2 rounded-badge border border-dashed border-mist bg-bone px-3 py-2 text-sm text-slate transition-colors hover:text-graphite disabled:opacity-60"
+      className="mt-3 flex w-full items-center justify-center gap-2 rounded-badge border border-dashed border-silver bg-bone px-3 py-2 text-sm text-slate transition-colors hover:text-graphite disabled:opacity-60"
     >
       <Sparkles size={14} />
       {loading ? 'Generating insight…' : 'Get AI insight'}

@@ -1,43 +1,56 @@
 import { apiClient } from './client';
 
-export interface AgentDetail {
-  name: string;
-  composite_score?: number;
-  [kpi: string]: unknown;
+export interface AgentProfile {
+  full_name: string;
+  role: string;
+  team: string;
+  experience_years: number;
+  manager: string;
+  certifications: string[];
+  avatar_initials: string;
+}
+
+export interface AgentKpi {
+  total_calls: number;
+  avg_sentiment: number | null;
+  escalation_pct: number | null;
+  compliance_fail_pct: number | null;
+  resolution_pct: number | null;
+  preverified_pct: number | null;
+  trigger_word_pct: number | null;
+  repeat_call_pct: number | null;
+  avg_duration_seconds: number | null;
 }
 
 export interface FeedbackEntry {
-  id: string;
-  agent_name: string;
+  manager: string;
+  date: string;
+  rating: number;
   comment: string;
-  created_at: string;
-  [field: string]: unknown;
 }
 
-export interface NewFeedbackEntry {
+export interface AgentDetail {
+  profile: AgentProfile;
+  kpi: AgentKpi;
+  feedback: FeedbackEntry[];
+}
+
+export interface AgentFilters {
+  start_date?: string;
+  end_date?: string;
+}
+
+export interface NewFeedbackPayload {
+  manager: string;
+  rating: number;
   comment: string;
-  [field: string]: unknown;
 }
 
-export async function listAgents(): Promise<AgentDetail[]> {
-  const { data } = await apiClient.get<AgentDetail[]>('/agents');
-  return data;
-}
-
-export async function getAgent(agentName: string): Promise<AgentDetail> {
-  const { data } = await apiClient.get<AgentDetail>(`/agents/${agentName}`);
-  return data;
-}
-
-export async function listAgentFeedback(agentName: string): Promise<FeedbackEntry[]> {
-  const { data } = await apiClient.get<FeedbackEntry[]>(`/agents/${agentName}/feedback`);
-  return data;
-}
-
-export async function addAgentFeedback(
-  agentName: string,
-  entry: NewFeedbackEntry,
-): Promise<FeedbackEntry> {
-  const { data } = await apiClient.post<FeedbackEntry>(`/agents/${agentName}/feedback`, entry);
-  return data;
-}
+export const agentsApi = {
+  list: (f?: AgentFilters): Promise<AgentDetail[]> =>
+    apiClient.get<AgentDetail[]>('/agents', { params: f }).then((r) => r.data),
+  get: (name: string, f?: AgentFilters): Promise<AgentDetail> =>
+    apiClient.get<AgentDetail>(`/agents/${name}`, { params: f }).then((r) => r.data),
+  addFeedback: (name: string, payload: NewFeedbackPayload): Promise<FeedbackEntry> =>
+    apiClient.post<FeedbackEntry>(`/agents/${name}/feedback`, payload).then((r) => r.data),
+};

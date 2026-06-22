@@ -7,7 +7,7 @@ interface AiBadgeProps {
 
 const VARIANT_STYLES: Record<AiBadgeVariant, string> = {
   live: 'bg-status-live-bg text-status-live',
-  neutral: 'bg-bone text-slate',
+  neutral: 'bg-bone text-graphite',
 };
 
 export default function AiBadge({ label, variant = 'neutral' }: AiBadgeProps) {
