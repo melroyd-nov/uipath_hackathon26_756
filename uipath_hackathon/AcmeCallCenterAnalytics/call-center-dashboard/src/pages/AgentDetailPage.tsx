@@ -10,6 +10,7 @@ import EmptyState from '../components/shared/EmptyState';
 import AgentRadarChart from '../components/charts/AgentRadarChart';
 import { useFilters } from '../context/FilterContext';
 import { useDummyDataContext } from '../context/DummyDataContext';
+import { useDataFabric } from '../lib/dataFabric';
 import { agentsApi } from '../api/agents';
 import type { NewFeedbackPayload } from '../api/agents';
 import { mockAgents } from '../data/mockAgentsData';
@@ -92,6 +93,7 @@ export default function AgentDetailPage() {
   const { name } = useParams<{ name: string }>();
   const { startDate, endDate } = useFilters();
   const { useDummyData } = useDummyDataContext();
+  const { entities } = useDataFabric();
   const queryClient = useQueryClient();
 
   const [showForm, setShowForm] = useState(false);
@@ -104,25 +106,28 @@ export default function AgentDetailPage() {
   const agentQuery = useQuery({
     queryKey: ['agent', name, startDate, endDate],
     queryFn: () =>
-      agentsApi.get(name!, {
+      agentsApi.get(name!, entities, {
         start_date: startDate ?? undefined,
         end_date: endDate ?? undefined,
       }),
     enabled: !!name && !useDummyData,
   });
 
+  const agent = useDummyData
+    ? mockAgents.find((a) => a.profile.full_name.split(' ')[0].toLowerCase() === name)
+    : agentQuery.data;
+
   const addFeedback = useMutation({
-    mutationFn: (payload: NewFeedbackPayload) => agentsApi.addFeedback(name!, payload),
+    mutationFn: (payload: NewFeedbackPayload) =>
+      useDummyData
+        ? Promise.resolve({ manager: payload.manager, date: new Date().toISOString().slice(0, 10), rating: payload.rating, comment: payload.comment })
+        : agentsApi.addFeedback(agent!.profile.id, payload, entities),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agent', name] });
       setFeedbackForm({ manager: '', rating: 5, comment: '' });
       setShowForm(false);
     },
   });
-
-  const agent = useDummyData
-    ? mockAgents.find((a) => a.profile.full_name.split(' ')[0].toLowerCase() === name)
-    : agentQuery.data;
 
   const isLoading = !useDummyData && agentQuery.isLoading;
 

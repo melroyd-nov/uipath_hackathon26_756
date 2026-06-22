@@ -3,6 +3,7 @@ import type { AgentDetail } from '../api/agents';
 export const mockAgents: AgentDetail[] = [
   {
     profile: {
+      id: 'mock-sam',
       full_name: 'Sam Reynolds',
       role: 'Senior Support Agent',
       team: 'Tier 2 Support',
@@ -39,6 +40,7 @@ export const mockAgents: AgentDetail[] = [
   },
   {
     profile: {
+      id: 'mock-john',
       full_name: 'John Martins',
       role: 'Support Agent',
       team: 'Tier 1 Support',
@@ -69,6 +71,7 @@ export const mockAgents: AgentDetail[] = [
   },
   {
     profile: {
+      id: 'mock-david',
       full_name: 'David Kim',
       role: 'Senior Support Agent',
       team: 'Billing & Payments',
@@ -105,6 +108,7 @@ export const mockAgents: AgentDetail[] = [
   },
   {
     profile: {
+      id: 'mock-mike',
       full_name: 'Mike Thompson',
       role: 'Support Agent',
       team: 'Tier 1 Support',
@@ -135,6 +139,7 @@ export const mockAgents: AgentDetail[] = [
   },
   {
     profile: {
+      id: 'mock-mary',
       full_name: 'Mary Johnson',
       role: 'Lead Support Agent',
       team: 'Tier 2 Support',

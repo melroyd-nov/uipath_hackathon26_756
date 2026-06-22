@@ -9,7 +9,7 @@ export default function Sidebar() {
   return (
     <aside
       className={`relative flex h-screen shrink-0 flex-col border-r border-silver bg-blush transition-all ${
-        collapsed ? 'w-16' : 'w-48'
+        collapsed ? 'w-12' : 'w-48'
       }`}
     >
       <button
@@ -20,12 +20,12 @@ export default function Sidebar() {
         <ChevronLeft size={14} className={`transition-transform ${collapsed ? 'rotate-180' : ''}`} />
       </button>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-visible">
         <div className="flex shrink-0 items-center gap-3 border-b border-black/10 px-4 py-4">
           <span className={`font-editorial text-obsidian ${collapsed ? 'text-base' : 'text-xl'}`}>n.</span>
         </div>
 
-        <nav className="flex min-h-0 flex-1 flex-col overflow-hidden pt-1 pb-3">
+        <nav className="flex min-h-0 flex-1 flex-col overflow-visible pt-1 pb-3">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             return (
@@ -34,7 +34,7 @@ export default function Sidebar() {
                 to={item.path}
                 end={item.path === '/'}
                 className={({ isActive }) =>
-                  `mx-1.5 flex items-center gap-2.5 rounded-lg px-2.5 transition-colors ${
+                  `group relative mx-1.5 flex items-center gap-2.5 rounded-lg px-2.5 transition-colors ${
                     collapsed ? 'py-2.5 text-sm' : 'py-2 text-[13px]'
                   } ${isActive ? 'bg-black/10 text-obsidian' : 'text-graphite/70 hover:bg-black/5 hover:text-obsidian'}`
                 }
@@ -43,6 +43,11 @@ export default function Sidebar() {
                   <>
                     <Icon size={16} className={`shrink-0 ${isActive ? 'text-obsidian' : 'text-graphite/50'}`} />
                     {!collapsed && <span className="truncate">{item.label}</span>}
+                    {collapsed && (
+                      <span className="pointer-events-none absolute left-full top-1/2 z-20 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md bg-obsidian px-2 py-1 text-xs text-white opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100">
+                        {item.label}
+                      </span>
+                    )}
                   </>
                 )}
               </NavLink>

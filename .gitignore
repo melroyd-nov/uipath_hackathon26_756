@@ -28,6 +28,9 @@ build/
 *.nupkg
 project.lock.json
 
+# Docs (internal project notes, not for commit)
+uipath_hackathon/Docs/
+
 # OS / editor
 .DS_Store
 Thumbs.db
