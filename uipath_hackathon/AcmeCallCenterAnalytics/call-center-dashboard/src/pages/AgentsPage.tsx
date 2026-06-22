@@ -6,6 +6,7 @@ import EmptyState from '../components/shared/EmptyState';
 import AgentProfileCard from '../components/cards/AgentProfileCard';
 import { useFilters } from '../context/FilterContext';
 import { useDummyDataContext } from '../context/DummyDataContext';
+import { useDataFabric } from '../lib/dataFabric';
 import { agentsApi } from '../api/agents';
 import type { AgentDetail } from '../api/agents';
 import { mockAgents } from '../data/mockAgentsData';
@@ -24,11 +25,12 @@ function agentScore(a: AgentDetail): number {
 export default function AgentsPage() {
   const { startDate, endDate } = useFilters();
   const { useDummyData } = useDummyDataContext();
+  const { entities } = useDataFabric();
 
   const agents = useQuery({
     queryKey: ['agents', startDate, endDate],
     queryFn: () =>
-      agentsApi.list({ start_date: startDate ?? undefined, end_date: endDate ?? undefined }),
+      agentsApi.list(entities, { start_date: startDate ?? undefined, end_date: endDate ?? undefined }),
     enabled: !useDummyData,
   });
 
