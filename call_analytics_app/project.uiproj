@@ -1,0 +1,6 @@
+{
+  "ProjectType": "Agent",
+  "Name": "call-analytics",
+  "Description": "Call-center audio analytics \u2014 UiPath cloud orchestrator (ML runs on local server via API)",
+  "MainFile": null
+}

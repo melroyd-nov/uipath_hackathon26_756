@@ -1,0 +1,111 @@
+{
+    "$schema": "https://cloud.uipath.com/draft/2024-12/entry-point",
+    "$id": "entry-points.json",
+    "entryPoints": [
+        {
+            "filePath": "agent",
+            "uniqueId": "ecd1794e-57b3-4a02-9872-ab8ed48b0aa7",
+            "type": "agent",
+            "input": {
+                "type": "object",
+                "properties": {
+                    "audio_blob_path": {
+                        "description": "Path to the audio file inside the input bucket (e.g. 'calls/recording.wav')",
+                        "title": "Audio Blob Path",
+                        "type": "string"
+                    },
+                    "api_url": {
+                        "description": "Base URL of your local analytics server (e.g. 'https://xxxx.ngrok-free.app')",
+                        "title": "Api Url",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "audio_blob_path",
+                    "api_url"
+                ]
+            },
+            "output": {
+                "type": "object",
+                "properties": {
+                    "report": {
+                        "additionalProperties": true,
+                        "description": "Full CallReport as a dictionary",
+                        "title": "Report",
+                        "type": "object"
+                    },
+                    "artifacts": {
+                        "additionalProperties": true,
+                        "description": "Bucket paths of uploaded output artifacts",
+                        "title": "Artifacts",
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "report"
+                ]
+            },
+            "graph": {
+                "nodes": [
+                    {
+                        "id": "__start__",
+                        "name": "__start__",
+                        "type": "__start__",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "fetch_audio",
+                        "name": "fetch_audio",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "call_local_api",
+                        "name": "call_local_api",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "push_outputs",
+                        "name": "push_outputs",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "__end__",
+                        "name": "__end__",
+                        "type": "__end__",
+                        "subgraph": null,
+                        "metadata": {}
+                    }
+                ],
+                "edges": [
+                    {
+                        "source": "__start__",
+                        "target": "fetch_audio",
+                        "label": null
+                    },
+                    {
+                        "source": "call_local_api",
+                        "target": "push_outputs",
+                        "label": null
+                    },
+                    {
+                        "source": "fetch_audio",
+                        "target": "call_local_api",
+                        "label": null
+                    },
+                    {
+                        "source": "push_outputs",
+                        "target": "__end__",
+                        "label": null
+                    }
+                ]
+            }
+        }
+    ]
+}

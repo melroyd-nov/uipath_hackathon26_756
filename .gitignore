@@ -37,3 +37,6 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+
+# stray non-dot env (secrets) — never commit
+call_analytics_app/env

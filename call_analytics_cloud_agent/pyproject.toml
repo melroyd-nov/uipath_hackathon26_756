@@ -1,0 +1,19 @@
+[project]
+name = "call-analytics"
+version = "0.3.1"
+description = "Call-center audio analytics — UiPath cloud orchestrator (ML runs on local server via API)"
+authors = [{ name = "Vineeth Shenoy" }]
+requires-python = ">=3.11"
+dependencies = [
+    "uipath",
+    "uipath-langchain",
+    "langgraph",
+    "langchain-core",
+    "pydantic>=2",
+    "python-dotenv",
+]
+
+[dependency-groups]
+dev = [
+    "uipath-dev",
+]
