@@ -1,0 +1,59 @@
+{
+  "version": "2.0",
+  "resources": [
+    {
+      "resource": "bucket",
+      "key": "call-analytics-audio",
+      "value": {
+        "name": {
+          "defaultValue": "call-analytics-audio",
+          "isExpression": false,
+          "displayName": "Name"
+        },
+        "folderPath": {
+          "defaultValue": "",
+          "isExpression": false,
+          "displayName": "Folder Path"
+        },
+        "EntryPointUniqueId": {
+          "defaultValue": "ecd1794e-57b3-4a02-9872-ab8ed48b0aa7",
+          "isExpression": false,
+          "displayName": "agent"
+        }
+      },
+      "metadata": {
+        "ActivityName": "retrieve_async",
+        "BindingsVersion": "2.2",
+        "DisplayLabel": "FullName",
+        "SubType": "orchestratorBucket"
+      }
+    },
+    {
+      "resource": "bucket",
+      "key": "call-analytics-results",
+      "value": {
+        "name": {
+          "defaultValue": "call-analytics-results",
+          "isExpression": false,
+          "displayName": "Name"
+        },
+        "folderPath": {
+          "defaultValue": "",
+          "isExpression": false,
+          "displayName": "Folder Path"
+        },
+        "EntryPointUniqueId": {
+          "defaultValue": "ecd1794e-57b3-4a02-9872-ab8ed48b0aa7",
+          "isExpression": false,
+          "displayName": "agent"
+        }
+      },
+      "metadata": {
+        "ActivityName": "retrieve_async",
+        "BindingsVersion": "2.2",
+        "DisplayLabel": "FullName",
+        "SubType": "orchestratorBucket"
+      }
+    }
+  ]
+}

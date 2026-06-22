@@ -1,0 +1,113 @@
+{
+  "version": "2.0",
+  "resources": [
+    {
+      "resource": "bucket",
+      "key": "call-analytics-results",
+      "value": {
+        "name": {
+          "defaultValue": "call-analytics-results",
+          "isExpression": false,
+          "displayName": "Name"
+        },
+        "folderPath": {
+          "defaultValue": "",
+          "isExpression": false,
+          "displayName": "Folder Path"
+        },
+        "EntryPointUniqueId": {
+          "defaultValue": "e4deda42-ca29-49c0-9c0d-eeb1873dab2c",
+          "isExpression": false,
+          "displayName": "agent"
+        }
+      },
+      "metadata": {
+        "ActivityName": "retrieve_async",
+        "BindingsVersion": "2.2",
+        "DisplayLabel": "FullName",
+        "SubType": "orchestratorBucket"
+      }
+    },
+    {
+      "resource": "asset",
+      "key": "call-analytics-api-key",
+      "value": {
+        "name": {
+          "defaultValue": "call-analytics-api-key",
+          "isExpression": false,
+          "displayName": "Name"
+        },
+        "folderPath": {
+          "defaultValue": "",
+          "isExpression": false,
+          "displayName": "Folder Path"
+        },
+        "EntryPointUniqueId": {
+          "defaultValue": "e4deda42-ca29-49c0-9c0d-eeb1873dab2c",
+          "isExpression": false,
+          "displayName": "agent"
+        }
+      },
+      "metadata": {
+        "ActivityName": "retrieve_secret",
+        "BindingsVersion": "2.2",
+        "DisplayLabel": "FullName",
+        "SubType": "orchestratorAsset"
+      }
+    },
+    {
+      "resource": "asset",
+      "key": "call-analytics-api-url",
+      "value": {
+        "name": {
+          "defaultValue": "call-analytics-api-url",
+          "isExpression": false,
+          "displayName": "Name"
+        },
+        "folderPath": {
+          "defaultValue": "",
+          "isExpression": false,
+          "displayName": "Folder Path"
+        },
+        "EntryPointUniqueId": {
+          "defaultValue": "e4deda42-ca29-49c0-9c0d-eeb1873dab2c",
+          "isExpression": false,
+          "displayName": "agent"
+        }
+      },
+      "metadata": {
+        "ActivityName": "retrieve",
+        "BindingsVersion": "2.2",
+        "DisplayLabel": "FullName",
+        "SubType": "orchestratorAsset"
+      }
+    },
+    {
+      "resource": "asset",
+      "key": "call-analytics-gdrive-conn-id",
+      "value": {
+        "name": {
+          "defaultValue": "call-analytics-gdrive-conn-id",
+          "isExpression": false,
+          "displayName": "Name"
+        },
+        "folderPath": {
+          "defaultValue": "",
+          "isExpression": false,
+          "displayName": "Folder Path"
+        },
+        "EntryPointUniqueId": {
+          "defaultValue": "e4deda42-ca29-49c0-9c0d-eeb1873dab2c",
+          "isExpression": false,
+          "displayName": "agent"
+        }
+      },
+      "metadata": {
+        "ActivityName": "retrieve",
+        "BindingsVersion": "2.2",
+        "DisplayLabel": "FullName",
+        "SubType": "orchestratorAsset"
+      }
+    }
+  ]
+}

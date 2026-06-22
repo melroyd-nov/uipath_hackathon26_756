@@ -1,0 +1,113 @@
+{
+    "$schema": "https://cloud.uipath.com/draft/2024-12/entry-point",
+    "$id": "entry-points.json",
+    "entryPoints": [
+        {
+            "filePath": "agent",
+            "uniqueId": "e4deda42-ca29-49c0-9c0d-eeb1873dab2c",
+            "type": "agent",
+            "input": {
+                "type": "object",
+                "properties": {
+                    "file_id": {
+                        "description": "Google Drive file ID of the audio file to analyze (from the Drive trigger item).",
+                        "title": "File Id",
+                        "type": "string"
+                    },
+                    "file_name": {
+                        "type": "string"
+                    },
+                    "metadata_file_id": {
+                        "description": "Google Drive file ID of the call's metadata JSON (from the 'Audio_Metadata' folder). Optional — merged into the final report.",
+                        "title": "Metadata File Id",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "file_id"
+                ]
+            },
+            "output": {
+                "type": "object",
+                "properties": {
+                    "report": {
+                        "additionalProperties": true,
+                        "description": "Full CallReport as a dictionary",
+                        "title": "Report",
+                        "type": "object"
+                    },
+                    "artifacts": {
+                        "additionalProperties": true,
+                        "description": "Bucket paths of uploaded output artifacts",
+                        "title": "Artifacts",
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "report"
+                ]
+            },
+            "graph": {
+                "nodes": [
+                    {
+                        "id": "__start__",
+                        "name": "__start__",
+                        "type": "__start__",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "download_file",
+                        "name": "download_file",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "call_local_api",
+                        "name": "call_local_api",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "push_outputs",
+                        "name": "push_outputs",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "__end__",
+                        "name": "__end__",
+                        "type": "__end__",
+                        "subgraph": null,
+                        "metadata": {}
+                    }
+                ],
+                "edges": [
+                    {
+                        "source": "__start__",
+                        "target": "download_file",
+                        "label": null
+                    },
+                    {
+                        "source": "call_local_api",
+                        "target": "push_outputs",
+                        "label": null
+                    },
+                    {
+                        "source": "download_file",
+                        "target": "call_local_api",
+                        "label": null
+                    },
+                    {
+                        "source": "push_outputs",
+                        "target": "__end__",
+                        "label": null
+                    }
+                ]
+            }
+        }
+    ]
+}
