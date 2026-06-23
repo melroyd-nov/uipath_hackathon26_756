@@ -66,6 +66,7 @@ class Settings(BaseSettings):
     role_prompt: str = ""
     rollup_prompt: str = ""
     sent_prompt: str = ""
+    followup_actions_prompt: str = ""
 
     # --- proprietary compliance rule texts (loaded from .env by rule id) ---
     rubric_purpose_disclosure: str = ""
@@ -78,7 +79,8 @@ class Settings(BaseSettings):
     rubric_professional_conduct: str = ""
 
     @field_validator(
-        "judge_prompt", "followup_prompt", "role_prompt", "rollup_prompt", "sent_prompt"
+        "judge_prompt", "followup_prompt", "role_prompt", "rollup_prompt", "sent_prompt",
+        "followup_actions_prompt",
     )
     @classmethod
     def _expand_newlines(cls, v: str) -> str:

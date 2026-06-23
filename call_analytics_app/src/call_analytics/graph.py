@@ -73,6 +73,15 @@ def n_rollup(state: CallState) -> dict:
     return {"rollup": AN.run_rollup(state["segments_text"])}
 
 
+def n_followup_actions(state: CallState) -> dict:
+    # Needs the rollup (intent + resolution), so it runs after n_rollup.
+    rollup = state.get("rollup", {})
+    items = AN.generate_followup_actions(
+        state["segments_text"], rollup.get("intent"), rollup.get("resolution")
+    )
+    return {"followup_actions": items}
+
+
 def n_persist(state: CallState) -> dict:
     report = O.build_report(state)
     report = O.write_artifacts(state, report)
@@ -91,10 +100,11 @@ def build_graph():
     g.add_node("compliance", n_compliance)
     g.add_node("followup", n_followup)
     g.add_node("rollup", n_rollup)
+    g.add_node("followup_actions", n_followup_actions)
     g.add_node("persist", n_persist)
 
     order = ["load_audio", "transcribe", "diarize", "align", "roles", "sentiment",
-             "emotion", "compliance", "followup", "rollup", "persist"]
+             "emotion", "compliance", "followup", "rollup", "followup_actions", "persist"]
     g.add_edge(START, order[0])
     for a, b in zip(order, order[1:]):
         g.add_edge(a, b)
