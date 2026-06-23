@@ -1,0 +1,340 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="Main" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:njl="clr-namespace:Newtonsoft.Json.Linq;assembly=Newtonsoft.Json" xmlns:s="clr-namespace:System;assembly=System.Private.CoreLib" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="out_ValidationErrors" Type="OutArgument(x:String)" />
+    <x:Property Name="out_ErrorMessage" Type="OutArgument(x:String)" />
+    <x:Property Name="out_ReviewFlag" Type="OutArgument(x:Boolean)" />
+    <x:Property Name="out_RouteToQueue" Type="OutArgument(x:String)" />
+    <x:Property Name="out_EnrichedJson" Type="OutArgument(njl:JObject)" />
+    <x:Property Name="in_ReportJson" Type="InArgument(njl:JObject)" />
+    <x:Property Name="in_CallRecordEntityId" Type="InArgument(x:String)" />
+    <x:Property Name="out_ValidationPassed" Type="OutArgument(x:Boolean)" />
+  </x:Members>
+  <VisualBasic.Settings>
+    <x:Null />
+  </VisualBasic.Settings>
+  <sap2010:WorkflowViewState.IdRef>ActivityBuilder_1</sap2010:WorkflowViewState.IdRef>
+  <TextExpression.NamespacesForImplementation>
+    <sco:Collection x:TypeArguments="x:String">
+      <x:String>System.Activities</x:String>
+      <x:String>System.Activities.Statements</x:String>
+      <x:String>System.Activities.Expressions</x:String>
+      <x:String>System.Activities.Validation</x:String>
+      <x:String>System.Activities.XamlIntegration</x:String>
+      <x:String>Microsoft.VisualBasic</x:String>
+      <x:String>Microsoft.VisualBasic.Activities</x:String>
+      <x:String>System</x:String>
+      <x:String>System.Collections</x:String>
+      <x:String>System.Collections.Generic</x:String>
+      <x:String>System.Collections.ObjectModel</x:String>
+      <x:String>System.Data</x:String>
+      <x:String>System.Diagnostics</x:String>
+      <x:String>System.Drawing</x:String>
+      <x:String>System.IO</x:String>
+      <x:String>System.Linq</x:String>
+      <x:String>System.Net.Mail</x:String>
+      <x:String>System.Xml</x:String>
+      <x:String>System.Xml.Linq</x:String>
+      <x:String>UiPath.Core</x:String>
+      <x:String>UiPath.Core.Activities</x:String>
+      <x:String>System.Windows.Markup</x:String>
+      <x:String>GlobalVariablesNamespace</x:String>
+      <x:String>GlobalConstantsNamespace</x:String>
+      <x:String>System.Reflection</x:String>
+      <x:String>System.Linq.Expressions</x:String>
+      <x:String>System.Runtime.Serialization</x:String>
+      <x:String>System.Activities.Runtime.Collections</x:String>
+      <x:String>System.Numerics</x:String>
+      <x:String>Newtonsoft.Json.Linq</x:String>
+      <x:String>System.Runtime.Caching</x:String>
+      <x:String>Newtonsoft.Json</x:String>
+      <x:String>UiPath.Web.Activities.JSON.Models</x:String>
+      <x:String>System.Dynamic</x:String>
+      <x:String>System.ComponentModel</x:String>
+      <x:String>System.Collections.Specialized</x:String>
+      <x:String>UiPath.Web.Activities</x:String>
+    </sco:Collection>
+  </TextExpression.NamespacesForImplementation>
+  <TextExpression.ReferencesForImplementation>
+    <sco:Collection x:TypeArguments="AssemblyReference">
+      <AssemblyReference>Microsoft.VisualBasic</AssemblyReference>
+      <AssemblyReference>mscorlib</AssemblyReference>
+      <AssemblyReference>PresentationCore</AssemblyReference>
+      <AssemblyReference>PresentationFramework</AssemblyReference>
+      <AssemblyReference>System</AssemblyReference>
+      <AssemblyReference>System.Activities</AssemblyReference>
+      <AssemblyReference>System.ComponentModel.TypeConverter</AssemblyReference>
+      <AssemblyReference>System.Core</AssemblyReference>
+      <AssemblyReference>System.Data</AssemblyReference>
+      <AssemblyReference>System.Data.Common</AssemblyReference>
+      <AssemblyReference>System.Data.DataSetExtensions</AssemblyReference>
+      <AssemblyReference>System.Drawing</AssemblyReference>
+      <AssemblyReference>System.Drawing.Common</AssemblyReference>
+      <AssemblyReference>System.Drawing.Primitives</AssemblyReference>
+      <AssemblyReference>System.Linq</AssemblyReference>
+      <AssemblyReference>System.Net.Mail</AssemblyReference>
+      <AssemblyReference>System.ObjectModel</AssemblyReference>
+      <AssemblyReference>System.Private.CoreLib</AssemblyReference>
+      <AssemblyReference>System.Xaml</AssemblyReference>
+      <AssemblyReference>System.Xml</AssemblyReference>
+      <AssemblyReference>System.Xml.Linq</AssemblyReference>
+      <AssemblyReference>UiPath.System.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.UiAutomation.Activities</AssemblyReference>
+      <AssemblyReference>WindowsBase</AssemblyReference>
+      <AssemblyReference>UiPath.Studio.Constants</AssemblyReference>
+      <AssemblyReference>System.Reflection.DispatchProxy</AssemblyReference>
+      <AssemblyReference>System.Reflection.TypeExtensions</AssemblyReference>
+      <AssemblyReference>System.Reflection.Metadata</AssemblyReference>
+      <AssemblyReference>System.Console</AssemblyReference>
+      <AssemblyReference>System.Security.Permissions</AssemblyReference>
+      <AssemblyReference>System.Configuration.ConfigurationManager</AssemblyReference>
+      <AssemblyReference>System.ComponentModel</AssemblyReference>
+      <AssemblyReference>System.Memory</AssemblyReference>
+      <AssemblyReference>System.Private.Uri</AssemblyReference>
+      <AssemblyReference>System.Linq.Expressions</AssemblyReference>
+      <AssemblyReference>System.Private.ServiceModel</AssemblyReference>
+      <AssemblyReference>System.Private.DataContractSerialization</AssemblyReference>
+      <AssemblyReference>System.Runtime.Serialization.Formatters</AssemblyReference>
+      <AssemblyReference>System.Runtime.Serialization.Primitives</AssemblyReference>
+      <AssemblyReference>System.Collections</AssemblyReference>
+      <AssemblyReference>System.Linq.Async</AssemblyReference>
+      <AssemblyReference>System.Collections.NonGeneric</AssemblyReference>
+      <AssemblyReference>System.Runtime.Numerics</AssemblyReference>
+      <AssemblyReference>Newtonsoft.Json</AssemblyReference>
+      <AssemblyReference>System.Runtime.Caching</AssemblyReference>
+      <AssemblyReference>UiPath.Web.Activities</AssemblyReference>
+      <AssemblyReference>System.ComponentModel.EventBasedAsync</AssemblyReference>
+      <AssemblyReference>System.ComponentModel.Primitives</AssemblyReference>
+      <AssemblyReference>System.Collections.Specialized</AssemblyReference>
+    </sco:Collection>
+  </TextExpression.ReferencesForImplementation>
+  <Sequence DisplayName="Main Sequence" sap:VirtualizedContainerService.HintSize="897.2,2819.2" sap2010:WorkflowViewState.IdRef="Sequence_1">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="errorMessage" />
+      <Variable x:TypeArguments="x:String" Name="routeToQueue" />
+      <Variable x:TypeArguments="njl:JObject" Name="enrichedJson" />
+      <Variable x:TypeArguments="x:Boolean" Name="reviewFlag" />
+      <Variable x:TypeArguments="x:Boolean" Name="isValid" />
+      <Variable x:TypeArguments="x:String" Name="validationWarnings" />
+      <Variable x:TypeArguments="x:String" Name="validationErrors" />
+    </Sequence.Variables>
+    <sap:WorkflowViewStateService.ViewState>
+      <scg:Dictionary x:TypeArguments="x:String, x:Object">
+        <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+      </scg:Dictionary>
+    </sap:WorkflowViewStateService.ViewState>
+    <ui:LogMessage DisplayName="Log Start" sap:VirtualizedContainerService.HintSize="548,174.4" sap2010:WorkflowViewState.IdRef="LogMessage_1" Level="Info" Message="[&quot;Sub_ValidateAndEnrichJSON started. Input JObject has values: &quot; &amp; in_ReportJson.HasValues.ToString]" />
+    <TryCatch DisplayName="Try Validation &amp; Enrichment" sap:VirtualizedContainerService.HintSize="548,2456" sap2010:WorkflowViewState.IdRef="TryCatch_1">
+      <TryCatch.Try>
+        <Sequence DisplayName="Try" sap:VirtualizedContainerService.HintSize="546.4,1613.6" sap2010:WorkflowViewState.IdRef="Sequence_2">
+          <sap:WorkflowViewStateService.ViewState>
+            <scg:Dictionary x:TypeArguments="x:String, x:Object">
+              <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+            </scg:Dictionary>
+          </sap:WorkflowViewStateService.ViewState>
+          <ui:InvokeCode ContinueOnError="{x:Null}" Code="// IMPORTANT: Do NOT write &quot;using&quot; statements here.&#xA;// Namespaces must be added in the workflow Imports panel instead.&#xA;&#xA;var result_IsValid = true;&#xA;var result_Errors = new System.Collections.Generic.List&lt;string&gt;();&#xA;var result_Warnings = new System.Collections.Generic.List&lt;string&gt;();&#xA;&#xA;// 1. Input is already JObject — validate it's not null&#xA;Newtonsoft.Json.Linq.JObject report = in_ReportJson;&#xA;if (report == null) {&#xA;    result_IsValid = false;&#xA;    result_Errors.Add(&quot;Input JObject is null&quot;);&#xA;    out_ValidationErrors = string.Join(&quot;; &quot;, result_Errors);&#xA;    out_ValidationPassed = false;&#xA;    return;&#xA;}&#xA;&#xA;// 2. Required fields check (original fields)&#xA;string[] requiredTopLevel = { &quot;recording&quot;, &quot;duration_sec&quot;, &quot;call_metadata&quot;, &quot;transcript&quot;, &quot;summary&quot;, &quot;intent&quot;, &quot;sentiment_avg&quot;, &quot;audio_emotion&quot;, &quot;talk_ratio_pct&quot;, &quot;compliance&quot;, &quot;compliance_violations&quot;, &quot;triggers&quot;, &quot;is_followup&quot;, &quot;resolution&quot;, &quot;fraud_risk&quot;, &quot;fraud_reason&quot;, &quot;pii_digits_detected&quot; };&#xA;foreach (var field in requiredTopLevel) {&#xA;    if (report[field] == null) {&#xA;        result_IsValid = false;&#xA;        result_Errors.Add(&quot;Missing required field: &quot; + field);&#xA;    }&#xA;}&#xA;&#xA;// 3. NEW: Validate pre-computed fields exist&#xA;string[] requiredComputed = { &quot;sentiment_category&quot;, &quot;escalation_flag&quot;, &quot;followup_items&quot;, &quot;followup_priority&quot;, &quot;followup_assigned_to&quot; };&#xA;foreach (var field in requiredComputed) {&#xA;    if (report[field] == null) {&#xA;        result_Warnings.Add(&quot;Missing pre-computed field: &quot; + field + &quot; (will use fallback)&quot;);&#xA;    }&#xA;}&#xA;&#xA;// 4. call_metadata required sub-fields&#xA;var meta = report[&quot;call_metadata&quot;] as Newtonsoft.Json.Linq.JObject;&#xA;if (meta != null) {&#xA;    string[] requiredMeta = { &quot;Call_Date&quot;, &quot;Call_Start_Time&quot;, &quot;Call_End_Time&quot;, &quot;Caller_Number&quot;, &quot;Caller_Name&quot;, &quot;Agent_Name&quot;, &quot;Agent_Id&quot; };&#xA;    foreach (var field in requiredMeta) {&#xA;        if (meta[field] == null) {&#xA;            result_IsValid = false;&#xA;            result_Errors.Add(&quot;Missing call_metadata field: &quot; + field);&#xA;        }&#xA;    }&#xA;}&#xA;&#xA;// 5. Schema validation&#xA;var sentiment = report[&quot;sentiment_avg&quot;] as Newtonsoft.Json.Linq.JObject;&#xA;if (sentiment != null) {&#xA;    double agentSent = sentiment[&quot;agent&quot;].Value&lt;double&gt;();&#xA;    double custSent = sentiment[&quot;customer&quot;].Value&lt;double&gt;();&#xA;    if (agentSent &lt; -1.0 || agentSent &gt; 1.0) result_Errors.Add(&quot;agent_sentiment out of range&quot;);&#xA;    if (custSent &lt; -1.0 || custSent &gt; 1.0) result_Errors.Add(&quot;customer_sentiment out of range&quot;);&#xA;}&#xA;&#xA;string resolution = report[&quot;resolution&quot;].Value&lt;string&gt;();&#xA;if (resolution != &quot;resolved&quot; &amp;&amp; resolution != &quot;unresolved&quot; &amp;&amp; resolution != &quot;partial&quot;) {&#xA;    result_Errors.Add(&quot;Invalid resolution: &quot; + resolution);&#xA;}&#xA;&#xA;string fraudRisk = report[&quot;fraud_risk&quot;].Value&lt;string&gt;();&#xA;if (fraudRisk != &quot;low&quot; &amp;&amp; fraudRisk != &quot;medium&quot; &amp;&amp; fraudRisk != &quot;high&quot;) {&#xA;    result_Errors.Add(&quot;Invalid fraud_risk: &quot; + fraudRisk);&#xA;}&#xA;&#xA;// 6. NEW: Validate pre-computed values&#xA;if (report[&quot;sentiment_category&quot;] != null) {&#xA;    int sentCat = report[&quot;sentiment_category&quot;].Value&lt;int&gt;();&#xA;    if (sentCat &lt; -1 || sentCat &gt; 1) result_Errors.Add(&quot;sentiment_category must be -1, 0, or 1&quot;);&#xA;}&#xA;&#xA;if (report[&quot;escalation_flag&quot;] != null) {&#xA;    bool esc = report[&quot;escalation_flag&quot;].Value&lt;bool&gt;();&#xA;    if (resolution == &quot;resolved&quot; &amp;&amp; esc == true) {&#xA;        result_Warnings.Add(&quot;Inconsistency: resolution=resolved but escalation_flag=true&quot;);&#xA;    }&#xA;}&#xA;&#xA;// 7. Count consistency&#xA;var complianceArr = report[&quot;compliance&quot;] as Newtonsoft.Json.Linq.JArray;&#xA;var violationsArr = report[&quot;compliance_violations&quot;] as Newtonsoft.Json.Linq.JArray;&#xA;if (complianceArr != null &amp;&amp; complianceArr.Count != 8) {&#xA;    result_Warnings.Add(&quot;compliance array has &quot; + complianceArr.Count + &quot; items (expected 8)&quot;);&#xA;}&#xA;if (violationsArr != null &amp;&amp; violationsArr.Count &gt; 8) {&#xA;    result_Errors.Add(&quot;Too many compliance violations: &quot; + violationsArr.Count);&#xA;}&#xA;&#xA;// 8. Output&#xA;out_ReviewFlag = result_Warnings.Count &gt; 0;&#xA;out_ValidationErrors = string.Join(&quot;; &quot;, result_Errors);&#xA;out_ValidationPassed = result_IsValid &amp;&amp; result_Errors.Count == 0;" DisplayName="Invoke Code : Validate JSON" sap:VirtualizedContainerService.HintSize="512.8,196.8" sap2010:WorkflowViewState.IdRef="InvokeCode_1" Language="CSharp">
+            <ui:InvokeCode.Arguments>
+              <InArgument x:TypeArguments="njl:JObject" x:Key="in_ReportJson">[in_ReportJson]</InArgument>
+              <OutArgument x:TypeArguments="x:String" x:Key="out_ValidationErrors">[validationErrors]</OutArgument>
+              <OutArgument x:TypeArguments="x:Boolean" x:Key="out_ValidationPassed">[isValid]</OutArgument>
+              <OutArgument x:TypeArguments="x:Boolean" x:Key="out_ReviewFlag">[reviewFlag]</OutArgument>
+            </ui:InvokeCode.Arguments>
+          </ui:InvokeCode>
+          <If Condition="[isValid]" DisplayName="If : Validation Passed?" sap:VirtualizedContainerService.HintSize="512.8,1356.8" sap2010:WorkflowViewState.IdRef="If_1">
+            <If.Then>
+              <Sequence DisplayName="Then" sap:VirtualizedContainerService.HintSize="511.2,696.8" sap2010:WorkflowViewState.IdRef="Sequence_5">
+                <sap:WorkflowViewStateService.ViewState>
+                  <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                    <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+                  </scg:Dictionary>
+                </sap:WorkflowViewStateService.ViewState>
+                <ui:LogMessage DisplayName="Log Validation Passed" sap:VirtualizedContainerService.HintSize="477.6,174.4" sap2010:WorkflowViewState.IdRef="LogMessage_2" Level="Info" Message="[&quot;Validation passed. Errors: &quot; &amp; If(String.IsNullOrEmpty(validationErrors), &quot;none&quot;, validationErrors)]" />
+                <ui:InvokeCode ContinueOnError="{x:Null}" Code="// IMPORTANT: Do NOT write &quot;using&quot; statements here.&#xD;&#xA;// Namespaces must be added in the workflow Imports panel instead.&#xD;&#xA;&#xD;&#xA;// Input is already JObject&#xD;&#xA;var report = in_ReportJson;&#xD;&#xA;var enriched = new Newtonsoft.Json.Linq.JObject();&#xD;&#xA;&#xD;&#xA;// DECLARE ONCE — reuse everywhere&#xD;&#xA;string resolution = report[&quot;resolution&quot;].Value&lt;string&gt;();&#xD;&#xA;var sentiment = report[&quot;sentiment_avg&quot;] as Newtonsoft.Json.Linq.JObject;&#xD;&#xA;double custSent = sentiment[&quot;customer&quot;].Value&lt;double&gt;();&#xD;&#xA;&#xD;&#xA;// --- 1. Map call_metadata to core fields ---&#xD;&#xA;var meta = report[&quot;call_metadata&quot;] as Newtonsoft.Json.Linq.JObject;&#xD;&#xA;string callDateRaw = meta[&quot;Call_Date&quot;].Value&lt;string&gt;();&#xD;&#xA;var dateParts = callDateRaw.Split('-');&#xD;&#xA;string callDateIso = dateParts[2] + &quot;-&quot; + dateParts[1] + &quot;-&quot; + dateParts[0];&#xD;&#xA;&#xD;&#xA;string startTimeRaw = meta[&quot;Call_Start_Time&quot;].Value&lt;string&gt;();&#xD;&#xA;var startParts = startTimeRaw.Split(' ');&#xD;&#xA;var startDateParts = startParts[0].Split('-');&#xD;&#xA;var startTimeParts = startParts[1].Split(':');&#xD;&#xA;string callStartIso = startDateParts[2] + &quot;-&quot; + startDateParts[1] + &quot;-&quot; + startDateParts[0] + &quot;T&quot; + startTimeParts[0] + &quot;:&quot; + startTimeParts[1] + &quot;:&quot; + startTimeParts[2];&#xD;&#xA;&#xD;&#xA;string endTimeRaw = meta[&quot;Call_End_Time&quot;].Value&lt;string&gt;();&#xD;&#xA;var endParts = endTimeRaw.Split(' ');&#xD;&#xA;var endDateParts = endParts[0].Split('-');&#xD;&#xA;var endTimeParts = endParts[1].Split(':');&#xD;&#xA;string callEndIso = endDateParts[2] + &quot;-&quot; + endDateParts[1] + &quot;-&quot; + endDateParts[0] + &quot;T&quot; + endTimeParts[0] + &quot;:&quot; + endTimeParts[1] + &quot;:&quot; + endTimeParts[2];&#xD;&#xA;&#xD;&#xA;string callerNumber = meta[&quot;Caller_Number&quot;].Value&lt;object&gt;().ToString();&#xD;&#xA;string agentId = meta[&quot;Agent_Id&quot;].Value&lt;object&gt;().ToString();&#xD;&#xA;&#xD;&#xA;string callid = callerNumber + &quot;_&quot; + callDateRaw.Replace(&quot;-&quot;, &quot;&quot;);&#xD;&#xA;&#xD;&#xA;enriched[&quot;callid&quot;] = callid;&#xD;&#xA;enriched[&quot;call_date&quot;] = callDateIso;&#xD;&#xA;enriched[&quot;call_start_time&quot;] = callStartIso;&#xD;&#xA;enriched[&quot;call_end_time&quot;] = callEndIso;&#xD;&#xA;enriched[&quot;caller_name&quot;] = meta[&quot;Caller_Name&quot;].Value&lt;string&gt;();&#xD;&#xA;enriched[&quot;caller_number&quot;] = callerNumber;&#xD;&#xA;enriched[&quot;agent_name&quot;] = meta[&quot;Agent_Name&quot;].Value&lt;string&gt;();&#xD;&#xA;enriched[&quot;agent_id&quot;] = agentId;&#xD;&#xA;&#xD;&#xA;// --- 2. Map direct fields ---&#xD;&#xA;enriched[&quot;call_intent1&quot;] = report[&quot;intent&quot;];&#xD;&#xA;enriched[&quot;call_summary&quot;] = report[&quot;summary&quot;];&#xD;&#xA;enriched[&quot;transcript&quot;] = string.Join(&quot;\n&quot;, report[&quot;transcript&quot;].Select(t =&gt; t[&quot;text&quot;].Value&lt;string&gt;()));&#xD;&#xA;enriched[&quot;file_name&quot;] = report[&quot;recording&quot;];&#xD;&#xA;enriched[&quot;duration_seconds&quot;] = report[&quot;duration_sec&quot;];&#xD;&#xA;&#xD;&#xA;// --- 3. Map sentiment / emotion ---&#xD;&#xA;enriched[&quot;agent_sentiment&quot;] = sentiment[&quot;agent&quot;];&#xD;&#xA;enriched[&quot;customer_sentiment&quot;] = sentiment[&quot;customer&quot;];&#xD;&#xA;&#xD;&#xA;var emotion = report[&quot;audio_emotion&quot;] as Newtonsoft.Json.Linq.JObject;&#xD;&#xA;enriched[&quot;agent_audio_emotion&quot;] = emotion[&quot;AGENT&quot;] ?? emotion[&quot;agent&quot;];&#xD;&#xA;enriched[&quot;customer_audio_emotion&quot;] = emotion[&quot;CUSTOMER&quot;] ?? emotion[&quot;customer&quot;];&#xD;&#xA;&#xD;&#xA;var talkRatio = report[&quot;talk_ratio_pct&quot;] as Newtonsoft.Json.Linq.JObject;&#xD;&#xA;enriched[&quot;agent_talk_pct&quot;] = talkRatio[&quot;AGENT&quot;];&#xD;&#xA;enriched[&quot;customer_talk_pct&quot;] = talkRatio[&quot;CUSTOMER&quot;];&#xD;&#xA;&#xD;&#xA;// --- 4. Map risk / fraud ---&#xD;&#xA;enriched[&quot;fraud_risk&quot;] = report[&quot;fraud_risk&quot;];&#xD;&#xA;enriched[&quot;fraud_reason&quot;] = report[&quot;fraud_reason&quot;];&#xD;&#xA;&#xD;&#xA;// --- 5. Map follow-up flags ---&#xD;&#xA;bool isFollowup = report[&quot;is_followup&quot;].Value&lt;bool&gt;();&#xD;&#xA;enriched[&quot;is_followup_call&quot;] = isFollowup ? 0 : 1;&#xD;&#xA;enriched[&quot;followup_call_evidence&quot;] = report[&quot;followup_evidence&quot;];&#xD;&#xA;&#xD;&#xA;// --- 6. Map compliance ---&#xD;&#xA;var complianceArr = report[&quot;compliance&quot;] as Newtonsoft.Json.Linq.JArray;&#xD;&#xA;var violationsArr = report[&quot;compliance_violations&quot;] as Newtonsoft.Json.Linq.JArray;&#xD;&#xA;enriched[&quot;compliance_detail&quot;] = complianceArr.ToString(Newtonsoft.Json.Formatting.None);&#xD;&#xA;enriched[&quot;compliance_fail_count&quot;] = violationsArr.Count;&#xD;&#xA;&#xD;&#xA;// --- 7. Map triggers ---&#xD;&#xA;var triggersArr = report[&quot;triggers&quot;] as Newtonsoft.Json.Linq.JArray;&#xD;&#xA;enriched[&quot;trigger_count&quot;] = triggersArr.Count;&#xD;&#xA;enriched[&quot;triggerwords&quot;] = string.Join(&quot;, &quot;, triggersArr.Select(t =&gt; t[&quot;word&quot;].Value&lt;string&gt;()));&#xD;&#xA;&#xD;&#xA;// --- 8. DERIVED FLAGS (USE PRE-COMPUTED WHERE AVAILABLE) ---&#xD;&#xA;&#xD;&#xA;// sentiment_category&#xD;&#xA;if (report[&quot;sentiment_category&quot;] != null) {&#xD;&#xA;    enriched[&quot;call_sentiment&quot;] = report[&quot;sentiment_category&quot;].Value&lt;int&gt;();&#xD;&#xA;} else {&#xD;&#xA;    double agentSent = sentiment[&quot;agent&quot;].Value&lt;double&gt;();&#xD;&#xA;    double avgSent = (agentSent + custSent) / 2.0;&#xD;&#xA;    enriched[&quot;call_sentiment&quot;] = avgSent &gt; 0.2 ? 1 : (avgSent &lt; -0.2 ? -1 : 0);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// escalation_flag&#xD;&#xA;if (report[&quot;escalation_flag&quot;] != null) {&#xD;&#xA;    enriched[&quot;escalation_flag&quot;] = report[&quot;escalation_flag&quot;].Value&lt;bool&gt;() ? 0 : 1;&#xD;&#xA;} else {&#xD;&#xA;    bool escalated = resolution == &quot;unresolved&quot; || violationsArr.Count &gt;= 2;&#xD;&#xA;    enriched[&quot;escalation_flag&quot;] = escalated ? 0 : 1;&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// These still computed from violations/triggers&#xD;&#xA;enriched[&quot;compliance_flag&quot;] = violationsArr.Count == 0 ? 0 : 1;&#xD;&#xA;enriched[&quot;triggerword_flag&quot;] = triggersArr.Count &gt; 0 ? 0 : 1;&#xD;&#xA;enriched[&quot;call_resolved_flag&quot;] = resolution == &quot;resolved&quot; ? 0 : 1;&#xD;&#xA;&#xD;&#xA;var iv = complianceArr.FirstOrDefault(c =&gt; c[&quot;id&quot;]?.Value&lt;string&gt;() == &quot;identity_verification&quot;);&#xD;&#xA;bool preverified = iv != null &amp;&amp; iv[&quot;status&quot;]?.Value&lt;string&gt;() == &quot;PASS&quot;;&#xD;&#xA;enriched[&quot;preverified_flag&quot;] = preverified ? 0 : 1;&#xD;&#xA;&#xD;&#xA;// FIX: Map pii_digits_detected&#xD;&#xA;bool piiDetected = report[&quot;pii_digits_detected&quot;].Value&lt;bool&gt;();&#xD;&#xA;enriched[&quot;pii_digits_detected&quot;] = piiDetected ? 0 : 1;&#xD;&#xA;&#xD;&#xA;// FIX: Map repeatcall_flag&#xD;&#xA;enriched[&quot;repeatcall_flag&quot;] = isFollowup ? 0 : 1;&#xD;&#xA;&#xD;&#xA;// --- 9. FOLLOW-UP ITEMS (USE PRE-COMPUTED WHERE AVAILABLE) ---&#xD;&#xA;&#xD;&#xA;if (report[&quot;followup_items&quot;] != null) {&#xD;&#xA;    var followupItems = report[&quot;followup_items&quot;] as Newtonsoft.Json.Linq.JArray;&#xD;&#xA;    enriched[&quot;followup_item1&quot;] = followupItems.Count &gt; 0 ? followupItems[0].Value&lt;string&gt;() : null;&#xD;&#xA;    enriched[&quot;followup_item2&quot;] = followupItems.Count &gt; 1 ? followupItems[1].Value&lt;string&gt;() : null;&#xD;&#xA;    enriched[&quot;followup_item3&quot;] = followupItems.Count &gt; 2 ? followupItems[2].Value&lt;string&gt;() : null;&#xD;&#xA;} else {&#xD;&#xA;    var followups = new System.Collections.Generic.List&lt;string&gt;();&#xD;&#xA;    string intent = report[&quot;intent&quot;].Value&lt;string&gt;();&#xD;&#xA;&#xD;&#xA;    if (resolution == &quot;unresolved&quot;) {&#xD;&#xA;        followups.Add(&quot;Follow up with customer to resolve open issue: &quot; + intent);&#xD;&#xA;    }&#xD;&#xA;    if (violationsArr.Count &gt; 0) {&#xD;&#xA;        followups.Add(&quot;Review compliance violations with agent&quot;);&#xD;&#xA;    }&#xD;&#xA;    if (isFollowup) {&#xD;&#xA;        followups.Add(&quot;Verify previous issue resolution status&quot;);&#xD;&#xA;    }&#xD;&#xA;    if (report[&quot;fraud_risk&quot;].Value&lt;string&gt;() == &quot;high&quot;) {&#xD;&#xA;        followups.Add(&quot;Escalate to fraud investigation team&quot;);&#xD;&#xA;    }&#xD;&#xA;    if (followups.Count == 0) {&#xD;&#xA;        followups.Add(&quot;Send satisfaction survey to customer&quot;);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    enriched[&quot;followup_item1&quot;] = followups.Count &gt; 0 ? followups[0] : null;&#xD;&#xA;    enriched[&quot;followup_item2&quot;] = followups.Count &gt; 1 ? followups[1] : null;&#xD;&#xA;    enriched[&quot;followup_item3&quot;] = followups.Count &gt; 2 ? followups[2] : null;&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// --- 10. ROUTING DECISION ---&#xD;&#xA;string route = &quot;normal&quot;;&#xD;&#xA;string fraudRisk = report[&quot;fraud_risk&quot;].Value&lt;string&gt;();&#xD;&#xA;&#xD;&#xA;if (fraudRisk == &quot;high&quot;) route = &quot;fraud&quot;;&#xD;&#xA;else if (violationsArr.Count &gt;= 3) route = &quot;compliance&quot;;&#xD;&#xA;else if (report[&quot;escalation_flag&quot;] != null &amp;&amp; report[&quot;escalation_flag&quot;].Value&lt;bool&gt;()) route = &quot;escalation&quot;;&#xD;&#xA;else if (custSent &lt; -0.8) route = &quot;retention&quot;;&#xD;&#xA;&#xD;&#xA;// FIXED: Assign JObject directly&#xD;&#xA;out_EnrichedJson = enriched;&#xD;&#xA;out_RouteToQueue = route;" DisplayName="Invoke Code : Enrich JSON" sap:VirtualizedContainerService.HintSize="477.6,196.8" sap2010:WorkflowViewState.IdRef="InvokeCode_2" Language="CSharp">
+                  <ui:InvokeCode.Arguments>
+                    <InArgument x:TypeArguments="njl:JObject" x:Key="in_ReportJson">[in_ReportJson]</InArgument>
+                    <OutArgument x:TypeArguments="njl:JObject" x:Key="out_EnrichedJson">[enrichedJson]</OutArgument>
+                    <OutArgument x:TypeArguments="x:String" x:Key="out_RouteToQueue">[routeToQueue]</OutArgument>
+                  </ui:InvokeCode.Arguments>
+                </ui:InvokeCode>
+                <ui:MultipleAssign DisplayName="Multiple Assign" sap:VirtualizedContainerService.HintSize="477.6,265.6" sap2010:WorkflowViewState.IdRef="MultipleAssign_1">
+                  <ui:MultipleAssign.AssignOperations>
+                    <scg:List x:TypeArguments="ui:AssignOperation" Capacity="8">
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_1">
+                        <ui:AssignOperation.To>
+                          <OutArgument x:TypeArguments="njl:JObject">[out_EnrichedJson]</OutArgument>
+                        </ui:AssignOperation.To>
+                        <ui:AssignOperation.Value>
+                          <InArgument x:TypeArguments="njl:JObject">[enrichedJson]</InArgument>
+                        </ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_3">
+                        <ui:AssignOperation.To>
+                          <OutArgument x:TypeArguments="x:String">[out_RouteToQueue]</OutArgument>
+                        </ui:AssignOperation.To>
+                        <ui:AssignOperation.Value>
+                          <InArgument x:TypeArguments="x:String">[routeToQueue]</InArgument>
+                        </ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_4">
+                        <ui:AssignOperation.To>
+                          <OutArgument x:TypeArguments="x:Boolean">[out_ReviewFlag]</OutArgument>
+                        </ui:AssignOperation.To>
+                        <ui:AssignOperation.Value>
+                          <InArgument x:TypeArguments="x:Boolean">[reviewFlag]</InArgument>
+                        </ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_5">
+                        <ui:AssignOperation.To>
+                          <OutArgument x:TypeArguments="x:Boolean">[out_ValidationPassed]</OutArgument>
+                        </ui:AssignOperation.To>
+                        <ui:AssignOperation.Value>
+                          <InArgument x:TypeArguments="x:Boolean">True</InArgument>
+                        </ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_6">
+                        <ui:AssignOperation.To>
+                          <OutArgument x:TypeArguments="x:String">[out_ErrorMessage]</OutArgument>
+                        </ui:AssignOperation.To>
+                        <ui:AssignOperation.Value>
+                          <InArgument x:TypeArguments="x:String">[String.Empty]</InArgument>
+                        </ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                    </scg:List>
+                  </ui:MultipleAssign.AssignOperations>
+                </ui:MultipleAssign>
+              </Sequence>
+            </If.Then>
+            <If.Else>
+              <Sequence DisplayName="Else" sap:VirtualizedContainerService.HintSize="511.2,530.4" sap2010:WorkflowViewState.IdRef="Sequence_6">
+                <sap:WorkflowViewStateService.ViewState>
+                  <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                    <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+                  </scg:Dictionary>
+                </sap:WorkflowViewStateService.ViewState>
+                <ui:LogMessage DisplayName="Log Validation Failed" sap:VirtualizedContainerService.HintSize="477.6,174.4" sap2010:WorkflowViewState.IdRef="LogMessage_3" Level="Error" Message="[&quot;Validation FAILED: &quot; &amp; validationErrors]" />
+                <ui:MultipleAssign DisplayName="Multiple Assign" sap:VirtualizedContainerService.HintSize="477.6,296" sap2010:WorkflowViewState.IdRef="MultipleAssign_2">
+                  <ui:MultipleAssign.AssignOperations>
+                    <scg:List x:TypeArguments="ui:AssignOperation" Capacity="8">
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_2">
+                        <ui:AssignOperation.To>
+                          <OutArgument x:TypeArguments="x:Boolean">[out_ValidationPassed]</OutArgument>
+                        </ui:AssignOperation.To>
+                        <ui:AssignOperation.Value>
+                          <InArgument x:TypeArguments="x:Boolean">False</InArgument>
+                        </ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_7">
+                        <ui:AssignOperation.To>
+                          <OutArgument x:TypeArguments="x:String">[out_ValidationErrors]</OutArgument>
+                        </ui:AssignOperation.To>
+                        <ui:AssignOperation.Value>
+                          <InArgument x:TypeArguments="x:String">[validationErrors]</InArgument>
+                        </ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_8">
+                        <ui:AssignOperation.To>
+                          <OutArgument x:TypeArguments="x:String">[out_ErrorMessage]</OutArgument>
+                        </ui:AssignOperation.To>
+                        <ui:AssignOperation.Value>
+                          <InArgument x:TypeArguments="x:String">[validationErrors]</InArgument>
+                        </ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_9">
+                        <ui:AssignOperation.To>
+                          <OutArgument x:TypeArguments="njl:JObject">[out_EnrichedJson]</OutArgument>
+                        </ui:AssignOperation.To>
+                        <ui:AssignOperation.Value>
+                          <InArgument x:TypeArguments="njl:JObject">[Nothing]</InArgument>
+                        </ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_10">
+                        <ui:AssignOperation.To>
+                          <OutArgument x:TypeArguments="x:String">[out_RouteToQueue]</OutArgument>
+                        </ui:AssignOperation.To>
+                        <ui:AssignOperation.Value>
+                          <InArgument x:TypeArguments="x:String">[String.Empty]</InArgument>
+                        </ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_11">
+                        <ui:AssignOperation.To>
+                          <OutArgument x:TypeArguments="x:Boolean">[out_ReviewFlag]</OutArgument>
+                        </ui:AssignOperation.To>
+                        <ui:AssignOperation.Value>
+                          <InArgument x:TypeArguments="x:Boolean">False</InArgument>
+                        </ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                    </scg:List>
+                  </ui:MultipleAssign.AssignOperations>
+                </ui:MultipleAssign>
+              </Sequence>
+            </If.Else>
+          </If>
+        </Sequence>
+      </TryCatch.Try>
+      <TryCatch.Catches>
+        <Catch x:TypeArguments="s:Exception" sap2010:WorkflowViewState.IdRef="Catch`1_1">
+          <ActivityAction x:TypeArguments="s:Exception">
+            <ActivityAction.Argument>
+              <DelegateInArgument x:TypeArguments="s:Exception" Name="exception" />
+            </ActivityAction.Argument>
+            <Sequence DisplayName="Catch {ExceptionType}" sap:VirtualizedContainerService.HintSize="546.4,612" sap2010:WorkflowViewState.IdRef="Sequence_4">
+              <sap:WorkflowViewStateService.ViewState>
+                <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                  <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+                </scg:Dictionary>
+              </sap:WorkflowViewStateService.ViewState>
+              <Assign sap:VirtualizedContainerService.HintSize="512.8,174.4" sap2010:WorkflowViewState.IdRef="Assign_1">
+                <Assign.To>
+                  <OutArgument x:TypeArguments="x:String">[errorMessage]</OutArgument>
+                </Assign.To>
+                <Assign.Value>
+                  <InArgument x:TypeArguments="x:String">[exception.Message]</InArgument>
+                </Assign.Value>
+              </Assign>
+              <ui:LogMessage DisplayName="Log Exception" sap:VirtualizedContainerService.HintSize="512.8,174.4" sap2010:WorkflowViewState.IdRef="LogMessage_4" Level="Error" Message="[&quot;Unhandled exception: &quot; &amp; exception.Message]" />
+              <ui:MultipleAssign DisplayName="Multiple Assign" sap:VirtualizedContainerService.HintSize="512.8,203.2" sap2010:WorkflowViewState.IdRef="MultipleAssign_3">
+                <ui:MultipleAssign.AssignOperations>
+                  <scg:List x:TypeArguments="ui:AssignOperation" Capacity="4">
+                    <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_12">
+                      <ui:AssignOperation.To>
+                        <OutArgument x:TypeArguments="x:Boolean">[out_ValidationPassed]</OutArgument>
+                      </ui:AssignOperation.To>
+                      <ui:AssignOperation.Value>
+                        <InArgument x:TypeArguments="x:Boolean">False</InArgument>
+                      </ui:AssignOperation.Value>
+                    </ui:AssignOperation>
+                    <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_13">
+                      <ui:AssignOperation.To>
+                        <OutArgument x:TypeArguments="x:String">[out_ErrorMessage]</OutArgument>
+                      </ui:AssignOperation.To>
+                      <ui:AssignOperation.Value>
+                        <InArgument x:TypeArguments="x:String">[errorMessage]</InArgument>
+                      </ui:AssignOperation.Value>
+                    </ui:AssignOperation>
+                    <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_14">
+                      <ui:AssignOperation.To>
+                        <OutArgument x:TypeArguments="x:String">[out_ValidationErrors]</OutArgument>
+                      </ui:AssignOperation.To>
+                      <ui:AssignOperation.Value>
+                        <InArgument x:TypeArguments="x:String">[errorMessage]</InArgument>
+                      </ui:AssignOperation.Value>
+                    </ui:AssignOperation>
+                  </scg:List>
+                </ui:MultipleAssign.AssignOperations>
+              </ui:MultipleAssign>
+            </Sequence>
+          </ActivityAction>
+        </Catch>
+      </TryCatch.Catches>
+      <TryCatch.Finally>
+        <Sequence DisplayName="Finally" sap:VirtualizedContainerService.HintSize="546.4,89.6" sap2010:WorkflowViewState.IdRef="Sequence_3">
+          <sap:WorkflowViewStateService.ViewState>
+            <scg:Dictionary x:TypeArguments="x:String, x:Object">
+              <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+            </scg:Dictionary>
+          </sap:WorkflowViewStateService.ViewState>
+        </Sequence>
+      </TryCatch.Finally>
+    </TryCatch>
+    <ui:LogMessage DisplayName="Log End" sap:VirtualizedContainerService.HintSize="548,165.6" sap2010:WorkflowViewState.IdRef="LogMessage_5" Level="Info" Message="[&quot;Sub_ValidateAndEnrichJSON completed. Valid: &quot; &amp; out_ValidationPassed.ToString &amp; &quot;, Route: &quot; &amp; out_RouteToQueue]" />
+  </Sequence>
+</Activity>

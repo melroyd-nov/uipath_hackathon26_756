@@ -442,6 +442,10 @@ The BPMN was **re-updated** to reflect that the system receives **pre-analyzed J
 | 2026-06-19 | OpenCode (kimi-k2.6) | ✅ Re-updated BPMN to reflect friend's JSON input structure (15 new fields mapped) |
 | 2026-06-22 | OpenCode (kimi-k2.6) | ✅ Added 15 fields to CallRecord entity via CLI. Cleared all test records. Re-seeded AiUsage singleton. Updated all docs. |
 | 2026-06-22 | OpenCode (kimi-k2.6) | ✅ Added `agent_id` field. `call_metadata` now structured JSON (not raw string). Populated call_date, call_start_time, call_end_time, caller_number, caller_name, agent_name from metadata. Inserted Scenario 1 record successfully. |
+| 2026-06-22 | OpenCode (kimi-k2.6) | ✅ Created `DASHBOARD_DATA_COVERAGE_ANALYSIS.md` — cross-referenced dashboard mock data with agent JSON output. Identified 60-70% coverage, critical gaps in follow-ups, agent profiles, marketing opportunities. |
+| 2026-06-22 | OpenCode (kimi-k2.6) | ✅ Created `JSON_VALIDATION_LAYER_DESIGN.md` — comprehensive validation layer architecture for Maestro Flow. Recommends replacing original 7-branch AI parallel gateway with validation + enrichment subprocess. 4 validation steps, 15 enrichment operations, routing matrix, updated BPMN task list. |
+| 2026-06-22 | OpenCode (kimi-k2.6) | ✅ Created `BPMN_MODIFICATION_GUIDE.md` — detailed step-by-step instructions for modifying `CurrentBPMNXML.bpmn` exported from UiPath Studio Web. Covers REMOVE (3 docs updates), ADD (1 subprocess + 14 elements), UPDATE (3 elements including 43-field body mapping), JOIN (15 flow changes). Includes variable additions and validation rule implementations. |
+| 2026-06-22 | OpenCode (kimi-k2.6) | ✅ Created `SUB_VALIDATEANDENRICHJSON_SETUP_GUIDE.md` — complete UiPath Studio drag-and-drop setup guide for the validation/enrichment RPA workflow. 24 activities with exact property values, 2 C# Invoke Code blocks (validation + enrichment), 3 test scenarios, BPMN integration instructions. |
 
 ---
 
