@@ -66,6 +66,7 @@ def build_report(state: dict) -> CallReport:
     rollup = state.get("rollup", {})
     followup = state.get("followup", {})
     compliance = state.get("compliance", [])
+    identity = state.get("caller_identity", {})
 
     talk_by_role = defaultdict(float)
     for spk, sec in talk.items():
@@ -129,6 +130,10 @@ def build_report(state: dict) -> CallReport:
         followup_items=state.get("followup_actions", []),
         followup_priority=priority,
         followup_assigned_to=E.assign_specialist(intent),
+        # Masked caller identity ("NA" when the node didn't run or nothing was stated).
+        caller_nric=identity.get("caller_nric", "NA"),
+        caller_dob=identity.get("caller_dob", "NA"),
+        policy_number=identity.get("policy_number", "NA"),
     )
 
 
