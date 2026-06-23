@@ -4,7 +4,7 @@ and the LangGraph CallState.
 from __future__ import annotations
 
 from typing import Any, Literal, Optional, TypedDict
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 Status = Literal["PASS", "FAIL", "NA"]
 
@@ -59,6 +59,15 @@ class FollowupActions(BaseModel):
     )
 
 
+class CallerIdentity(BaseModel):
+    # Caller identifiers spoken during verification (not in the raw analysis JSON). Required
+    # (no defaults) so the model is forced to emit each — it returns the literal "NA" when a
+    # value was never stated. Raw values are MASKED downstream before they reach the report.
+    nric: str = Field(description="the caller's national ID / NRIC exactly as stated in the call, or 'NA' if never stated")
+    dob: str = Field(description="the caller's date of birth exactly as stated in the call, or 'NA' if never stated")
+    policy_number: str = Field(description="the insurance policy number exactly as stated in the call, or 'NA' if never stated")
+
+
 # --------------------------------------------------------------------------------------
 # Data records
 # --------------------------------------------------------------------------------------
@@ -105,6 +114,14 @@ class ComplianceItem(BaseModel):
 # Public output contract (mirrors notebook §10 call_<rec>.json) — UiPath Coded Agent I/O
 # --------------------------------------------------------------------------------------
 
+# String-valued report fields the BPMN consumer requires as non-null text (see validator below).
+_NA_STRING_FIELDS = (
+    "summary", "intent", "resolution", "fraud_risk", "fraud_reason", "followup_evidence",
+    "marketing_opportunity", "followup_priority", "followup_assigned_to",
+    "caller_nric", "caller_dob", "policy_number",
+)
+
+
 class CallReport(BaseModel):
     recording: str
     duration_sec: Optional[float] = None
@@ -144,7 +161,25 @@ class CallReport(BaseModel):
     followup_priority: Optional[str] = None
     followup_assigned_to: Optional[str] = None
 
+    # --- Caller identity (extracted from transcript, MASKED) — sensitive PII ---
+    # NRIC/policy masked to last 4 (e.g. S••••567A); DOB reduced to year. "NA" when not stated.
+    caller_nric: str = "NA"
+    caller_dob: str = "NA"
+    policy_number: str = "NA"
+
     artifacts: dict[str, str] = Field(default_factory=dict)
+
+    # The downstream BPMN process indexes report keys directly and breaks on a null where it
+    # expects text. Every string-valued field must therefore be present AND non-null: coerce
+    # any missing/blank string to the literal "NA". Numeric/bool/list/dict fields keep their
+    # types (the key is always emitted by model_dump, so none are ever dropped).
+    @model_validator(mode="after")
+    def _na_for_missing_strings(self):
+        for name in _NA_STRING_FIELDS:
+            val = getattr(self, name, None)
+            if val is None or (isinstance(val, str) and not val.strip()):
+                setattr(self, name, "NA")
+        return self
 
 
 # --------------------------------------------------------------------------------------
@@ -169,5 +204,6 @@ class CallState(TypedDict, total=False):
     followup: dict
     rollup: dict
     followup_actions: list[str]
+    caller_identity: dict      # {caller_nric, caller_dob, policy_number} (masked)
     report: dict               # CallReport.model_dump()
     artifacts: dict[str, str]
