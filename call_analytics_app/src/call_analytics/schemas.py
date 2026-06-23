@@ -49,6 +49,16 @@ class Rollup(BaseModel):
     fraud_reason: str = Field(description="short reason for the fraud risk; empty string if low/none")
 
 
+class FollowupActions(BaseModel):
+    # Required (no default) so constrained decoding actually generates the list — see the
+    # note above ComplianceVerdict. An empty list is valid when no follow-up is warranted.
+    action_items: list[str] = Field(
+        description="0 to 3 concrete next-step action items a supervisor/agent should take "
+        "after this call (each a short imperative, e.g. 'Call the customer back to confirm "
+        "the retention discount was applied'). Empty list if the call needs no follow-up."
+    )
+
+
 # --------------------------------------------------------------------------------------
 # Data records
 # --------------------------------------------------------------------------------------
@@ -117,6 +127,23 @@ class CallReport(BaseModel):
     quality: dict[str, Any] = Field(default_factory=dict)
     # Role-labeled transcript for audit/debug: each turn's role, timing, text and sentiment.
     transcript: list[dict] = Field(default_factory=list)
+
+    # --- Derived dashboard fields (computed by our agent; not in the raw analysis) ---
+    # Categorical sentiment (-1/0/1) mapped from the decimal sentiment_avg, for the
+    # dashboard's positive/neutral/negative counts.
+    sentiment_category: Optional[int] = None
+    sentiment_category_by_role: dict[str, Optional[int]] = Field(default_factory=dict)
+    # Escalation: derived (unresolved OR any compliance violation).
+    escalation_flag: Optional[bool] = None
+    # Friction composite for this call (0..100): weighted negative/escalation/repeat.
+    friction_score: Optional[float] = None
+    # Marketing opportunity class derived from intent (Upsell/Cross-sell/Retention/Referral/None).
+    marketing_opportunity: Optional[str] = None
+    # AI-generated supervisor follow-up (action items + derived priority + specialist owner).
+    followup_items: list[str] = Field(default_factory=list)
+    followup_priority: Optional[str] = None
+    followup_assigned_to: Optional[str] = None
+
     artifacts: dict[str, str] = Field(default_factory=dict)
 
 
@@ -141,5 +168,6 @@ class CallState(TypedDict, total=False):
     pii_flag: bool
     followup: dict
     rollup: dict
+    followup_actions: list[str]
     report: dict               # CallReport.model_dump()
     artifacts: dict[str, str]
