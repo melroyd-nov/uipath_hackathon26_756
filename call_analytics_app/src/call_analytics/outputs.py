@@ -10,6 +10,7 @@ from .schemas import CallReport, ComplianceItem
 from .settings import get_settings
 from .analysis.heatmap import build_heatmap, detect_triggers
 from .analysis.roles import detect_call_opening
+from .analysis import enrichment as E
 
 
 def _role_sentiment(turns: list[dict], role: str):
@@ -73,26 +74,61 @@ def build_report(state: dict) -> CallReport:
     audio_emotion = {e["role"]: e["dominant"] for e in state.get("speaker_emotion", [])}
     dur = state.get("duration_sec")
 
+    intent = rollup.get("intent")
+    resolution = rollup.get("resolution")
+    fraud_risk = rollup.get("fraud_risk")
+    is_followup = followup.get("is_followup")
+    violations = [c["id"] for c in compliance if c["status"] == "FAIL"]
+
+    agent_sent = _role_sentiment(at, "AGENT")
+    cust_sent = _role_sentiment(at, "CUSTOMER")
+    # Overall decimal sentiment = mean of whichever role scores exist.
+    present = [v for v in (agent_sent, cust_sent) if v is not None]
+    overall_sent = sum(present) / len(present) if present else None
+
+    # --- Derived dashboard fields ---
+    agent_cat = E.categorize_sentiment(agent_sent)
+    cust_cat = E.categorize_sentiment(cust_sent)
+    overall_cat = E.categorize_sentiment(overall_sent)
+    escalation_flag = E.derive_escalation(resolution, violations)
+    friction = E.friction_score(
+        is_negative=(overall_cat == -1),
+        is_escalated=escalation_flag,
+        is_repeat=bool(is_followup),
+    )
+    priority = E.followup_priority(
+        escalation_flag=escalation_flag, fraud_risk=fraud_risk,
+        compliance_violations=violations, resolution=resolution,
+        customer_sentiment_cat=cust_cat,
+    )
+
     return CallReport(
         recording=rec,
         duration_sec=round(dur, 1) if dur else None,
         summary=rollup.get("summary"),
-        intent=rollup.get("intent"),
-        resolution=rollup.get("resolution"),
-        fraud_risk=rollup.get("fraud_risk"),
+        intent=intent,
+        resolution=resolution,
+        fraud_risk=fraud_risk,
         fraud_reason=rollup.get("fraud_reason"),
-        is_followup=followup.get("is_followup"),
+        is_followup=is_followup,
         followup_evidence=followup.get("evidence"),
-        sentiment_avg={"agent": _role_sentiment(at, "AGENT"),
-                       "customer": _role_sentiment(at, "CUSTOMER")},
+        sentiment_avg={"agent": agent_sent, "customer": cust_sent},
         talk_ratio_pct={r: round(100 * sec / total, 1) for r, sec in talk_by_role.items()},
         audio_emotion=audio_emotion,
         compliance=[ComplianceItem(**c) for c in compliance],
-        compliance_violations=[c["id"] for c in compliance if c["status"] == "FAIL"],
+        compliance_violations=violations,
         pii_digits_detected=state.get("pii_flag"),
         triggers=detect_triggers(at),
         quality=_assess_quality(at, roles),
         transcript=_build_transcript(at),
+        sentiment_category=overall_cat,
+        sentiment_category_by_role={"agent": agent_cat, "customer": cust_cat},
+        escalation_flag=escalation_flag,
+        friction_score=friction,
+        marketing_opportunity=E.marketing_opportunity(intent),
+        followup_items=state.get("followup_actions", []),
+        followup_priority=priority,
+        followup_assigned_to=E.assign_specialist(intent),
     )
 
 
