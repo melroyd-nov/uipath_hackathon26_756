@@ -446,7 +446,17 @@ The BPMN was **re-updated** to reflect that the system receives **pre-analyzed J
 | 2026-06-22 | OpenCode (kimi-k2.6) | ✅ Created `JSON_VALIDATION_LAYER_DESIGN.md` — comprehensive validation layer architecture for Maestro Flow. Recommends replacing original 7-branch AI parallel gateway with validation + enrichment subprocess. 4 validation steps, 15 enrichment operations, routing matrix, updated BPMN task list. |
 | 2026-06-22 | OpenCode (kimi-k2.6) | ✅ Created `BPMN_MODIFICATION_GUIDE.md` — detailed step-by-step instructions for modifying `CurrentBPMNXML.bpmn` exported from UiPath Studio Web. Covers REMOVE (3 docs updates), ADD (1 subprocess + 14 elements), UPDATE (3 elements including 43-field body mapping), JOIN (15 flow changes). Includes variable additions and validation rule implementations. |
 | 2026-06-22 | OpenCode (kimi-k2.6) | ✅ Created `SUB_VALIDATEANDENRICHJSON_SETUP_GUIDE.md` — complete UiPath Studio drag-and-drop setup guide for the validation/enrichment RPA workflow. 24 activities with exact property values, 2 C# Invoke Code blocks (validation + enrichment), 3 test scenarios, BPMN integration instructions. |
+| 2026-06-23 | OpenCode (kimi-k2.6) | ✅ Created `BPMN_VISUAL_BUILD_GUIDE.md` — simplified visual BPMN guide with ASCII diagram, numbered tasks [1]-[20], and step-by-step build instructions for UiPath Studio drag-and-drop. |
+| 2026-06-23 | OpenCode (kimi-k2.6) | ✅ Created `BPMN_TASK_GUIDES/` folder with 21 files — one `.md` per BPMN node (Tasks 01-20 + README index). Each file contains exact mapping, connector config, and build steps. |
+| 2026-06-23 | OpenCode (kimi-k2.6) | ✅ Created `ENRICHED_OUTPUT_ANALYSIS.md` — analyzed the 43-field enriched JSON output vs Data Fabric schema. Identified 2 bugs (missing `pii_digits_detected` and `repeatcall_flag` mappings in RPA). |
+| 2026-06-23 | OpenCode (kimi-k2.6) | ✅ Updated `Task_06` name from "Reject JSON and Queue for Retry" → "Reject JSON and Log Error" (honest naming — no retry queue exists). Updated all cross-references. |
+| 2026-06-23 | OpenCode (kimi-k2.6) | ✅ Completely rewrote `Task_07_StoreCallRecord.md` with complete field-by-field mapping table showing all 43 CallRecord columns side-by-side with enriched JSON keys. |
+| 2026-06-23 | OpenCode (kimi-k2.6) | ✅ Friend updated agent JSON with pre-computed fields: `sentiment_category`, `escalation_flag`, `followup_items[]`, `followup_priority`, `followup_assigned_to`, `friction_score`, `marketing_opportunity`. |
+| 2026-06-23 | OpenCode (kimi-k2.6) | ✅ Updated `Sub_ValidateAndEnrichJSON` RPA workflow (`Main.xaml`): changed `in_ReportJson` from `String` → `JObject`, `out_EnrichedJson` from `String` → `JObject`. Updated both InvokeCode blocks to accept JObject directly (no Parse). Added support for friend's pre-computed fields with fallback logic. Fixed `pii_digits_detected` and `repeatcall_flag` mappings. |
+| 2026-06-23 | OpenCode (kimi-k2.6) | ✅ Created `SUB_VALIDATEANDENRICHJSON_UPDATES.md` — complete update guide documenting all RPA changes for the new JObject types and pre-computed fields. Includes full C# code blocks. |
+| 2026-06-23 | OpenCode (kimi-k2.6) | ✅ Created `CALLRECORD_TO_ENRICHEDJSON_MAPPING.md` — two-column table mapping all 43 CallRecord columns to enriched JSON keys for manual Data Fabric body construction. |
+| 2026-06-23 | OpenCode (kimi-k2.6) | ✅ Git committed `Claude.md` and `uipath_workflows/` folder. Commit `16e92fe`: "Update Claude.md and RPA workflow Sub_ValidateAndEnrichJSON". |
 
 ---
 
-*End of Claude.md — Last updated: 2026-06-19 by OpenCode*
+*End of Claude.md — Last updated: 2026-06-23 by OpenCode*
