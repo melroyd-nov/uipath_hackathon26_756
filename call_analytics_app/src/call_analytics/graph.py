@@ -82,6 +82,11 @@ def n_followup_actions(state: CallState) -> dict:
     return {"followup_actions": items}
 
 
+def n_identity(state: CallState) -> dict:
+    # Caller identifiers spoken during verification; values are masked inside extract_identity.
+    return {"caller_identity": AN.extract_identity(state["segments_text"])}
+
+
 def n_persist(state: CallState) -> dict:
     report = O.build_report(state)
     report = O.write_artifacts(state, report)
@@ -101,10 +106,12 @@ def build_graph():
     g.add_node("followup", n_followup)
     g.add_node("rollup", n_rollup)
     g.add_node("followup_actions", n_followup_actions)
+    g.add_node("identity", n_identity)
     g.add_node("persist", n_persist)
 
     order = ["load_audio", "transcribe", "diarize", "align", "roles", "sentiment",
-             "emotion", "compliance", "followup", "rollup", "followup_actions", "persist"]
+             "emotion", "compliance", "followup", "rollup", "followup_actions",
+             "identity", "persist"]
     g.add_edge(START, order[0])
     for a, b in zip(order, order[1:]):
         g.add_edge(a, b)
