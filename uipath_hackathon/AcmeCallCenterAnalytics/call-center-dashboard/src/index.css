@@ -48,10 +48,34 @@
   --surface-card: var(--color-paper);
 }
 
+.dark {
+  --color-obsidian: #f0eeec;
+  --color-graphite: #d6d6d6;
+  --color-slate: #9b9b9b;
+  --color-mist: #6b6b6b;
+  --color-silver: #34343a;
+  --color-bone: #14141a;
+  --color-paper: #1d1d24;
+  --color-blush: #2a1f23;
+
+  --color-status-live-bg: #16301f;
+  --color-status-hold-bg: #3a2f12;
+  --color-status-escalated-bg: #3a1f1c;
+  --color-status-resolved-bg: #16313a;
+
+  --shadow-subtle: rgba(0, 0, 0, 0.3) 0px 1px 2px 0px;
+  --shadow-md: rgba(0, 0, 0, 0.4) 0px 8px 16px 0px;
+}
+
 body {
   font-family: var(--font-switzer);
   background-color: var(--surface-canvas);
   color: var(--color-obsidian);
+}
+
+.app-texture {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  background-attachment: fixed;
 }
 
 @keyframes fade-in {

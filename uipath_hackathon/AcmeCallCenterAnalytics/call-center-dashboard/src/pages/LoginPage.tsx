@@ -14,7 +14,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex h-screen bg-canvas">
+    <div className="app-texture flex h-screen bg-canvas">
       <div className="hidden w-1/2 flex-col justify-between bg-graphite p-10 lg:flex">
         <span className="font-editorial text-xl text-white">n.</span>
         <div>

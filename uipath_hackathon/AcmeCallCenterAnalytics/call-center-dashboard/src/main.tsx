@@ -7,6 +7,8 @@ import { AuthProvider } from './hooks/useAuth';
 import App from './App';
 import './index.css';
 
+document.documentElement.classList.toggle('dark', localStorage.getItem('cc_theme') === 'dark');
+
 const queryClient = new QueryClient();
 
 const uipathConfig: UiPathSDKConfig = {
