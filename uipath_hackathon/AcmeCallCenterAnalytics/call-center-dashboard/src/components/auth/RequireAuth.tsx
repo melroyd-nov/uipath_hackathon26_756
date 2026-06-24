@@ -14,7 +14,7 @@ export default function RequireAuth({ children }: { children: ReactNode }) {
 
   if (!isAuthenticated) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4 bg-canvas">
+      <div className="app-texture flex h-screen flex-col items-center justify-center gap-4 bg-canvas">
         <div className="w-full max-w-sm rounded-card border border-silver bg-paper p-8 text-center shadow-card">
           <h2 className="font-editorial text-2xl text-obsidian">Connect to UiPath</h2>
           <p className="mt-2 text-sm text-slate">

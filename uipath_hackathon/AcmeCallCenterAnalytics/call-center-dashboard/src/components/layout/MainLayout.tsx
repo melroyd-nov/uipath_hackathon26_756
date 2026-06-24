@@ -9,11 +9,11 @@ export default function MainLayout() {
   const location = useLocation();
 
   return (
-    <div className="flex h-screen bg-canvas">
+    <div className="app-texture flex h-screen bg-canvas">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 scroll-smooth overflow-y-auto p-6">
           <Suspense
             fallback={
               <div className="flex h-full items-center justify-center">

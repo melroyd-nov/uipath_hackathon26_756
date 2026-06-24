@@ -1,5 +1,6 @@
 import { Info, Download } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { motion } from 'framer-motion';
 
 interface GlassPanelProps {
   title?: string;
@@ -12,7 +13,13 @@ interface GlassPanelProps {
 
 export default function GlassPanel({ title, subtitle, tooltip, onExport, children, className = '' }: GlassPanelProps) {
   return (
-    <section className={`rounded-card border border-silver bg-paper/80 p-6 shadow-card backdrop-blur-sm ${className}`}>
+    <motion.section
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className={`rounded-card border border-silver bg-paper/80 p-6 shadow-card backdrop-blur-sm ${className}`}
+    >
       {title && (
         <header className="mb-4 flex items-start justify-between gap-2">
           <div>
@@ -40,6 +47,6 @@ export default function GlassPanel({ title, subtitle, tooltip, onExport, childre
         </header>
       )}
       {children}
-    </section>
+    </motion.section>
   );
 }
