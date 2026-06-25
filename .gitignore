@@ -40,3 +40,9 @@ Thumbs.db
 
 # stray non-dot env (secrets) — never commit
 call_analytics_app/env
+completed task docs/
+BPMN_TASK_GUIDES/
+_studio_web_download/
+_bpmn_download_tmp/
+studio_web_solution/
+uipath_hackathon/Scripts/
