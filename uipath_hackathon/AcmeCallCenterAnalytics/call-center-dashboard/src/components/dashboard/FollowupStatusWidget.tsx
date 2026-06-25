@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ClipboardList, CheckCircle2, Loader2, CheckCheck, AlarmClock, Percent } from 'lucide-react';
 import GlassPanel from '../shared/GlassPanel';
 import LoadingSpinner from '../shared/LoadingSpinner';
-import { followupsApi } from '../../api/followups';
+import { useDataFabric, ENTITY_IDS } from '../../lib/dataFabric';
 
 const TILES: { key: string; label: string; icon: typeof ClipboardList; isPercent?: boolean }[] = [
   { key: 'pending', label: 'Needs Review', icon: ClipboardList },
@@ -15,10 +15,25 @@ const TILES: { key: string; label: string; icon: typeof ClipboardList; isPercent
 ];
 
 export default function FollowupStatusWidget() {
-  const { data, isLoading } = useQuery({
-    queryKey: ['followups-summary'],
-    queryFn: followupsApi.summary,
+  const { entities } = useDataFabric();
+
+  const { data: rawData, isLoading } = useQuery({
+    queryKey: ['df-followups-summary'],
+    queryFn: () => entities.getAllRecords(ENTITY_IDS.CallFollowup),
   });
+
+  const allItems = rawData?.items ?? [];
+  const STATUS_MAP: Record<number, string> = { 0: 'pending', 1: 'approved', 2: 'rejected', 3: 'in_progress', 4: 'completed' };
+  const statuses = allItems.map((r) => STATUS_MAP[Number(r.status)] ?? 'pending');
+  const completed = statuses.filter((s) => s === 'completed').length;
+  const data = {
+    pending: statuses.filter((s) => s === 'pending').length,
+    approved: statuses.filter((s) => s === 'approved').length,
+    in_progress: statuses.filter((s) => s === 'in_progress').length,
+    completed,
+    overdue: 0,
+    completion_rate: allItems.length > 0 ? Math.round((completed / allItems.length) * 100) : 0,
+  };
 
   return (
     <GlassPanel title="Follow-up Pipeline">

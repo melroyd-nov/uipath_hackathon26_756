@@ -12,10 +12,8 @@ import GlassPanel from '../components/shared/GlassPanel';
 import ChartInsight from '../components/shared/ChartInsight';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import EmptyState from '../components/shared/EmptyState';
-import { useFilters } from '../context/FilterContext';
-import { useDummyDataContext } from '../context/DummyDataContext';
-import { getFrictionPoints } from '../api/analytics';
-import { mockFrictionPoints } from '../data/mockFrictionData';
+import { useDataFabric } from '../lib/dataFabric';
+import { getDfFrictionScore } from '../api/dataFabricQueries';
 import { num } from '../utils/num';
 
 function SCORE_COLOR(score: number): string {
@@ -28,24 +26,30 @@ function ScoreLabel({ score }: { score: number }) {
   return <span className="text-[10px] text-emerald-600">Low friction</span>;
 }
 
+interface FrictionRow {
+  intent: string;
+  rank: number;
+  total_calls: number;
+  negative_pct: number;
+  escalation_pct: number;
+  repeat_call_pct: number;
+  friction_score: number;
+}
+
 export default function FrictionPage() {
-  const { startDate, endDate, agentFilter } = useFilters();
-  const filters = {
-    start_date: startDate ?? undefined,
-    end_date: endDate ?? undefined,
-    agent: agentFilter ?? undefined,
-  };
-  const { useDummyData } = useDummyDataContext();
+  const { entities } = useDataFabric();
   const [showMetricInfo, setShowMetricInfo] = useState(false);
 
   const friction = useQuery({
-    queryKey: ['friction-points', startDate, endDate, agentFilter],
-    queryFn: () => getFrictionPoints(filters),
-    enabled: !useDummyData,
+    queryKey: ['df-friction-score'],
+    queryFn: async (): Promise<FrictionRow[]> => {
+      const data = await getDfFrictionScore(entities);
+      return data as unknown as FrictionRow[];
+    },
   });
 
-  const rows = useDummyData ? mockFrictionPoints : friction.data ?? [];
-  const isLoading = !useDummyData && friction.isLoading;
+  const rows = friction.data ?? [];
+  const isLoading = friction.isLoading;
 
   const top3 = rows.slice(0, 3);
 
@@ -233,7 +237,7 @@ export default function FrictionPage() {
             </ResponsiveContainer>
             <ChartInsight
               prompt={`Which call intents have the highest friction scores combining negative sentiment, escalations, and repeat calls? What are the top 3 friction points and what actions would reduce customer effort for each? Data: ${JSON.stringify(rows)}`}
-              cacheKey={`friction-breakdown-${startDate}-${endDate}-${agentFilter}`}
+              cacheKey="friction-breakdown"
             />
           </>
         )}

@@ -7,10 +7,8 @@ import ChartInsight from '../components/shared/ChartInsight';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import EmptyState from '../components/shared/EmptyState';
 import HorizontalBarChart from '../components/charts/HorizontalBarChart';
-import { useFilters } from '../context/FilterContext';
-import { useDummyDataContext } from '../context/DummyDataContext';
-import { getMarketingOpportunities } from '../api/analytics';
-import { mockMarketingOpportunities } from '../data/mockMarketingData';
+import { useDataFabric } from '../lib/dataFabric';
+import { getDfIntentSummary } from '../api/dataFabricQueries';
 import { num } from '../utils/num';
 
 const BRAND_COLOR = '#6366F1';
@@ -36,23 +34,39 @@ function sentimentLabel(s: number): { label: string; className: string } {
 }
 
 export default function MarketingPage() {
-  const { startDate, endDate, agentFilter } = useFilters();
-  const filters = {
-    start_date: startDate ?? undefined,
-    end_date: endDate ?? undefined,
-    agent: agentFilter ?? undefined,
-  };
-  const { useDummyData } = useDummyDataContext();
+  const { entities } = useDataFabric();
   const [showMetricInfo, setShowMetricInfo] = useState(false);
 
+  interface MarketingRow {
+    intent: string;
+    call_count: number;
+    opportunity_type: string;
+    avg_sentiment: number;
+    positive_sentiment_pct: number;
+    conversion_score: number;
+    is_marketing: boolean;
+  }
+
   const opps = useQuery({
-    queryKey: ['marketing-opportunities', startDate, endDate, agentFilter],
-    queryFn: () => getMarketingOpportunities(filters),
-    enabled: !useDummyData,
+    queryKey: ['df-intent-summary-marketing'],
+    queryFn: async (): Promise<MarketingRow[]> => {
+      const all = await getDfIntentSummary(entities);
+      return all
+        .filter((r) => r.is_marketing === true)
+        .map((r) => ({
+          intent: String(r.intent ?? ''),
+          call_count: Number(r.count ?? 0),
+          opportunity_type: String(r.opportunity_type ?? ''),
+          avg_sentiment: Number(r.avg_sentiment ?? 0),
+          positive_sentiment_pct: Number(r.positive_sentiment_pct ?? 0),
+          conversion_score: Number(r.conversion_score ?? 0),
+          is_marketing: true,
+        }));
+    },
   });
 
-  const rows = useDummyData ? mockMarketingOpportunities : opps.data ?? [];
-  const isLoading = !useDummyData && opps.isLoading;
+  const rows = opps.data ?? [];
+  const isLoading = opps.isLoading;
 
   const totalCalls = rows.reduce((sum, r) => sum + num(r.call_count), 0);
   const highConversionCount = rows.filter((r) => num(r.conversion_score) >= HIGH_CONVERSION_THRESHOLD).length;
@@ -184,7 +198,7 @@ export default function MarketingPage() {
             />
             <ChartInsight
               prompt={`Analyse the marketing opportunity breakdown by type. Which opportunity type (Upsell, Cross-sell, Retention, Referral) has the highest call volume? What does this distribution reveal about customer behaviour and where should the marketing team focus? Data: ${JSON.stringify(typeBarData)}`}
-              cacheKey={`marketing-type-breakdown-${startDate}-${endDate}-${agentFilter}`}
+              cacheKey="marketing-type-breakdown"
             />
           </>
         )}
@@ -212,7 +226,7 @@ export default function MarketingPage() {
               />
               <ChartInsight
                 prompt={`Which call intents drive the most marketing opportunity volume? Among the top intents, what are the most actionable next steps for sales or marketing teams to convert these signals? Data: ${JSON.stringify(intentBarData)}`}
-                cacheKey={`marketing-intent-volume-${startDate}-${endDate}-${agentFilter}`}
+                cacheKey="marketing-intent-volume"
               />
             </>
           )}
@@ -242,7 +256,7 @@ export default function MarketingPage() {
               />
               <ChartInsight
                 prompt={`Analyse the conversion scores for each marketing opportunity intent. Which intents have the highest conversion potential (score ≥70) and which are underperforming? What actions would improve conversion rates for medium and low-scoring intents? Data: ${JSON.stringify(conversionBarData)}`}
-                cacheKey={`marketing-conversion-score-${startDate}-${endDate}-${agentFilter}`}
+                cacheKey="marketing-conversion-score"
               />
             </>
           )}

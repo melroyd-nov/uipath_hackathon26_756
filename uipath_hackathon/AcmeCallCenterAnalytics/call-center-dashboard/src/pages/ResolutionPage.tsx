@@ -9,19 +9,8 @@ import EmptyState from '../components/shared/EmptyState';
 import ResolutionDonutChart from '../components/charts/ResolutionDonutChart';
 import TrendLineChart from '../components/charts/TrendLineChart';
 import { useFilters } from '../context/FilterContext';
-import { useDummyDataContext } from '../context/DummyDataContext';
-import {
-  getResolutionOverview,
-  getResolutionTrend,
-  getRepeatCallsTrend,
-  getRepeatCallsByAgent,
-} from '../api/analytics';
-import {
-  mockResolutionOverview,
-  mockResolutionTrend,
-  mockRepeatCallTrend,
-  mockRepeatCallByAgent,
-} from '../data/mockResolutionData';
+import { useDataFabric } from '../lib/dataFabric';
+import { getDfKpiSummary, getDfKpiTrends, getDfAgentSummary } from '../api/dataFabricQueries';
 import { num } from '../utils/num';
 
 const BRAND_COLOR = '#6366F1';
@@ -34,48 +23,62 @@ function repeatRateClass(pct: number): string {
 }
 
 export default function ResolutionPage() {
-  const { startDate, endDate, agentFilter } = useFilters();
-  const filters = {
-    start_date: startDate ?? undefined,
-    end_date: endDate ?? undefined,
-    agent: agentFilter ?? undefined,
-  };
-  const { useDummyData } = useDummyDataContext();
+  const { entities } = useDataFabric();
   const [showMetricInfo, setShowMetricInfo] = useState(false);
 
-  const overview = useQuery({
-    queryKey: ['resolution-overview', startDate, endDate, agentFilter],
-    queryFn: () => getResolutionOverview(filters),
-    enabled: !useDummyData,
+  const kpiSummary = useQuery({
+    queryKey: ['df-dashboard-summary'],
+    queryFn: () => getDfKpiSummary(entities),
   });
 
-  const resTrend = useQuery({
-    queryKey: ['resolution-trend', startDate, endDate, agentFilter],
-    queryFn: () => getResolutionTrend(filters),
-    enabled: !useDummyData,
+  const kpiTrends = useQuery({
+    queryKey: ['df-kpi-trends'],
+    queryFn: () => getDfKpiTrends(entities),
   });
 
-  const repeatTrend = useQuery({
-    queryKey: ['repeat-call-trend', startDate, endDate, agentFilter],
-    queryFn: () => getRepeatCallsTrend(filters),
-    enabled: !useDummyData,
+  const agentSummary = useQuery({
+    queryKey: ['df-agent-summary'],
+    queryFn: () => getDfAgentSummary(entities),
   });
 
-  const repeatByAgent = useQuery({
-    queryKey: ['repeat-by-agent', startDate, endDate],
-    queryFn: () => getRepeatCallsByAgent({ start_date: startDate ?? undefined, end_date: endDate ?? undefined }),
-    enabled: !useDummyData,
-  });
+  const overviewData = kpiSummary.data
+    ? (() => {
+        const resPct = Number(kpiSummary.data.resolution_pct ?? 0);
+        const total = Number(kpiSummary.data.total_calls ?? 0);
+        return {
+          resolved_count: Math.round((resPct / 100) * total),
+          unresolved_count: Math.round(((100 - resPct) / 100) * total),
+          resolution_pct: resPct,
+        };
+      })()
+    : undefined;
 
-  const overviewData = useDummyData ? mockResolutionOverview : overview.data;
-  const resTrendRows = useDummyData ? mockResolutionTrend : resTrend.data ?? [];
-  const repeatTrendRows = useDummyData ? mockRepeatCallTrend : repeatTrend.data ?? [];
-  const repeatByAgentRows = useDummyData ? mockRepeatCallByAgent : repeatByAgent.data ?? [];
+  // resTrendRows: {month, resolution_pct, total_calls}
+  const resTrendRows = (kpiTrends.data ?? []).map((r) => ({
+    month: r.month,
+    resolution_pct: Number(r.resolution_pct),
+    total_calls: Number(r.total_calls),
+  })) as Record<string, unknown>[];
 
-  const overviewLoading = !useDummyData && overview.isLoading;
-  const resTrendLoading = !useDummyData && resTrend.isLoading;
-  const repeatTrendLoading = !useDummyData && repeatTrend.isLoading;
-  const repeatByAgentLoading = !useDummyData && repeatByAgent.isLoading;
+  // repeatTrendRows: {month, repeat_pct, total_calls}
+  const repeatTrendRows = (kpiTrends.data ?? []).map((r) => ({
+    month: r.month,
+    repeat_pct: Number(r.repeat_call_pct),
+    total_calls: Number(r.total_calls),
+  })) as Record<string, unknown>[];
+
+  // repeatByAgentRows: {agent_name, total_calls, repeat_count, repeat_pct}
+  const repeatByAgentRows = (agentSummary.data ?? []).map((r) => ({
+    agent_name: r.agent,
+    total_calls: r.call_count,
+    repeat_count: Math.round((Number(r.repeat_pct) / 100) * r.call_count),
+    repeat_pct: Number(r.repeat_pct),
+  }));
+
+  const overviewLoading = kpiSummary.isLoading;
+  const resTrendLoading = kpiTrends.isLoading;
+  const repeatTrendLoading = kpiTrends.isLoading;
+  const repeatByAgentLoading = agentSummary.isLoading;
 
   return (
     <div className="space-y-6">
@@ -142,7 +145,7 @@ export default function ResolutionPage() {
               <ResolutionDonutChart data={overviewData} />
               <ChartInsight
                 prompt={`Based on the resolved vs unresolved call split, how healthy is first-call resolution? Is the unresolved rate acceptable and what actions would improve it? Data: ${JSON.stringify(overviewData)}`}
-                cacheKey={`resolution-overview-${startDate}-${endDate}-${agentFilter}`}
+                cacheKey="resolution-overview"
               />
             </>
           )}
@@ -161,13 +164,13 @@ export default function ResolutionPage() {
           ) : (
             <>
               <TrendLineChart
-                data={resTrendRows}
+                data={resTrendRows as Record<string, unknown>[]}
                 series={[{ dataKey: 'resolution_pct', label: 'Resolution %', stroke: BRAND_COLOR }]}
                 benchmark={{ value: 80, label: '80%', color: BRAND_COLOR }}
               />
               <ChartInsight
                 prompt={`Analyse the monthly resolution rate trend. Is performance improving or declining? Which months fell below the 80% benchmark and what actions are needed? Data: ${JSON.stringify(resTrendRows)}`}
-                cacheKey={`resolution-trend-${JSON.stringify(filters)}`}
+                cacheKey="resolution-trend"
               />
             </>
           )}
@@ -188,13 +191,13 @@ export default function ResolutionPage() {
           ) : (
             <>
               <TrendLineChart
-                data={repeatTrendRows}
+                data={repeatTrendRows as Record<string, unknown>[]}
                 series={[{ dataKey: 'repeat_pct', label: 'Repeat Call %', stroke: '#F59E0B' }]}
                 benchmark={{ value: REPEAT_BENCH, label: '20% bench', color: '#F59E0B' }}
               />
               <ChartInsight
                 prompt={`Analyse the monthly repeat call trend. Is the rate rising or falling? What is likely causing customers to call back and what process or training changes would reduce repeat calls? Data: ${JSON.stringify(repeatTrendRows)}`}
-                cacheKey={`repeat-call-trend-${JSON.stringify(filters)}`}
+                cacheKey="repeat-call-trend"
               />
             </>
           )}

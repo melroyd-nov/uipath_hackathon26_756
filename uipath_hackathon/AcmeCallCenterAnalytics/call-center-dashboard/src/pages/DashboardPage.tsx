@@ -25,9 +25,9 @@ import AiOrbIcon from '../components/ai/AiOrbIcon';
 import CallVolumeTrendChart from '../components/charts/CallVolumeTrendChart';
 import AvgHandleTimeChart from '../components/charts/AvgHandleTimeChart';
 import { useFilters } from '../context/FilterContext';
-import { useDummyDataContext } from '../context/DummyDataContext';
-import { getKpiSummary, getKpiTrends, getAgentSummary, type KpiSummary } from '../api/dashboard';
-import { mockKpiSummary, mockKpiTrends, mockAgentSummary } from '../data/mockDashboardData';
+import { useDataFabric } from '../lib/dataFabric';
+import { getDfKpiSummary, getDfKpiTrends, getDfAgentSummary } from '../api/dataFabricQueries';
+import type { KpiSummary } from '../api/dashboard';
 import { num } from '../utils/num';
 
 function benchmarkFor(kpi: KpiSummary, key: string, fallback: number): number {
@@ -131,31 +131,23 @@ const HEALTH_METRICS = [
 ] as const;
 
 export default function DashboardPage() {
-  const { startDate, endDate, agentFilter } = useFilters();
-  const filters = { start_date: startDate, end_date: endDate, agent: agentFilter };
-  const { useDummyData } = useDummyDataContext();
+  const { startDate, endDate } = useFilters();
+  const { entities } = useDataFabric();
 
-  const { data: querySummary, isLoading: summaryLoading } = useQuery({
-    queryKey: ['dashboard-summary', filters],
-    queryFn: () => getKpiSummary(filters),
-    enabled: !useDummyData,
+  const { data: summary, isLoading: summaryLoading } = useQuery({
+    queryKey: ['df-dashboard-summary'],
+    queryFn: () => getDfKpiSummary(entities),
   });
 
-  const { data: queryKpiTrends } = useQuery({
-    queryKey: ['dashboard-kpi-trends', filters],
-    queryFn: () => getKpiTrends(filters),
-    enabled: !useDummyData,
+  const { data: kpiTrends } = useQuery({
+    queryKey: ['df-kpi-trends'],
+    queryFn: () => getDfKpiTrends(entities),
   });
 
-  const { data: queryAgentSummary } = useQuery({
-    queryKey: ['dashboard-agent-summary', filters],
-    queryFn: () => getAgentSummary(filters),
-    enabled: !useDummyData,
+  const { data: agentSummary } = useQuery({
+    queryKey: ['df-agent-summary'],
+    queryFn: () => getDfAgentSummary(entities),
   });
-
-  const summary = useDummyData ? mockKpiSummary : querySummary;
-  const kpiTrends = useDummyData ? mockKpiTrends : queryKpiTrends;
-  const agentSummary = useDummyData ? mockAgentSummary : queryAgentSummary;
 
   const trendSeries = (key: string) => (kpiTrends ?? []).map((t) => num(t[key]));
 
@@ -259,7 +251,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <FilterBar />
 
-      {(summaryLoading && !useDummyData) || !summary ? (
+      {summaryLoading || !summary ? (
         <div className="flex justify-center py-16">
           <LoadingSpinner size={32} />
         </div>
@@ -433,14 +425,14 @@ export default function DashboardPage() {
           <CallVolumeTrendChart data={kpiTrends ?? []} />
           <ChartInsight
             prompt={`Given this monthly call volume trend: ${JSON.stringify(kpiTrends ?? [])}, give one short insight about the pattern.`}
-            cacheKey={`call-volume-${JSON.stringify(filters)}`}
+            cacheKey="call-volume-df"
           />
         </GlassPanel>
         <GlassPanel title="Avg Handle Time">
           <AvgHandleTimeChart data={kpiTrends ?? []} />
           <ChartInsight
             prompt={`Given this monthly average handle time trend: ${JSON.stringify(kpiTrends ?? [])}, give one short insight about the pattern.`}
-            cacheKey={`avg-handle-time-${JSON.stringify(filters)}`}
+            cacheKey="avg-handle-time-df"
           />
         </GlassPanel>
       </div>

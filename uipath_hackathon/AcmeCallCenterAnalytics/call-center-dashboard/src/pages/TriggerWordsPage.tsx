@@ -8,42 +8,37 @@ import LoadingSpinner from '../components/shared/LoadingSpinner';
 import EmptyState from '../components/shared/EmptyState';
 import HorizontalBarChart from '../components/charts/HorizontalBarChart';
 import TrendLineChart from '../components/charts/TrendLineChart';
-import { useFilters } from '../context/FilterContext';
-import { useDummyDataContext } from '../context/DummyDataContext';
-import { getTriggerWordCounts, getTriggerWordTrend } from '../api/analytics';
-import { mockTriggerWordCounts, mockTriggerWordTrend } from '../data/mockTriggerWordData';
+import { useDataFabric } from '../lib/dataFabric';
+import { getDfTriggerWordCount } from '../api/dataFabricQueries';
 import { num } from '../utils/num';
 
 const BRAND_COLOR = '#6366F1';
 const HIGH_RISK_WORDS = new Set(['lawyer', 'fraud', 'lawsuit', 'sue', 'legal', 'attorney']);
 
 export default function TriggerWordsPage() {
-  const { startDate, endDate, agentFilter } = useFilters();
-  const filters = {
-    start_date: startDate ?? undefined,
-    end_date: endDate ?? undefined,
-    agent: agentFilter ?? undefined,
-  };
-  const { useDummyData } = useDummyDataContext();
+  const { entities } = useDataFabric();
   const [showMetricInfo, setShowMetricInfo] = useState(false);
 
+  interface TriggerWordRow { word: string; count: number; pct_of_calls: number; }
+
   const counts = useQuery({
-    queryKey: ['trigger-word-counts', startDate, endDate, agentFilter],
-    queryFn: () => getTriggerWordCounts(filters),
-    enabled: !useDummyData,
+    queryKey: ['df-trigger-words'],
+    queryFn: async (): Promise<TriggerWordRow[]> => {
+      const data = await getDfTriggerWordCount(entities);
+      return data.map((r) => ({
+        word: String(r.word ?? ''),
+        count: Number(r.count ?? 0),
+        pct_of_calls: Number(r.pct_of_calls ?? 0),
+      }));
+    },
   });
 
-  const trend = useQuery({
-    queryKey: ['trigger-word-trend', startDate, endDate, agentFilter],
-    queryFn: () => getTriggerWordTrend(filters),
-    enabled: !useDummyData,
-  });
+  const countsRows = counts.data ?? [];
+  // Trigger word trend not available in DF — render empty
+  const trendRows: Record<string, unknown>[] = [];
 
-  const countsRows = useDummyData ? mockTriggerWordCounts : counts.data ?? [];
-  const trendRows = useDummyData ? mockTriggerWordTrend : trend.data ?? [];
-
-  const countsLoading = !useDummyData && counts.isLoading;
-  const trendLoading = !useDummyData && trend.isLoading;
+  const countsLoading = counts.isLoading;
+  const trendLoading = false;
 
   const totalFlags = countsRows.reduce((sum, r) => sum + num(r.count), 0);
   const highRiskTotal = countsRows
@@ -150,7 +145,7 @@ export default function TriggerWordsPage() {
               />
               <ChartInsight
                 prompt={`Analyse the top trigger words detected in calls. Which words are most concerning from a risk or compliance standpoint? What patterns do they reveal about customer sentiment and what actions should be taken? Data: ${JSON.stringify(countsRows)}`}
-                cacheKey={`trigger-word-counts-${startDate}-${endDate}-${agentFilter}`}
+                cacheKey="trigger-word-counts"
               />
             </>
           )}
@@ -174,7 +169,7 @@ export default function TriggerWordsPage() {
               />
               <ChartInsight
                 prompt={`Analyse the monthly trend of trigger word detections. Is the volume rising or falling? What months show spikes and what are the likely operational causes? What interventions would reduce trigger word frequency? Data: ${JSON.stringify(trendRows)}`}
-                cacheKey={`trigger-word-trend-${JSON.stringify(filters)}`}
+                cacheKey="trigger-word-trend"
               />
             </>
           )}

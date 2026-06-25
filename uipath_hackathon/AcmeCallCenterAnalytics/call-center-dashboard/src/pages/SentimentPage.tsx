@@ -10,10 +10,9 @@ import SentimentTrendChart from '../components/charts/SentimentTrendChart';
 import AgentSentimentChart from '../components/charts/AgentSentimentChart';
 import SentimentDonutChart from '../components/charts/SentimentDonutChart';
 import { useFilters } from '../context/FilterContext';
-import { useDummyDataContext } from '../context/DummyDataContext';
-import { getSentimentMonthly } from '../api/dashboard';
-import { getSentimentByAgent } from '../api/analytics';
-import { mockSentimentMonthly, mockSentimentByAgent } from '../data/mockSentimentData';
+import { useDataFabric } from '../lib/dataFabric';
+import { getDfSentimentTrend, getDfAgentSummary } from '../api/dataFabricQueries';
+import type { SentimentMonthlyPoint } from '../api/dashboard';
 import { num } from '../utils/num';
 
 function negPctClass(pct: number): string {
@@ -29,27 +28,37 @@ function avgScoreClass(score: number): string {
 }
 
 export default function SentimentPage() {
-  const { startDate, endDate, agentFilter } = useFilters();
-  const filters = { start_date: startDate, end_date: endDate, agent: agentFilter };
-  const { useDummyData } = useDummyDataContext();
+  const { startDate, endDate } = useFilters();
+  const filters = { start_date: startDate, end_date: endDate };
+  const { entities } = useDataFabric();
   const [showMetricInfo, setShowMetricInfo] = useState(false);
 
   const trend = useQuery({
-    queryKey: ['sentiment-monthly', filters],
-    queryFn: () => getSentimentMonthly(filters),
-    enabled: !useDummyData,
+    queryKey: ['df-sentiment-trend'],
+    queryFn: async (): Promise<SentimentMonthlyPoint[]> => {
+      const data = await getDfSentimentTrend(entities);
+      return data as unknown as SentimentMonthlyPoint[];
+    },
   });
 
   const byAgent = useQuery({
-    queryKey: ['sentiment-by-agent', startDate, endDate],
-    queryFn: () => getSentimentByAgent({ start_date: startDate ?? undefined, end_date: endDate ?? undefined }),
-    enabled: !useDummyData,
+    queryKey: ['df-agent-summary'],
+    queryFn: () => getDfAgentSummary(entities),
   });
 
-  const trendData = useDummyData ? mockSentimentMonthly : trend.data ?? [];
-  const agentRows = useDummyData ? mockSentimentByAgent : byAgent.data ?? [];
-  const trendLoading = !useDummyData && trend.isLoading;
-  const byAgentLoading = !useDummyData && byAgent.isLoading;
+  const trendData = trend.data ?? [];
+  // Map agent summary to the shape the JSX expects
+  const agentRows = (byAgent.data ?? []).map((row) => ({
+    agent: row.agent,
+    total_calls: row.call_count,
+    positive_count: null,
+    neutral_count: null,
+    negative_count: null,
+    negative_pct: row.negative_pct,
+    avg_sentiment: row.avg_sentiment,
+  }));
+  const trendLoading = trend.isLoading;
+  const byAgentLoading = byAgent.isLoading;
 
   const nssMonthly = useMemo(
     () => trendData.map((d) => ({ month: d.month, avg_score: Math.round(num(d.avg_score) * 1000) / 1000 })),
@@ -75,7 +84,7 @@ export default function SentimentPage() {
 
   const sentimentTotals = useMemo(() => {
     const totals = trendData.reduce(
-      (acc, d) => {
+      (acc: { positive: number; neutral: number; negative: number }, d) => {
         acc.positive += num(d.positive_count);
         acc.neutral += num(d.neutral_count);
         acc.negative += num(d.negative_count);

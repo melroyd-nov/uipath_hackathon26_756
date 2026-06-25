@@ -1,8 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Brain, Gauge, RotateCcw, Clock, Cpu, Activity } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Brain, Gauge, Clock, Cpu, Activity } from 'lucide-react';
 import GlassPanel from '../components/shared/GlassPanel';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
-import { getAiUsage, resetAiUsage } from '../api/ai';
+import { useDataFabric, ENTITY_IDS } from '../lib/dataFabric';
+import type { AiUsageOut } from '../api/ai';
 
 function formatDateTime(value: string | null): string {
   if (!value) return '—';
@@ -31,17 +32,22 @@ function StatTile({
 }
 
 export default function AiUsagePage() {
-  const queryClient = useQueryClient();
+  const { entities } = useDataFabric();
 
   const usageQuery = useQuery({
-    queryKey: ['ai-usage'],
-    queryFn: getAiUsage,
-  });
-
-  const resetMutation = useMutation({
-    mutationFn: resetAiUsage,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ai-usage'] });
+    queryKey: ['df-ai-usage'],
+    queryFn: async (): Promise<AiUsageOut> => {
+      const result = await entities.getAllRecords(ENTITY_IDS.AiUsage);
+      const r = result.items[0] ?? {};
+      return {
+        calls_today: Number(r.calls_today ?? 0),
+        total_calls: Number(r.total_calls ?? 0),
+        period_date: r.period_date != null ? String(r.period_date) : '',
+        last_call_at: r.last_call_at != null ? String(r.last_call_at) : null,
+        last_reset_at: r.last_reset_at != null ? String(r.last_reset_at) : null,
+        last_model: r.last_model != null ? String(r.last_model) : null,
+        last_endpoint: r.last_endpoint != null ? String(r.last_endpoint) : null,
+      };
     },
   });
 
@@ -60,15 +66,6 @@ export default function AiUsagePage() {
               Tracks calls made to the Gemini-backed AI assistant — today&apos;s count and all-time total.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => resetMutation.mutate()}
-            disabled={resetMutation.isPending}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-graphite bg-bone hover:bg-silver border border-silver rounded-lg px-3 py-2 disabled:opacity-40 transition-colors"
-          >
-            <RotateCcw size={13} />
-            {resetMutation.isPending ? 'Resetting…' : "Reset today's count"}
-          </button>
         </div>
       </div>
 
@@ -103,9 +100,6 @@ export default function AiUsagePage() {
           </>
         )}
 
-        {resetMutation.isError && (
-          <p className="text-xs text-red-600 mt-3">Failed to reset usage — check that the backend is reachable.</p>
-        )}
       </GlassPanel>
     </div>
   );

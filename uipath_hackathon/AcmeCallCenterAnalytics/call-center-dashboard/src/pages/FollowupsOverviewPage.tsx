@@ -7,10 +7,8 @@ import {
 } from 'lucide-react';
 import GlassPanel from '../components/shared/GlassPanel';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
-import { useDummyDataContext } from '../context/DummyDataContext';
-import { followupsApi } from '../api/followups';
+import { useDataFabric, ENTITY_IDS } from '../lib/dataFabric';
 import type { GlobalFollowup, GlobalFollowupFilters, FollowupStatus } from '../api/followups';
-import { mockFollowups, computeMockSummary, paginateMockFollowups } from '../data/mockFollowupsData';
 
 const PAGE_SIZE = 25;
 
@@ -35,7 +33,9 @@ const STATUS_META: Record<FollowupStatus, { label: string; color: string }> = {
   rejected: { label: 'Rejected', color: '#9CA3AF' },
 };
 
-const STATUS_CHIPS: { value: StatusFilter; label: string; color: string; countKey: keyof ReturnType<typeof computeMockSummary> }[] = [
+type FollowupSummaryShape = { total: number; pending: number; approved: number; in_progress: number; completed: number; rejected: number; overdue: number; completion_rate: number };
+
+const STATUS_CHIPS: { value: StatusFilter; label: string; color: string; countKey: keyof FollowupSummaryShape }[] = [
   { value: 'all', label: 'All', color: '#9CA3AF', countKey: 'total' },
   { value: 'pending', label: 'Needs Review', color: '#F59E0B', countKey: 'pending' },
   { value: 'approved', label: 'Approved', color: '#38BDF8', countKey: 'approved' },
@@ -45,7 +45,7 @@ const STATUS_CHIPS: { value: StatusFilter; label: string; color: string; countKe
   { value: 'overdue', label: 'Overdue', color: '#EF4444', countKey: 'overdue' },
 ];
 
-const SUMMARY_TILES: { key: keyof ReturnType<typeof computeMockSummary>; label: string; color: string; alert?: boolean; isPercent?: boolean }[] = [
+const SUMMARY_TILES: { key: keyof FollowupSummaryShape; label: string; color: string; alert?: boolean; isPercent?: boolean }[] = [
   { key: 'total', label: 'Total', color: '#9CA3AF' },
   { key: 'pending', label: 'Needs Review', color: '#F59E0B' },
   { key: 'approved', label: 'Approved', color: '#38BDF8' },
@@ -275,7 +275,7 @@ const CONTROL_CLASS =
   'text-xs bg-paper border border-silver rounded-md focus:outline-none focus:border-emerald-500/40 px-3 py-1.5 text-graphite';
 
 export default function FollowupsOverviewPage() {
-  const { useDummyData } = useDummyDataContext();
+  const { entities } = useDataFabric();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [search, setSearch] = useState('');
@@ -300,25 +300,75 @@ export default function FollowupsOverviewPage() {
     limit: PAGE_SIZE,
   };
 
-  const summaryQuery = useQuery({
-    queryKey: ['followups', 'summary'],
-    queryFn: followupsApi.summary,
-    enabled: !useDummyData,
+  const allFollowupsQuery = useQuery({
+    queryKey: ['df-followups'],
+    queryFn: () => entities.getAllRecords(ENTITY_IDS.CallFollowup),
   });
 
-  const listQuery = useQuery({
-    queryKey: ['followups', 'list', statusFilter, source, priority, agent, search, page],
-    queryFn: () => followupsApi.listAll(filters),
-    enabled: !useDummyData,
+  const STATUS_MAP: Record<number, FollowupStatus> = { 0: 'pending', 1: 'approved', 2: 'rejected', 3: 'in_progress', 4: 'completed' };
+  const SOURCE_MAP: Record<number, 'ai_generated' | 'manual'> = { 0: 'ai_generated', 1: 'manual' };
+  const PRIORITY_MAP: Record<number, string> = { 0: 'low', 1: 'medium', 2: 'high' };
+
+  const allItems: GlobalFollowup[] = (allFollowupsQuery.data?.items ?? []).map((r) => ({
+    id: Number(r.Id ?? 0),
+    call_id: Number(r.callid ?? 0),
+    text: String(r.text ?? ''),
+    reason: r.reason != null ? String(r.reason) : null,
+    source: SOURCE_MAP[Number(r.source)] ?? 'ai_generated',
+    status: STATUS_MAP[Number(r.status)] ?? 'pending',
+    priority: r.priority != null ? (PRIORITY_MAP[Number(r.priority)] as 'low' | 'medium' | 'high') : null,
+    assigned_to: r.assigned_to != null ? String(r.assigned_to) : null,
+    due_date: r.due_date != null ? String(r.due_date) : null,
+    approved_by: r.approved_by != null ? String(r.approved_by) : null,
+    approved_at: r.approved_at != null ? String(r.approved_at) : null,
+    completed_at: r.completed_at != null ? String(r.completed_at) : null,
+    completion_notes: r.completion_notes != null ? String(r.completion_notes) : null,
+    created_at: String(r.CreatedOn ?? ''),
+    updated_at: String(r.ModifiedOn ?? ''),
+    agent_name: null,
+    call_date: null,
+    is_overdue: false,
+    days_overdue: null,
+    caller_name: null,
+    policy_number: null,
+    call_intent1: null,
+    call_intent2: null,
+    call_intent3: null,
+    call_summary: null,
+    call_sentiment: null,
+    escalation_flag: null,
+    compliance_flag: null,
+    call_resolved_flag: null,
+  }));
+
+  // Apply client-side filters
+  const filteredItems = allItems.filter((f) => {
+    if (filters.status && f.status !== filters.status) return false;
+    if (filters.overdue && !f.is_overdue) return false;
+    if (filters.source && f.source !== filters.source) return false;
+    if (filters.priority && f.priority !== filters.priority) return false;
+    if (filters.search && !f.text.toLowerCase().includes(filters.search.toLowerCase())) return false;
+    return true;
   });
 
-  const summary = useDummyData ? computeMockSummary() : summaryQuery.data;
-  const data = useDummyData ? paginateMockFollowups(filters, PAGE_SIZE) : listQuery.data;
-  const isLoading = !useDummyData && listQuery.isLoading;
+  const total = filteredItems.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const items = filteredItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const items = data?.items ?? [];
-  const total = data?.total ?? 0;
-  const pages = data?.pages ?? 1;
+  const summary: FollowupSummaryShape = {
+    total: allItems.length,
+    pending: allItems.filter((f) => f.status === 'pending').length,
+    approved: allItems.filter((f) => f.status === 'approved').length,
+    in_progress: allItems.filter((f) => f.status === 'in_progress').length,
+    completed: allItems.filter((f) => f.status === 'completed').length,
+    rejected: allItems.filter((f) => f.status === 'rejected').length,
+    overdue: allItems.filter((f) => f.is_overdue).length,
+    completion_rate: allItems.length > 0
+      ? Math.round((allItems.filter((f) => f.status === 'completed').length / allItems.length) * 100)
+      : 0,
+  };
+
+  const isLoading = allFollowupsQuery.isLoading;
 
   const hasActiveFilters = !!(search || agent || source || priority || statusFilter !== 'all');
 

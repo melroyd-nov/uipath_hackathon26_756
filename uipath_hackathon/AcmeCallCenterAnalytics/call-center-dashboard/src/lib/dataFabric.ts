@@ -8,6 +8,15 @@ export const ENTITY_IDS = {
   CallRecord: 'beac40ee-bd6b-f111-8fcb-000d3ab36606',
   CallFollowup: '993c2c06-be6b-f111-8fcb-000d3ab36606',
   AiUsage: '45af032d-bb6b-f111-8fcb-000d3ab36606',
+  DashboardKpi: 'ff689045-7d70-f111-ac9b-000d3a68f6f7',
+  AgentSummary: '4db98f58-7d70-f111-ac9b-000d3a68f6f7',
+  SentimentTrend: '7db98f58-7d70-f111-ac9b-000d3a68f6f7',
+  MonthlyKpiTrend: '90b98f58-7d70-f111-ac9b-000d3a68f6f7',
+  IntentSummary: '9f9e6b6c-7d70-f111-ac9b-000d3a68f6f7',
+  TriggerWordCount: 'b49e6b6c-7d70-f111-ac9b-000d3a68f6f7',
+  FrictionScore: 'c19e6b6c-7d70-f111-ac9b-000d3a68f6f7',
+  ComplianceRule: 'd29e6b6c-7d70-f111-ac9b-000d3a68f6f7',
+  EscalationSummary: 'e19e6b6c-7d70-f111-ac9b-000d3a68f6f7',
 } as const;
 
 export const CHOICE_SET_IDS = {
