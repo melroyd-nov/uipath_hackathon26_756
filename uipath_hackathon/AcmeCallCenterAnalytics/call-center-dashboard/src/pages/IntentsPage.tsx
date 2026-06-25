@@ -8,9 +8,9 @@ import LoadingSpinner from '../components/shared/LoadingSpinner';
 import EmptyState from '../components/shared/EmptyState';
 import IntentParetoChart from '../components/charts/IntentParetoChart';
 import { useFilters } from '../context/FilterContext';
-import { useDummyDataContext } from '../context/DummyDataContext';
-import { getIntentsPareto } from '../api/analytics';
-import { mockIntentPareto } from '../data/mockIntentsData';
+import { useDataFabric } from '../lib/dataFabric';
+import { getDfIntentSummary } from '../api/dataFabricQueries';
+import type { IntentPareto } from '../api/analytics';
 import { exportCsv } from '../utils/csv';
 import { num } from '../utils/num';
 
@@ -31,19 +31,21 @@ function repeatCallClass(pct: number): string {
 }
 
 export default function IntentsPage() {
-  const { startDate, endDate, agentFilter } = useFilters();
-  const filters = { start_date: startDate ?? undefined, end_date: endDate ?? undefined, agent: agentFilter ?? undefined };
-  const { useDummyData } = useDummyDataContext();
+  const { startDate, endDate } = useFilters();
+  const filters = { start_date: startDate ?? undefined, end_date: endDate ?? undefined };
+  const { entities } = useDataFabric();
   const [showMetricInfo, setShowMetricInfo] = useState(false);
 
   const pareto = useQuery({
-    queryKey: ['intents-pareto', filters],
-    queryFn: () => getIntentsPareto(filters),
-    enabled: !useDummyData,
+    queryKey: ['df-intent-summary'],
+    queryFn: async (): Promise<IntentPareto[]> => {
+      const data = await getDfIntentSummary(entities);
+      return data as unknown as IntentPareto[];
+    },
   });
 
-  const rows = useDummyData ? mockIntentPareto : pareto.data ?? [];
-  const isLoading = !useDummyData && pareto.isLoading;
+  const rows = pareto.data ?? [];
+  const isLoading = pareto.isLoading;
   const sortedRows = [...rows].sort((a, b) => num(b.count) - num(a.count));
 
   const handleExport = () => {

@@ -5,11 +5,9 @@ import LoadingSpinner from '../components/shared/LoadingSpinner';
 import EmptyState from '../components/shared/EmptyState';
 import AgentProfileCard from '../components/cards/AgentProfileCard';
 import { useFilters } from '../context/FilterContext';
-import { useDummyDataContext } from '../context/DummyDataContext';
 import { useDataFabric } from '../lib/dataFabric';
 import { agentsApi } from '../api/agents';
 import type { AgentDetail } from '../api/agents';
-import { mockAgents } from '../data/mockAgentsData';
 
 function agentScore(a: AgentDetail): number {
   const k = a.kpi;
@@ -24,18 +22,16 @@ function agentScore(a: AgentDetail): number {
 
 export default function AgentsPage() {
   const { startDate, endDate } = useFilters();
-  const { useDummyData } = useDummyDataContext();
   const { entities } = useDataFabric();
 
   const agents = useQuery({
     queryKey: ['agents', startDate, endDate],
     queryFn: () =>
       agentsApi.list(entities, { start_date: startDate ?? undefined, end_date: endDate ?? undefined }),
-    enabled: !useDummyData,
   });
 
-  const rawData = useDummyData ? mockAgents : (agents.data ?? []);
-  const isLoading = !useDummyData && agents.isLoading;
+  const rawData = agents.data ?? [];
+  const isLoading = agents.isLoading;
 
   const ranked = useMemo(
     () =>

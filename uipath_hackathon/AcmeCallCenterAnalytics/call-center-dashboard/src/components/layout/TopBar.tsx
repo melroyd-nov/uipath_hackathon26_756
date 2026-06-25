@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Trash2, Moon, Sun, LogOut, FlaskConical } from 'lucide-react';
+import { Trash2, Moon, Sun, LogOut } from 'lucide-react';
 import { NAV_ITEMS } from '../../config/navigation';
-import { getHealth } from '../../api/health';
-import { useDummyDataContext } from '../../context/DummyDataContext';
 
 function derivePageTitle(pathname: string): string {
   if (pathname === '/') return 'Dashboard';
@@ -17,22 +15,9 @@ function derivePageTitle(pathname: string): string {
 export default function TopBar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { useDummyData, toggleDummyData } = useDummyDataContext();
-  const [dbOnline, setDbOnline] = useState<boolean | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(
     () => (localStorage.getItem('cc_theme') as 'light' | 'dark') ?? 'light',
   );
-
-  useEffect(() => {
-    const checkHealth = () => {
-      getHealth()
-        .then(() => setDbOnline(true))
-        .catch(() => setDbOnline(false));
-    };
-    checkHealth();
-    const interval = setInterval(checkHealth, 60_000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -62,35 +47,12 @@ export default function TopBar() {
       <h1 className="font-editorial text-lg text-obsidian">{derivePageTitle(location.pathname)}</h1>
 
       <div className="flex items-center gap-3">
-        <span
-          className={`flex items-center gap-1.5 rounded-pill px-3 py-1 text-xs font-medium ${
-            dbOnline === null
-              ? 'bg-bone text-graphite'
-              : dbOnline
-                ? 'bg-status-live-bg text-status-live'
-                : 'bg-status-escalated-bg text-status-escalated'
-          }`}
-        >
-          <span className={`h-1.5 w-1.5 rounded-full bg-current`} />
-          {dbOnline === null ? 'Checking…' : dbOnline ? 'DB Online' : 'DB Offline'}
+        <span className="flex items-center gap-1.5 rounded-pill bg-status-live-bg px-3 py-1 text-xs font-medium text-status-live">
+          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+          Data Fabric
         </span>
 
         <span className="text-xs text-slate">{today}</span>
-
-        <button
-          type="button"
-          onClick={toggleDummyData}
-          aria-pressed={useDummyData}
-          title="Toggle dummy data across all pages"
-          className={`flex items-center gap-1.5 rounded-pill border px-3 py-1.5 text-xs font-medium transition-colors ${
-            useDummyData
-              ? 'border-amber-400 bg-amber-100 text-amber-700'
-              : 'border-silver bg-paper text-slate hover:text-obsidian'
-          }`}
-        >
-          <FlaskConical size={14} />
-          {useDummyData ? 'Dummy Data: On' : 'Dummy Data: Off'}
-        </button>
 
         <button
           type="button"

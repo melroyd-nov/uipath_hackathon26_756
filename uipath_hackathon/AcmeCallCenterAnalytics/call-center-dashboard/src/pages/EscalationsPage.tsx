@@ -10,9 +10,8 @@ import EscalationByAgentChart from '../components/charts/EscalationByAgentChart'
 import TrendLineChart from '../components/charts/TrendLineChart';
 import HorizontalBarChart from '../components/charts/HorizontalBarChart';
 import { useFilters } from '../context/FilterContext';
-import { useDummyDataContext } from '../context/DummyDataContext';
-import { getEscalationsByAgent, getEscalationsTrend, getEscalationsRootCause } from '../api/analytics';
-import { mockEscalationsByAgent, mockEscalationsTrend, mockEscalationsRootCause } from '../data/mockEscalationsData';
+import { useDataFabric } from '../lib/dataFabric';
+import { getDfEscalationSummary } from '../api/dataFabricQueries';
 import { num } from '../utils/num';
 
 function escalationClass(pct: number): string {
@@ -20,38 +19,61 @@ function escalationClass(pct: number): string {
 }
 
 export default function EscalationsPage() {
-  const { startDate, endDate, agentFilter } = useFilters();
-  const filters = { start_date: startDate ?? undefined, end_date: endDate ?? undefined, agent: agentFilter ?? undefined };
-  const { useDummyData } = useDummyDataContext();
+  const { startDate, endDate } = useFilters();
+  const { entities } = useDataFabric();
   const [showMetricInfo, setShowMetricInfo] = useState(false);
 
-  const byAgent = useQuery({
-    queryKey: ['escalations-by-agent', startDate, endDate],
-    queryFn: () => getEscalationsByAgent({ start_date: startDate ?? undefined, end_date: endDate ?? undefined }),
-    enabled: !useDummyData,
+  const escalation = useQuery({
+    queryKey: ['df-escalation-summary'],
+    queryFn: () => getDfEscalationSummary(entities),
   });
 
-  const trend = useQuery({
-    queryKey: ['escalations-trend', filters],
-    queryFn: () => getEscalationsTrend(filters),
-    enabled: !useDummyData,
-  });
+  const dfRows = escalation.data ?? [];
 
-  const rootCause = useQuery({
-    queryKey: ['escalations-root-cause', filters],
-    queryFn: () => getEscalationsRootCause(filters),
-    enabled: !useDummyData,
-  });
+  // byAgent: aggregate per agent across all months
+  const byAgentRows = Object.values(
+    dfRows.reduce<Record<string, { agent_name: string; total_calls: number; escalation_count: number; escalation_pct: number }>>(
+      (acc, row) => {
+        const name = String(row.agent ?? '');
+        if (!acc[name]) {
+          acc[name] = { agent_name: name, total_calls: 0, escalation_count: 0, escalation_pct: 0 };
+        }
+        acc[name].total_calls += num(row.total_calls);
+        acc[name].escalation_count += num(row.escalation_count);
+        return acc;
+      },
+      {},
+    ),
+  ).map((r) => ({
+    ...r,
+    escalation_pct: r.total_calls > 0 ? (r.escalation_count / r.total_calls) * 100 : 0,
+  }));
 
-  const byAgentRows = useDummyData ? mockEscalationsByAgent : byAgent.data ?? [];
-  const trendRows = useDummyData ? mockEscalationsTrend : trend.data ?? [];
-  const rootCauseData = useDummyData ? mockEscalationsRootCause : rootCause.data;
+  // trendRows: aggregate per month across all agents
+  const trendRows = Object.values(
+    dfRows.reduce<Record<string, { month: string; total_calls: number; escalation_count: number; escalation_pct: number }>>(
+      (acc, row) => {
+        const month = String(row.month ?? '');
+        if (!acc[month]) {
+          acc[month] = { month, total_calls: 0, escalation_count: 0, escalation_pct: 0 };
+        }
+        acc[month].total_calls += num(row.total_calls);
+        acc[month].escalation_count += num(row.escalation_count);
+        return acc;
+      },
+      {},
+    ),
+  ).map((r) => ({
+    ...r,
+    escalation_pct: r.total_calls > 0 ? (r.escalation_count / r.total_calls) * 100 : 0,
+  }));
 
-  const byAgentLoading = !useDummyData && byAgent.isLoading;
-  const trendLoading = !useDummyData && trend.isLoading;
-  const rootCauseLoading = !useDummyData && rootCause.isLoading;
+  // root cause by intent — not available in DF, render empty
+  const intentData: { label: string; value: number }[] = [];
 
-  const intentData = (rootCauseData?.by_intent ?? []).map((i) => ({ label: i.intent, value: i.escalation_count }));
+  const byAgentLoading = escalation.isLoading;
+  const trendLoading = escalation.isLoading;
+  const rootCauseLoading = false;
 
   return (
     <div className="space-y-6">
@@ -129,13 +151,13 @@ export default function EscalationsPage() {
           ) : (
             <>
               <TrendLineChart
-                data={trendRows}
+                data={trendRows as Record<string, unknown>[]}
                 series={[{ dataKey: 'escalation_pct', label: 'Escalation %', stroke: '#EF4444' }]}
                 benchmark={{ value: 10, label: '10% bench', color: '#F59E0B' }}
               />
               <ChartInsight
                 prompt={`Analyse the monthly escalation rate trend. Are escalations improving or worsening? What months show concerning spikes and what might be driving them? Data: ${JSON.stringify(trendRows)}`}
-                cacheKey={`escalations-trend-${JSON.stringify(filters)}`}
+                cacheKey="escalations-trend"
               />
             </>
           )}
@@ -162,8 +184,8 @@ export default function EscalationsPage() {
               valueFormatter={(v) => String(v)}
             />
             <ChartInsight
-              prompt={`Which call intent types are driving the most escalations? Are these structural problems or agent skill gaps? What process changes would reduce escalations for the top intents? Data: ${JSON.stringify(rootCauseData?.by_intent ?? [])}`}
-              cacheKey={`escalations-root-cause-${JSON.stringify(filters)}`}
+              prompt={`Which call intent types are driving the most escalations? Are these structural problems or agent skill gaps? What process changes would reduce escalations for the top intents? Data: ${JSON.stringify(intentData)}`}
+              cacheKey="escalations-root-cause"
             />
           </>
         )}

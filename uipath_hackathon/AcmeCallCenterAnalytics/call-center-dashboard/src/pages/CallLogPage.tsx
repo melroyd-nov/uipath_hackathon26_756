@@ -5,10 +5,9 @@ import { Search, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import GlassPanel from '../components/shared/GlassPanel';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import EmptyState from '../components/shared/EmptyState';
-import { useDummyDataContext } from '../context/DummyDataContext';
-import { callsApi } from '../api/calls';
+import { useDataFabric, ENTITY_IDS } from '../lib/dataFabric';
 import type { CallListFilters } from '../api/calls';
-import { mockCalls, paginateMockCalls } from '../data/mockCallsData';
+import type { CallRecordList } from '../api/calls';
 import { exportCsv } from '../utils/csv';
 
 const PAGE_SIZE = 20;
@@ -64,7 +63,7 @@ function FlagBadge({ value, invert = false }: { value: string | null; invert?: b
 }
 
 export default function CallLogPage() {
-  const { useDummyData } = useDummyDataContext();
+  const { entities } = useDataFabric();
 
   const [agent, setAgent] = useState('');
   const [sentiment, setSentiment] = useState('');
@@ -88,18 +87,44 @@ export default function CallLogPage() {
   };
 
   const callsQuery = useQuery({
-    queryKey: ['calls', filters],
-    queryFn: () => callsApi.list(filters),
-    enabled: !useDummyData,
+    queryKey: ['df-call-records'],
+    queryFn: async () => {
+      const result = await entities.getAllRecords(ENTITY_IDS.CallRecord);
+      return result.items.map((r): CallRecordList => ({
+        call_id: Number(r.callid ?? 0),
+        call_date: r.call_date != null ? String(r.call_date) : '',
+        agent_name: r.agent_name != null ? String(r.agent_name) : null,
+        caller_nric: r.caller_nric != null ? String(r.caller_nric) : null,
+        call_intent1: r.call_intent1 != null ? String(r.call_intent1) : null,
+        call_sentiment: r.call_sentiment != null ? Number(r.call_sentiment) : null,
+        escalation_flag: r.escalation_flag != null ? (Number(r.escalation_flag) === 0 ? 'Yes' : 'No') : null,
+        compliance_flag: r.compliance_flag != null ? (Number(r.compliance_flag) === 0 ? 'Yes' : 'No') : null,
+        call_resolved_flag: r.call_resolved_flag != null ? (Number(r.call_resolved_flag) === 0 ? 'Yes' : 'No') : null,
+        repeat_call_flag: r.repeatcall_flag != null ? (Number(r.repeatcall_flag) === 0 ? 'Yes' : 'No') : null,
+        duration_seconds: r.duration_seconds != null ? Number(r.duration_seconds) : null,
+      }));
+    },
   });
 
-  const data = useDummyData ? paginateMockCalls(mockCalls, filters, PAGE_SIZE) : callsQuery.data;
-  const isLoading = !useDummyData && callsQuery.isLoading;
-  const isFetching = !useDummyData && callsQuery.isFetching;
+  // Apply client-side filters
+  const allRecords = callsQuery.data ?? [];
+  const filtered = allRecords.filter((c) => {
+    if (filters.agent && c.agent_name !== filters.agent) return false;
+    if (filters.sentiment !== undefined && c.call_sentiment !== filters.sentiment) return false;
+    if (filters.escalation && c.escalation_flag !== filters.escalation) return false;
+    if (filters.repeat_call && c.repeat_call_flag !== filters.repeat_call) return false;
+    if (filters.start_date && c.call_date < filters.start_date) return false;
+    if (filters.end_date && c.call_date > filters.end_date) return false;
+    if (filters.intent && !(c.call_intent1 ?? '').toLowerCase().includes(filters.intent.toLowerCase())) return false;
+    return true;
+  });
 
-  const items = data?.items ?? [];
-  const total = data?.total ?? 0;
-  const pages = data?.pages ?? 1;
+  const total = filtered.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const items = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const isLoading = callsQuery.isLoading;
+  const isFetching = callsQuery.isFetching;
 
   const withReset = (setter: (v: string) => void) => (v: string) => {
     setter(v);

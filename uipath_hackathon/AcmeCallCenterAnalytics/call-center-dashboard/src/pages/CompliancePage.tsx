@@ -9,9 +9,8 @@ import EmptyState from '../components/shared/EmptyState';
 import ComplianceByAgentChart from '../components/charts/ComplianceByAgentChart';
 import TrendLineChart from '../components/charts/TrendLineChart';
 import { useFilters } from '../context/FilterContext';
-import { useDummyDataContext } from '../context/DummyDataContext';
-import { getComplianceByAgent, getComplianceTrend } from '../api/analytics';
-import { mockComplianceByAgent, mockComplianceTrend } from '../data/mockComplianceData';
+import { useDataFabric } from '../lib/dataFabric';
+import { getDfComplianceTrend } from '../api/dataFabricQueries';
 import { num } from '../utils/num';
 
 const BENCHMARK = 5;
@@ -21,27 +20,40 @@ function failRateClass(pct: number): string {
 }
 
 export default function CompliancePage() {
-  const { startDate, endDate, agentFilter } = useFilters();
-  const filters = { start_date: startDate ?? undefined, end_date: endDate ?? undefined, agent: agentFilter ?? undefined };
-  const { useDummyData } = useDummyDataContext();
+  const { entities } = useDataFabric();
   const [showMetricInfo, setShowMetricInfo] = useState(false);
 
-  const byAgent = useQuery({
-    queryKey: ['compliance-by-agent', startDate, endDate],
-    queryFn: () => getComplianceByAgent({ start_date: startDate ?? undefined, end_date: endDate ?? undefined }),
-    enabled: !useDummyData,
+  const compliance = useQuery({
+    queryKey: ['df-compliance-trend'],
+    queryFn: () => getDfComplianceTrend(entities),
   });
 
-  const trend = useQuery({
-    queryKey: ['compliance-trend', startDate, endDate, agentFilter],
-    queryFn: () => getComplianceTrend(filters),
-    enabled: !useDummyData,
-  });
+  const dfRows = compliance.data ?? [];
 
-  const byAgentRows = useDummyData ? mockComplianceByAgent : byAgent.data ?? [];
-  const trendRows = useDummyData ? mockComplianceTrend : trend.data ?? [];
-  const byAgentLoading = !useDummyData && byAgent.isLoading;
-  const trendLoading = !useDummyData && trend.isLoading;
+  // byAgent: aggregate per agent — JSX uses agent_name, fail_count, total_calls, compliance_fail_pct
+  const byAgentRows = Object.values(
+    dfRows.reduce<Record<string, { agent_name: string; total_calls: number; fail_count: number; compliance_fail_pct: number }>>(
+      (acc, row) => {
+        const name = String(row.agent ?? '');
+        if (!acc[name]) {
+          acc[name] = { agent_name: name, total_calls: 0, fail_count: 0, compliance_fail_pct: 0 };
+        }
+        acc[name].total_calls += num(row.total_calls as number);
+        acc[name].fail_count += num(row.fail_count as number);
+        return acc;
+      },
+      {},
+    ),
+  ).map((r) => ({
+    ...r,
+    compliance_fail_pct: r.total_calls > 0 ? (r.fail_count / r.total_calls) * 100 : 0,
+  }));
+
+  // trendRows: use DF rows directly — already has month + compliance_fail_pct
+  const trendRows = dfRows;
+
+  const byAgentLoading = compliance.isLoading;
+  const trendLoading = compliance.isLoading;
 
   return (
     <div className="space-y-6">
@@ -107,7 +119,7 @@ export default function CompliancePage() {
               <ComplianceByAgentChart data={byAgentRows} benchmark={BENCHMARK} />
               <ChartInsight
                 prompt={`Which agents have the highest compliance failure rates? Who is above the 5% benchmark and what are the immediate risk mitigation actions required? Data: ${JSON.stringify(byAgentRows)}`}
-                cacheKey={`compliance-by-agent-${startDate}-${endDate}`}
+                cacheKey="compliance-by-agent"
               />
             </>
           )}
@@ -131,7 +143,7 @@ export default function CompliancePage() {
               />
               <ChartInsight
                 prompt={`Analyse the monthly compliance failure trend. Is the rate improving or worsening? What months are most concerning and what interventions would bring it back under the 5% benchmark? Data: ${JSON.stringify(trendRows)}`}
-                cacheKey={`compliance-trend-${JSON.stringify(filters)}`}
+                cacheKey="compliance-trend"
               />
             </>
           )}
