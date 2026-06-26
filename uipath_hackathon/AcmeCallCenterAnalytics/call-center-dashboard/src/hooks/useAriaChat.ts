@@ -23,6 +23,8 @@ interface UseAriaChatOptions {
   restoreHistory?: boolean;
 }
 
+const CHAT_TAG = '[ARIA-CHAT]';
+
 export function useAriaChat({ restoreHistory = true }: UseAriaChatOptions = {}) {
   const { sdk } = useAuth();
 
@@ -43,8 +45,12 @@ export function useAriaChat({ restoreHistory = true }: UseAriaChatOptions = {}) 
   // Register all WebSocket event handlers on a session — called once per session
   const attachHandlers = useCallback((session: SessionStream) => {
     session.onExchangeStart((exchange) => {
+      console.log(CHAT_TAG, 'onExchangeStart fired', exchange.exchangeId);
       const assistantId = pendingExchanges.current.get(exchange.exchangeId);
-      if (!assistantId) return;
+      if (!assistantId) {
+        console.log(CHAT_TAG, 'WARNING: no pending assistant bubble for exchange', exchange.exchangeId);
+        return;
+      }
 
       setIsStreaming(true);
 
@@ -66,6 +72,7 @@ export function useAriaChat({ restoreHistory = true }: UseAriaChatOptions = {}) 
       });
 
       exchange.onExchangeEnd(() => {
+        console.log(CHAT_TAG, 'onExchangeEnd fired', exchange.exchangeId);
         pendingExchanges.current.delete(exchange.exchangeId);
         setMessages((prev) =>
           prev.map((m) => (m.id === assistantId ? { ...m, isStreaming: false } : m)),
@@ -75,12 +82,19 @@ export function useAriaChat({ restoreHistory = true }: UseAriaChatOptions = {}) 
     });
   }, []);
 
-  // Open a session on a conversation and attach handlers
+  // Open a session on a conversation and attach handlers.
+  // isReady is set inside onSessionStarted — the SDK requires waiting for this
+  // event before calling startExchange, otherwise EXCHANGE_START_PROCESSING_FAILED
+  // is thrown because the WebSocket handshake hasn't completed.
   const openSession = useCallback(
     (conv: ConversationGetResponse): SessionStream => {
       const session = conv.startSession({ echo: true });
       sessionRef.current = session;
       attachHandlers(session);
+      session.onSessionStarted(() => {
+        console.log(CHAT_TAG, 'onSessionStarted — WebSocket ready, setting isReady=true');
+        setIsReady(true);
+      });
       return session;
     },
     [attachHandlers],
@@ -91,17 +105,21 @@ export function useAriaChat({ restoreHistory = true }: UseAriaChatOptions = {}) 
 
     const setup = async () => {
       let step = 'loading agents';
+      console.log(CHAT_TAG, 'setup() start', { restoreHistory, folderId: ARIA_FOLDER_ID, agentName: ARIA_AGENT_NAME });
       try {
         const agents = await service.getAll(ARIA_FOLDER_ID);
-        if (cancelled) return;
+        if (cancelled) { console.log(CHAT_TAG, 'setup() cancelled after getAll'); return; }
 
+        console.log(CHAT_TAG, 'getAll() returned', agents.length, 'agents:', agents.map((a) => a.name));
         const agent = agents.find((a) => a.name === ARIA_AGENT_NAME) ?? null;
         if (!agent) {
           const available = agents.map((a) => a.name).join(', ') || 'none';
+          console.log(CHAT_TAG, 'ERROR: agent not found. Available:', available);
           setError(`Agent "${ARIA_AGENT_NAME}" not found in folder ${ARIA_FOLDER_ID}. Available: ${available}`);
           setIsReady(true);
           return;
         }
+        console.log(CHAT_TAG, 'Agent found:', agent.name);
         agentRef.current = agent;
 
         let conv: ConversationGetResponse;
@@ -157,16 +175,20 @@ export function useAriaChat({ restoreHistory = true }: UseAriaChatOptions = {}) 
         } else {
           step = 'creating conversation';
           conv = await agent.conversations.create({ label: 'Aria Chat' });
+          console.log(CHAT_TAG, 'Fresh conversation created:', conv.conversationId ?? '(no id field)');
         }
 
-        if (cancelled) return;
+        if (cancelled) { console.log(CHAT_TAG, 'setup() cancelled before openSession'); return; }
         convRef.current = conv;
         step = 'opening session';
+        console.log(CHAT_TAG, 'Opening session…');
         openSession(conv);
-        setIsReady(true);
+        console.log(CHAT_TAG, 'Session open. sessionRef.current set:', sessionRef.current !== null);
+        console.log(CHAT_TAG, 'Waiting for onSessionStarted before marking ready…');
       } catch (err: unknown) {
         if (!cancelled) {
           const msg = err instanceof Error ? err.message : String(err);
+          console.log(CHAT_TAG, `ERROR at step "${step}":`, msg);
           setError(`Failed at "${step}": ${msg}`);
           setIsReady(true);
         }
@@ -176,6 +198,7 @@ export function useAriaChat({ restoreHistory = true }: UseAriaChatOptions = {}) 
     setup();
 
     return () => {
+      console.log(CHAT_TAG, 'cleanup — cancelling setup, clearing sessionRef');
       cancelled = true;
       convRef.current?.endSession();
       sessionRef.current = null;
@@ -185,7 +208,20 @@ export function useAriaChat({ restoreHistory = true }: UseAriaChatOptions = {}) 
   const sendMessage = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || isStreaming || !sessionRef.current) return;
+      console.log(CHAT_TAG, 'sendMessage called', {
+        textLength: trimmed.length,
+        isStreaming,
+        sessionReady: sessionRef.current !== null,
+        preview: trimmed.slice(0, 80),
+      });
+      if (!trimmed || isStreaming || !sessionRef.current) {
+        console.log(CHAT_TAG, 'sendMessage BLOCKED —', {
+          emptyText: !trimmed,
+          isStreaming,
+          noSession: sessionRef.current === null,
+        });
+        return;
+      }
 
       const assistantId = `assistant-${Date.now()}`;
 
@@ -201,9 +237,12 @@ export function useAriaChat({ restoreHistory = true }: UseAriaChatOptions = {}) 
       const exchangeId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
       pendingExchanges.current.set(exchangeId, assistantId);
 
+      console.log(CHAT_TAG, 'Starting exchange', exchangeId);
       const exchange = sessionRef.current.startExchange({ exchangeId });
       const message = exchange.startMessage({ role: MessageRole.User });
+      console.log(CHAT_TAG, 'Sending content part…');
       await message.sendContentPart({ data: trimmed });
+      console.log(CHAT_TAG, 'sendContentPart done — calling sendMessageEnd');
       message.sendMessageEnd();
     },
     [isStreaming],

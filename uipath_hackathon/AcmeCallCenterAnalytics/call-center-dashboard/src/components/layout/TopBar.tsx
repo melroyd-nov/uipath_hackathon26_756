@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Trash2, Moon, Sun, LogOut } from 'lucide-react';
 import { NAV_ITEMS } from '../../config/navigation';
 import { useAuth } from '../../hooks/useAuth';
+import { ARIA_BRIEF_CACHE_KEY } from '../../hooks/useAriaBrief';
 
 function derivePageTitle(pathname: string): string {
   if (pathname === '/') return 'Dashboard';
@@ -36,6 +37,7 @@ export default function TopBar() {
   const logout = () => {
     uiPathLogout();
     localStorage.removeItem('cc_auth');
+    sessionStorage.removeItem(ARIA_BRIEF_CACHE_KEY);
     navigate('/login');
   };
 
