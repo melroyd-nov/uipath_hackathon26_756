@@ -124,7 +124,7 @@ function greeting() {
 }
 
 const HEALTH_METRICS = [
-  { key: 'resolution_pct', label: 'Resolution', icon: CheckCircle, direction: 'higher', benchmarkKey: 'resolution_pct', fallback: 80, color: '#34D399' },
+  { key: 'resolution_pct', label: 'First Call Resolution', icon: CheckCircle, direction: 'higher', benchmarkKey: 'resolution_pct', fallback: 80, color: '#34D399' },
   { key: 'escalation_pct', label: 'Escalation', icon: AlertTriangle, direction: 'lower', benchmarkKey: 'escalation_pct', fallback: 10, color: '#F59E0B' },
   { key: 'compliance_fail_pct', label: 'Compliance', icon: ShieldCheck, direction: 'lower', benchmarkKey: 'compliance_fail_pct', fallback: 5, color: '#6366F1' },
   { key: 'repeat_call_pct', label: 'Repeat Calls', icon: RefreshCw, direction: 'lower', benchmarkKey: 'repeat_call_pct', fallback: 20, color: '#EC4899' },
@@ -163,7 +163,7 @@ export default function DashboardPage() {
           sparkline: trendSeries('total_calls'),
         },
         {
-          label: 'Resolution',
+          label: 'First Call Resolution',
           value: `${num(summary.resolution_pct).toFixed(1)}%`,
           icon: CheckCircle,
           accent: 'emerald' as const,
