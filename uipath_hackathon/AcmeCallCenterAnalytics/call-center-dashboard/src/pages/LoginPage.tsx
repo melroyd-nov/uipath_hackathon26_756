@@ -1,17 +1,18 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Headset, Mail, Lock } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { login, isLoading, isAuthenticated, error: uiPathError } = useAuth();
 
-  const handleSignIn = (e: FormEvent) => {
-    e.preventDefault();
-    localStorage.setItem('cc_auth', '1');
-    navigate('/');
-  };
+  useEffect(() => {
+    if (isAuthenticated) {
+      localStorage.setItem('cc_auth', '1');
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="app-texture flex h-screen bg-canvas">
@@ -40,50 +41,60 @@ export default function LoginPage() {
           <h2 className="mt-4 font-editorial text-3xl text-obsidian lg:mt-0">Welcome back</h2>
           <p className="mt-1 text-sm text-slate">Sign in to monitor your live queue</p>
 
-          <form className="mt-6 space-y-4" onSubmit={handleSignIn}>
+          <div className="mt-6 space-y-4">
             <div>
-              <label htmlFor="email" className="mb-1.5 block text-xs font-medium text-graphite">
-                Email
-              </label>
-              <div className="flex items-center gap-2 rounded-input border border-silver bg-bone px-3 py-2 focus-within:border-graphite">
+              <label className="mb-1.5 block text-xs font-medium text-graphite">Email</label>
+              <div className="flex items-center gap-2 rounded-input border border-silver bg-bone px-3 py-2 opacity-50">
                 <Mail size={15} className="text-slate" />
                 <input
-                  id="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  disabled
                   placeholder="you@acme.com"
-                  className="w-full bg-transparent text-sm text-obsidian outline-none placeholder:text-slate"
+                  className="w-full bg-transparent text-sm text-obsidian outline-none placeholder:text-slate cursor-not-allowed"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-graphite">
-                Password
-              </label>
-              <div className="flex items-center gap-2 rounded-input border border-silver bg-bone px-3 py-2 focus-within:border-graphite">
+              <label className="mb-1.5 block text-xs font-medium text-graphite">Password</label>
+              <div className="flex items-center gap-2 rounded-input border border-silver bg-bone px-3 py-2 opacity-50">
                 <Lock size={15} className="text-slate" />
                 <input
-                  id="password"
                   type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  disabled
                   placeholder="••••••••"
-                  className="w-full bg-transparent text-sm text-obsidian outline-none placeholder:text-slate"
+                  className="w-full bg-transparent text-sm text-obsidian outline-none placeholder:text-slate cursor-not-allowed"
                 />
               </div>
             </div>
 
             <button
-              type="submit"
-              className="mt-2 w-full rounded-button bg-obsidian px-4 py-2 text-sm font-medium text-paper shadow-subtle transition-colors hover:bg-graphite"
+              type="button"
+              disabled
+              className="mt-2 w-full rounded-button bg-obsidian px-4 py-2 text-sm font-medium text-paper shadow-subtle opacity-50 cursor-not-allowed"
             >
               Sign in
             </button>
-          </form>
+          </div>
 
-          <p className="mt-4 text-center text-xs text-slate">Demo build — any credentials will sign you in.</p>
+          <div className="mt-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-silver" />
+            <span className="text-xs text-slate">or</span>
+            <span className="h-px flex-1 bg-silver" />
+          </div>
+
+          {uiPathError && (
+            <p className="mt-3 text-center text-xs text-red-600">{uiPathError}</p>
+          )}
+
+          <button
+            type="button"
+            onClick={() => login()}
+            disabled={isLoading}
+            className="mt-4 w-full rounded-button border border-silver bg-bone px-4 py-2 text-sm font-medium text-obsidian transition-colors hover:bg-silver disabled:opacity-50"
+          >
+            {isLoading ? 'Connecting…' : 'Continue with UiPath'}
+          </button>
         </div>
       </div>
     </div>
