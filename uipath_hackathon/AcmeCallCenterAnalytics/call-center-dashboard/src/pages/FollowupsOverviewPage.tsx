@@ -83,20 +83,22 @@ function FilterChip({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors"
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+        active ? '' : 'bg-bone border-silver text-slate'
+      }`}
       style={
         active
           ? { backgroundColor: `${color}1F`, borderColor: `${color}55`, color: TEXT_COLOR[color] ?? color }
-          : { backgroundColor: '#F5F2F0', borderColor: '#D6D6D6', color: '#7B7B7B' }
+          : undefined
       }
     >
       {label}
       <span
-        className="px-1.5 py-0.5 rounded-full text-[10px]"
+        className={`px-1.5 py-0.5 rounded-full text-[10px] ${active ? '' : 'bg-silver text-graphite'}`}
         style={
           active
             ? { backgroundColor: color, color: '#0B0B12' }
-            : { backgroundColor: '#E5E1DD', color: '#4B5563' }
+            : undefined
         }
       >
         {count}
@@ -193,11 +195,11 @@ function FollowupRow({ f }: { f: GlobalFollowup }) {
 
   return (
     <div
-      className="rounded-xl border flex overflow-hidden"
-      style={{
-        backgroundColor: f.is_overdue ? '#FEF2F2' : '#FFFFFF',
-        borderColor: f.is_overdue ? '#FCA5A5' : '#D6D6D6',
-      }}
+      className={`rounded-xl border flex overflow-hidden ${
+        f.is_overdue
+          ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/60'
+          : 'bg-paper border-silver'
+      }`}
     >
       <div className="w-1 shrink-0" style={{ backgroundColor: meta.color }} />
       <div className="flex-1 p-4">
@@ -258,7 +260,7 @@ function FollowupRow({ f }: { f: GlobalFollowup }) {
         {hasOutcomeRow && (
           <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-silver">
             {intents.slice(0, 3).map((intent) => (
-              <span key={intent} className="px-2 py-0.5 rounded-full text-[11px] bg-purple-100 text-purple-700">
+              <span key={intent} className="px-2 py-0.5 rounded-full text-[11px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                 {intent}
               </span>
             ))}
