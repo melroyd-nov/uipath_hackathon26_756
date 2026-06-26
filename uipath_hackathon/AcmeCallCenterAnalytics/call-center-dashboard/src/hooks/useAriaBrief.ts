@@ -77,6 +77,7 @@ export function useAriaBrief({ kpi }: { kpi: KpiSummary | undefined }) {
 
   const { messages, isStreaming, isReady, error, sendMessage } = useAriaChat({
     restoreHistory: false,
+    enabled: !isCached,
   });
 
   // ── SEND EFFECT ───────────────────────────────────────────────────────────
@@ -122,16 +123,15 @@ export function useAriaBrief({ kpi }: { kpi: KpiSummary | undefined }) {
 
   // ── EXTRACT EFFECT ────────────────────────────────────────────────────────
   // Maps completed assistant messages back to section keys and updates state.
+  // NOTE: 'sections' is intentionally excluded from deps — including it causes
+  // an infinite loop because setSections triggers a re-render which re-fires
+  // the effect, which calls setSections again (new object reference every time).
   useEffect(() => {
     if (isCached) return;
 
     const completed = messages.filter((m) => m.role === 'assistant' && !m.isStreaming && m.content);
 
-    console.log(TAG, 'EXTRACT EFFECT fired', {
-      completedCount: completed.length,
-      isStreaming,
-      sectionsPopulated: Object.keys(sections).length,
-    });
+    console.log(TAG, 'EXTRACT EFFECT fired', { completedCount: completed.length });
 
     if (completed.length === 0) return;
 
@@ -139,30 +139,26 @@ export function useAriaBrief({ kpi }: { kpi: KpiSummary | undefined }) {
     completed.forEach((msg, i) => {
       if (i < BRIEF_SECTION_KEYS.length) {
         const key = BRIEF_SECTION_KEYS[i];
-        const text = msg.content.slice(0, MAX_CHARS);
-        incoming[key] = text;
-        console.log(TAG, `  section "${key}" → ${text.length} chars: "${text.slice(0, 80)}…"`);
+        incoming[key] = msg.content.slice(0, MAX_CHARS);
       }
     });
 
     if (Object.keys(incoming).length === 0) return;
 
-    setSections((prev) => {
-      const next = { ...prev, ...incoming };
-      const allDone = BRIEF_SECTION_KEYS.every((k) => Boolean(next[k]));
-      if (allDone) {
-        writeCache(next as Record<BriefSectionKey, string>);
-      }
-      return next;
-    });
-  }, [isCached, messages, isStreaming, sections]);
+    setSections((prev) => ({ ...prev, ...incoming }));
+
+    // Write cache outside setSections callback — avoids calling writeCache on
+    // every React reconciliation pass of the functional update.
+    if (BRIEF_SECTION_KEYS.every((k) => Boolean(incoming[k]))) {
+      writeCache(incoming as Record<BriefSectionKey, string>);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCached, messages, isStreaming]);
 
   const isLoading = !isCached && (
     !isReady ||
     messages.filter((m) => m.role === 'assistant' && !m.isStreaming).length < BRIEF_SECTION_KEYS.length
   );
-
-  console.log(TAG, 'render', { isReady, isLoading, isCached, error, sectionKeys: Object.keys(sections) });
 
   return { sections, isLoading, error };
 }
