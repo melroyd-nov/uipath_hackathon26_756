@@ -21,11 +21,12 @@ export interface AriaChatMessage {
 
 interface UseAriaChatOptions {
   restoreHistory?: boolean;
+  enabled?: boolean;
 }
 
 const CHAT_TAG = '[ARIA-CHAT]';
 
-export function useAriaChat({ restoreHistory = true }: UseAriaChatOptions = {}) {
+export function useAriaChat({ restoreHistory = true, enabled = true }: UseAriaChatOptions = {}) {
   const { sdk } = useAuth();
 
   // One ConversationalAgent service instance per SDK identity
@@ -101,6 +102,8 @@ export function useAriaChat({ restoreHistory = true }: UseAriaChatOptions = {}) 
   );
 
   useEffect(() => {
+    if (!enabled) return;
+
     let cancelled = false;
 
     const setup = async () => {
@@ -203,7 +206,7 @@ export function useAriaChat({ restoreHistory = true }: UseAriaChatOptions = {}) 
       convRef.current?.endSession();
       sessionRef.current = null;
     };
-  }, [service, restoreHistory, openSession]);
+  }, [service, restoreHistory, openSession, enabled]);
 
   const sendMessage = useCallback(
     async (text: string) => {
