@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Trash2, Moon, Sun, LogOut } from 'lucide-react';
 import { NAV_ITEMS } from '../../config/navigation';
+import { useAuth } from '../../hooks/useAuth';
 
 function derivePageTitle(pathname: string): string {
   if (pathname === '/') return 'Dashboard';
@@ -15,6 +16,7 @@ function derivePageTitle(pathname: string): string {
 export default function TopBar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout: uiPathLogout } = useAuth();
   const [theme, setTheme] = useState<'light' | 'dark'>(
     () => (localStorage.getItem('cc_theme') as 'light' | 'dark') ?? 'light',
   );
@@ -32,6 +34,7 @@ export default function TopBar() {
   };
 
   const logout = () => {
+    uiPathLogout();
     localStorage.removeItem('cc_auth');
     navigate('/login');
   };
