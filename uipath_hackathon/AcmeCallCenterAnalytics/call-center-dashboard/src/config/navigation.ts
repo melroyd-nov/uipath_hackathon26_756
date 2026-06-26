@@ -36,6 +36,6 @@ export const NAV_ITEMS: NavItem[] = [
   { icon: Users, label: 'Agents', path: '/agents' },
   { icon: PhoneCall, label: 'Call Log', path: '/calls' },
   { icon: ListChecks, label: 'Follow-ups', path: '/followups' },
-  { icon: Brain, label: 'AI Insights', path: '/ai' },
+  { icon: Brain, label: 'Chat with Aria', path: '/chat' },
   { icon: Gauge, label: 'AI Usage', path: '/ai-usage' },
 ];

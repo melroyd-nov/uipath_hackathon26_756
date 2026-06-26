@@ -1,4 +1,4 @@
 {
-  "scope": "DataFabric.Data.Read DataFabric.Data.Write DataFabric.Schema.Read",
+  "scope": "DataFabric.Data.Read DataFabric.Data.Write DataFabric.Schema.Read OR.Execution OR.Folders OR.Jobs ConversationalAgents",
   "clientId": "e5a68586-b976-4291-afb7-64cac2935824"
 }

@@ -52,6 +52,7 @@ export default function App() {
             <Route path="/calls/:id" element={<CallDetailPage />} />
             <Route path="/calls/:id/followups" element={<FollowupsPage />} />
             <Route path="/followups" element={<FollowupsOverviewPage />} />
+            <Route path="/chat" element={<AIInsightsPage />} />
             <Route path="/ai" element={<AIInsightsPage />} />
             <Route path="/ai-usage" element={<AiUsagePage />} />
           </Route>
