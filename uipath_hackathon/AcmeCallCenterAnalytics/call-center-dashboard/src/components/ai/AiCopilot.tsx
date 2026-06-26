@@ -1,41 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { X, Send } from 'lucide-react';
 import AiOrbIcon from './AiOrbIcon';
-import { askAi, getSuggestedQuestions } from '../../api/ai';
+import { useAriaChat } from '../../hooks/useAriaChat';
 
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  text: string;
-}
+const SUGGESTED_QUESTIONS = [
+  'What are the top escalation drivers today?',
+  'Which agent has the best resolution rate?',
+  'Show me any compliance issues from recent calls.',
+];
 
 export default function AiCopilot() {
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [suggested, setSuggested] = useState<string[]>([]);
-  const [thinking, setThinking] = useState(false);
 
-  useEffect(() => {
-    if (open && suggested.length === 0) {
-      getSuggestedQuestions()
-        .then((res) => setSuggested(res.questions))
-        .catch(() => setSuggested([]));
-    }
-  }, [open, suggested.length]);
+  const { messages, isStreaming, isReady, sendMessage } = useAriaChat({ restoreHistory: false });
 
-  const ask = async (text: string) => {
-    if (!text.trim()) return;
-    setMessages((prev) => [...prev, { role: 'user', text }]);
+  const ask = (text: string) => {
+    if (!text.trim() || isStreaming) return;
     setQuestion('');
-    setThinking(true);
-    try {
-      const res = await askAi(text);
-      setMessages((prev) => [...prev, { role: 'assistant', text: res.answer }]);
-    } catch {
-      setMessages((prev) => [...prev, { role: 'assistant', text: 'Something went wrong answering that.' }]);
-    } finally {
-      setThinking(false);
-    }
+    sendMessage(text);
   };
 
   return (
@@ -43,16 +26,17 @@ export default function AiCopilot() {
       {open && (
         <div className="flex h-[480px] w-80 flex-col overflow-hidden rounded-card-elevated border border-silver bg-paper shadow-card">
           <header className="flex items-center justify-between border-b border-silver px-4 py-3">
-            <span className="font-editorial text-base text-obsidian">AI Copilot</span>
+            <span className="font-editorial text-base text-obsidian">Aria Copilot</span>
             <button type="button" onClick={() => setOpen(false)} className="text-slate hover:text-obsidian">
               <X size={18} />
             </button>
           </header>
+
           <div className="flex-1 space-y-2 overflow-y-auto p-4">
-            {messages.length === 0 && (
+            {messages.length === 0 && isReady && (
               <div className="space-y-2">
                 <p className="text-sm text-slate">Ask anything about your call center data.</p>
-                {suggested.map((q) => (
+                {SUGGESTED_QUESTIONS.map((q) => (
                   <button
                     key={q}
                     type="button"
@@ -64,20 +48,37 @@ export default function AiCopilot() {
                 ))}
               </div>
             )}
-            {messages.map((m, i) => (
+
+            {messages.length === 0 && !isReady && (
+              <p className="text-sm text-slate">Connecting to Aria…</p>
+            )}
+
+            {messages.map((m) => (
               <div
-                key={i}
+                key={m.id}
                 className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
                   m.role === 'user'
                     ? 'ml-auto bg-sky-veil text-obsidian'
                     : 'border border-silver bg-bone text-obsidian'
                 }`}
               >
-                {m.text}
+                {m.isStreaming && !m.content ? (
+                  <div className="flex items-center gap-1">
+                    {[0, 1, 2].map((i) => (
+                      <span
+                        key={i}
+                        className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce"
+                        style={{ animationDelay: `${i * 0.15}s` }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  m.content
+                )}
               </div>
             ))}
-            {thinking && <p className="text-xs text-slate">Thinking…</p>}
           </div>
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -90,11 +91,13 @@ export default function AiCopilot() {
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Ask a question…"
-              className="flex-1 rounded-input border border-silver px-3 py-1.5 text-sm focus:border-graphite focus:outline-none"
+              disabled={isStreaming || !isReady}
+              className="flex-1 rounded-input border border-silver px-3 py-1.5 text-sm focus:border-graphite focus:outline-none disabled:opacity-50"
             />
             <button
               type="submit"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-obsidian text-paper hover:bg-graphite"
+              disabled={!question.trim() || isStreaming || !isReady}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-obsidian text-paper hover:bg-graphite disabled:opacity-40"
             >
               <Send size={14} />
             </button>

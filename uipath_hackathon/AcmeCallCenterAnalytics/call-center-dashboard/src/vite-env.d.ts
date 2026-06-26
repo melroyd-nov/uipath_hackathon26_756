@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly VITE_UIPATH_ORG_NAME: string;
   readonly VITE_UIPATH_TENANT_NAME: string;
   readonly VITE_UIPATH_BASE_URL: string;
+  readonly VITE_ARIA_AGENT_FOLDER_ID: string;
 }
 
 interface ImportMeta {

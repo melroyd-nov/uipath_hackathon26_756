@@ -4,6 +4,7 @@ import { Bot, User } from 'lucide-react';
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  isStreaming?: boolean;
 }
 
 function inlineFormat(text: string): ReactNode[] {
@@ -281,7 +282,19 @@ export default function AiChatMessage({ message }: { message: ChatMessage }) {
         <Bot size={15} className="text-purple-600" />
       </div>
       <div className="bg-paper border border-silver rounded-2xl px-4 py-3 max-w-2xl flex-1">
-        {renderMarkdown(message.content)}
+        {message.isStreaming && !message.content ? (
+          <div className="flex items-center gap-1.5 py-0.5">
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
+                style={{ animationDelay: `${i * 0.15}s` }}
+              />
+            ))}
+          </div>
+        ) : (
+          renderMarkdown(message.content)
+        )}
       </div>
     </div>
   );
