@@ -47,7 +47,7 @@ export default function AIInsightsPage() {
 
   if (!isReady) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-160px)] gap-4">
+      <div className="flex flex-col items-center justify-center h-full gap-4">
         <LoadingSpinner size={28} />
         <p className="text-slate text-sm">Connecting to Aria…</p>
       </div>
@@ -55,7 +55,7 @@ export default function AIInsightsPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-160px)]">
+    <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <span className="text-slate text-sm">Ask anything about call patterns, agent performance, and trends.</span>
         {messages.length > 0 && (
@@ -70,7 +70,7 @@ export default function AIInsightsPage() {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+      <div className="chat-scroll flex-1 overflow-y-auto space-y-4 pr-1">
         {showSuggestions && (
           <>
             <div className="bg-paper border border-silver rounded-2xl p-6 flex items-start gap-4">

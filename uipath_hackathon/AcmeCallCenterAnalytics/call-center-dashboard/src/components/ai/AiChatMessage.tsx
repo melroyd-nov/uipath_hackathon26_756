@@ -266,7 +266,7 @@ export default function AiChatMessage({ message }: { message: ChatMessage }) {
   if (isUser) {
     return (
       <div className="flex items-start gap-3 justify-end">
-        <div className="bg-emerald-100 border border-emerald-200 rounded-2xl rounded-tr-sm px-4 py-3 max-w-lg">
+        <div className="bg-moss-veil border border-blush rounded-2xl rounded-tr-sm px-4 py-3 max-w-lg">
           <p className="text-obsidian text-sm whitespace-pre-wrap">{message.content}</p>
         </div>
         <div className="w-8 h-8 rounded-full bg-bone flex items-center justify-center shrink-0">
@@ -281,7 +281,7 @@ export default function AiChatMessage({ message }: { message: ChatMessage }) {
       <div className="w-8 h-8 rounded-full bg-purple-100 border border-purple-200 flex items-center justify-center shrink-0">
         <Bot size={15} className="text-purple-600" />
       </div>
-      <div className="bg-paper border border-silver rounded-2xl px-4 py-3 max-w-2xl flex-1">
+      <div className="flex-1 min-w-0 py-1 pr-4">
         {message.isStreaming && !message.content ? (
           <div className="flex items-center gap-1.5 py-0.5">
             {[0, 1, 2].map((i) => (

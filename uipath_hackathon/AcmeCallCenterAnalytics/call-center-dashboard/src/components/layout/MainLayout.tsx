@@ -3,7 +3,6 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import LoadingSpinner from '../shared/LoadingSpinner';
-import AiCopilot from '../ai/AiCopilot';
 
 export default function MainLayout() {
   const location = useLocation();
@@ -13,21 +12,20 @@ export default function MainLayout() {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar />
-        <main className="flex-1 scroll-smooth overflow-y-auto p-6">
+        <main className="flex-1 overflow-hidden p-6 flex flex-col">
           <Suspense
             fallback={
-              <div className="flex h-full items-center justify-center">
+              <div className="flex flex-1 items-center justify-center">
                 <LoadingSpinner size={32} />
               </div>
             }
           >
-            <div key={location.pathname} className="animate-[fade-in_0.18s_ease-out]">
+            <div key={location.pathname} className="animate-[fade-in_0.18s_ease-out] flex-1 min-h-0 overflow-y-auto scroll-smooth">
               <Outlet />
             </div>
           </Suspense>
         </main>
       </div>
-      <AiCopilot />
     </div>
   );
 }
