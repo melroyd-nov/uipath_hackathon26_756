@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Star, Award, MessageSquare, Send } from 'lucide-react';
+import lottieChat from '../assets/lottie/icon-chat.json';
+import lottieTarget from '../assets/lottie/icon-target.json';
 import FilterBar from '../components/shared/FilterBar';
 import GlassPanel from '../components/shared/GlassPanel';
 import ChartInsight from '../components/shared/ChartInsight';
@@ -267,6 +269,8 @@ export default function AgentDetailPage() {
         <GlassPanel
           title="Performance Radar"
           subtitle="Green = agent · Dashed = benchmark"
+          lottieIcon={lottieTarget}
+          accent="#6366F1"
           tooltip="Spider/radar chart comparing the agent across 5 KPIs: Resolution Rate, Pre-Verification, Non-Escalation, Compliance, and No Repeat. The brand-color solid shape is the agent's actual performance; the dashed amber shape shows the benchmark target. Gaps between the two highlight specific areas needing improvement."
         >
           <AgentRadarChart kpi={kpi} agentName={firstName} />
@@ -276,7 +280,7 @@ export default function AgentDetailPage() {
           />
         </GlassPanel>
 
-        <GlassPanel title={`Manager Feedback (${feedback.length})`}>
+        <GlassPanel title={`Manager Feedback (${feedback.length})`} lottieIcon={lottieChat} accent="#8B5CF6">
           <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
             {feedback.length === 0 ? (
               <EmptyState title="No feedback yet" />

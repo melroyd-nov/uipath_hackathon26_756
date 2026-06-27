@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Info, ChevronDown, ChevronUp, AlertTriangle, BarChart2 } from 'lucide-react';
+import lottieEscalation from '../assets/lottie/icon-escalation.json';
 import FilterBar from '../components/shared/FilterBar';
 import GlassPanel from '../components/shared/GlassPanel';
 import ChartInsight from '../components/shared/ChartInsight';
@@ -122,6 +123,8 @@ export default function EscalationsPage() {
         <GlassPanel
           title="Escalation Rate by Agent"
           subtitle="Benchmark: 10% (amber line)"
+          lottieIcon={lottieEscalation}
+          accent="#EF4444"
           tooltip="Percentage of each agent's calls that were escalated to a supervisor. Benchmark is ≤10%. Agents above the line may need coaching, better scripts, or reduced complexity in call routing."
         >
           {byAgentLoading ? (
@@ -142,6 +145,8 @@ export default function EscalationsPage() {
         <GlassPanel
           title="Escalation Trend"
           subtitle="Monthly escalation % over time"
+          lottieIcon={lottieEscalation}
+          accent="#EF4444"
           tooltip="Monthly escalation rate over the selected period. Spikes may indicate product issues, system outages, or high-complexity call months. The amber dashed line marks the 10% benchmark — sustained periods above it warrant investigation."
         >
           {trendLoading ? (
@@ -167,6 +172,8 @@ export default function EscalationsPage() {
       <GlassPanel
         title="Escalations by Intent"
         subtitle="Which call types drive escalations"
+        lottieIcon={lottieEscalation}
+        accent="#EF4444"
         tooltip="Number of escalated calls broken down by call intent. Intents with high escalation counts are structural friction points — they may need process redesign, better agent training, or self-service alternatives."
       >
         {rootCauseLoading ? (
@@ -191,7 +198,7 @@ export default function EscalationsPage() {
         )}
       </GlassPanel>
 
-      <GlassPanel title="Agent Escalation Summary">
+      <GlassPanel title="Agent Escalation Summary" lottieIcon={lottieEscalation} accent="#EF4444">
         {byAgentLoading ? (
           <div className="flex justify-center py-16">
             <LoadingSpinner size={28} />

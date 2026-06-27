@@ -5,6 +5,7 @@ import { DummyDataProvider } from './context/DummyDataContext';
 import MainLayout from './components/layout/MainLayout';
 import RequireAuth from './components/auth/RequireAuth';
 import LoginPage from './pages/LoginPage';
+import CustomCursor from './components/shared/CustomCursor';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const SentimentPage = lazy(() => import('./pages/SentimentPage'));
@@ -28,6 +29,7 @@ export default function App() {
   return (
     <DummyDataProvider>
       <FilterProvider>
+        <CustomCursor />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route

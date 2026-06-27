@@ -16,7 +16,7 @@ const uipathConfig: UiPathSDKConfig = {
   orgName: import.meta.env.VITE_UIPATH_ORG_NAME,
   tenantName: import.meta.env.VITE_UIPATH_TENANT_NAME,
   baseUrl: import.meta.env.VITE_UIPATH_BASE_URL,
-  redirectUri: window.location.origin + window.location.pathname,
+  redirectUri: window.location.origin + '/',
   scope: import.meta.env.VITE_UIPATH_SCOPE,
 };
 

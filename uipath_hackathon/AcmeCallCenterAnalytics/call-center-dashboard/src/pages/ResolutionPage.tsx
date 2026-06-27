@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Info, ChevronDown, ChevronUp, CheckCircle, RefreshCw } from 'lucide-react';
+import lottieCheck from '../assets/lottie/icon-check.json';
 import FilterBar from '../components/shared/FilterBar';
 import GlassPanel from '../components/shared/GlassPanel';
 import ChartInsight from '../components/shared/ChartInsight';
@@ -134,6 +135,8 @@ export default function ResolutionPage() {
         <GlassPanel
           title="Resolution Overview"
           subtitle="Resolved vs Unresolved"
+          lottieIcon={lottieCheck}
+          accent="#22C55E"
           tooltip="Donut showing the split of call outcomes: Resolved (issue fixed on the call) vs Unresolved. A healthy centre targets ≥80% resolved."
         >
           {overviewLoading ? (
@@ -154,6 +157,8 @@ export default function ResolutionPage() {
         <GlassPanel
           title="Resolution Rate Trend"
           subtitle="Monthly % — benchmark: 80%"
+          lottieIcon={lottieCheck}
+          accent="#22C55E"
           tooltip="Tracks the monthly percentage of calls fully resolved on the first interaction. The dashed line marks the 80% benchmark. Dips below the line signal agent knowledge gaps, system issues, or complex call types needing process support."
           className="lg:col-span-2"
         >
@@ -182,6 +187,8 @@ export default function ResolutionPage() {
         <GlassPanel
           title="Repeat Call Trend"
           subtitle="Monthly repeat call %"
+          lottieIcon={lottieCheck}
+          accent="#22C55E"
           tooltip="Percentage of calls per month where the customer called back for the same issue. High repeat rates indicate first-call resolution failures. Aim for ≤20%."
         >
           {repeatTrendLoading ? (
@@ -203,7 +210,7 @@ export default function ResolutionPage() {
           )}
         </GlassPanel>
 
-        <GlassPanel title="Repeat Call Rate by Agent">
+        <GlassPanel title="Repeat Call Rate by Agent" lottieIcon={lottieCheck} accent="#22C55E">
           {repeatByAgentLoading ? (
             <div className="flex justify-center py-16">
               <LoadingSpinner size={28} />

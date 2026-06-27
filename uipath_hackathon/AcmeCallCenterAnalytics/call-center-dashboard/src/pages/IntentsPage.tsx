@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Info, ChevronDown, ChevronUp, BarChart2, TrendingUp, AlertTriangle, RefreshCw } from 'lucide-react';
+import lottieTarget from '../assets/lottie/icon-target.json';
 import FilterBar from '../components/shared/FilterBar';
 import GlassPanel from '../components/shared/GlassPanel';
 import ChartInsight from '../components/shared/ChartInsight';
@@ -70,6 +71,8 @@ export default function IntentsPage() {
       <GlassPanel
         title="Intent Pareto Analysis"
         subtitle="Call volume by intent — sorted highest to lowest"
+        lottieIcon={lottieTarget}
+        accent="#3B82F6"
         tooltip="Horizontal bar chart showing call volume by intent type, sorted from highest to lowest. Each bar is colour-coded. The intent at the top drives the most calls — prioritise these for automation, improved agent scripts, or self-service deflection."
       >
         {isLoading ? (
@@ -87,7 +90,7 @@ export default function IntentsPage() {
         )}
       </GlassPanel>
 
-      <GlassPanel title="Intent Detail Table" onExport={handleExport}>
+      <GlassPanel title="Intent Detail Table" onExport={handleExport} lottieIcon={lottieTarget} accent="#3B82F6">
         <button
           type="button"
           onClick={() => setShowMetricInfo((prev) => !prev)}

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Brain, Gauge, Clock, Cpu, Activity } from 'lucide-react';
+import lottiePulse from '../assets/lottie/icon-pulse.json';
 import GlassPanel from '../components/shared/GlassPanel';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import { useDataFabric, ENTITY_IDS } from '../lib/dataFabric';
@@ -69,7 +70,7 @@ export default function AiUsagePage() {
         </div>
       </div>
 
-      <GlassPanel title="Usage Summary" subtitle="Live counters from the ai_usage table">
+      <GlassPanel title="Usage Summary" subtitle="Live counters from the ai_usage table" lottieIcon={lottiePulse} accent="#6366F1">
         {usageQuery.isLoading || !usage ? (
           <div className="flex justify-center py-16">
             <LoadingSpinner size={28} />
