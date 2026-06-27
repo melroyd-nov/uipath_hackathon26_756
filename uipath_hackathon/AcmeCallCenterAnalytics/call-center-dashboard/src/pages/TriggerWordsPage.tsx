@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Info, ChevronDown, ChevronUp, AlertTriangle, TrendingUp } from 'lucide-react';
+import lottieZap from '../assets/lottie/icon-zap.json';
 import FilterBar from '../components/shared/FilterBar';
 import GlassPanel from '../components/shared/GlassPanel';
 import ChartInsight from '../components/shared/ChartInsight';
@@ -128,6 +129,8 @@ export default function TriggerWordsPage() {
         <GlassPanel
           title="Top Trigger Words"
           subtitle="Occurrences this period — sorted by count"
+          lottieIcon={lottieZap}
+          accent="#F59E0B"
           tooltip="Words flagged by the NLP pipeline as high-risk. Bars show raw occurrence count; hover for detail. Words associated with legal or fraud exposure appear in red when above the alert threshold."
         >
           {countsLoading ? (
@@ -154,6 +157,8 @@ export default function TriggerWordsPage() {
         <GlassPanel
           title="Trigger Word Trend"
           subtitle="Monthly total occurrences"
+          lottieIcon={lottieZap}
+          accent="#F59E0B"
           tooltip="Total trigger word detections per month. Spikes may indicate a product issue, policy change, or external event driving customer frustration. Use alongside the escalation and sentiment trends to confirm root cause."
         >
           {trendLoading ? (
@@ -177,7 +182,7 @@ export default function TriggerWordsPage() {
       </div>
 
       {/* Detail table */}
-      <GlassPanel title="Trigger Word Breakdown" subtitle="All flagged terms ranked by occurrence">
+      <GlassPanel title="Trigger Word Breakdown" subtitle="All flagged terms ranked by occurrence" lottieIcon={lottieZap} accent="#F59E0B">
         {countsLoading ? (
           <div className="flex justify-center py-16">
             <LoadingSpinner size={28} />

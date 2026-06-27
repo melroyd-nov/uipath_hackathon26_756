@@ -4,6 +4,8 @@ import {
   Info, ChevronDown, ChevronUp,
   Flame, TrendingDown, AlertTriangle, RefreshCw,
 } from 'lucide-react';
+import lottieFire from '../assets/lottie/icon-fire.json';
+import lottieBars from '../assets/lottie/icon-bars.json';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
@@ -68,6 +70,8 @@ export default function FrictionPage() {
       <GlassPanel
         title="Top Friction Points"
         subtitle="Highest friction call intents by combined score"
+        lottieIcon={lottieFire}
+        accent="#F97316"
         tooltip="Friction Score = Negative Sentiment × 40% + Escalation Rate × 35% + Repeat Call Rate × 25%. A higher score means customers are most frustrated, most likely to escalate, and most likely to call back. These are your highest-priority improvement areas."
       >
         {/* Methodology banner — inside this panel per spec */}
@@ -197,6 +201,8 @@ export default function FrictionPage() {
       <GlassPanel
         title="Friction Component Breakdown"
         subtitle="Negative %, Escalation %, Repeat % by intent"
+        lottieIcon={lottieBars}
+        accent="#F97316"
         tooltip="Stacked bar showing three friction drivers per call intent: Negative sentiment % (red), Escalation % (amber), and Repeat call % (orange). The combined height reflects overall friction. Taller bars = higher customer effort and dissatisfaction for that intent type."
       >
         {isLoading ? (
@@ -247,6 +253,8 @@ export default function FrictionPage() {
       <GlassPanel
         title="All Friction Points Ranked"
         subtitle="Full breakdown by intent"
+        lottieIcon={lottieFire}
+        accent="#F97316"
         tooltip="Complete ranked list of all call intents by friction score. Friction Score = Negative % × 0.4 + Escalation % × 0.35 + Repeat Call % × 0.25. Only intents with ≥3 calls are included. Use this to prioritise coaching, script improvements, and self-service deflection."
       >
         {isLoading ? (

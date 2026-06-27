@@ -5,6 +5,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        /* Semantic aliases (backward-compat with existing classes) */
         obsidian: 'var(--color-obsidian)',
         graphite: 'var(--color-graphite)',
         slate: 'var(--color-slate)',
@@ -17,6 +18,18 @@ export default {
         'sky-veil': 'var(--color-sky-veil)',
         'sage-bloom': 'var(--color-sage-bloom)',
         'moss-veil': 'var(--color-moss-veil)',
+        /* Brand tokens */
+        brand: {
+          primary: 'var(--color-brand-primary)',
+          dark: 'var(--color-brand-dark)',
+          deep: 'var(--color-brand-deep)',
+          navy: 'var(--color-brand-navy)',
+          blue: 'var(--color-brand-blue)',
+        },
+        action: {
+          blue: 'var(--color-action-blue)',
+        },
+        /* Status */
         status: {
           live: 'var(--color-status-live)',
           'live-bg': 'var(--color-status-live-bg)',
@@ -31,6 +44,7 @@ export default {
       fontFamily: {
         sans: ['var(--font-switzer)'],
         editorial: ['var(--font-pp-editorial-new)'],
+        mono: ['var(--font-mono)'],
       },
       borderRadius: {
         card: 'var(--radius-cards)',
@@ -43,6 +57,9 @@ export default {
       boxShadow: {
         subtle: 'var(--shadow-subtle)',
         card: 'var(--shadow-md)',
+        'brand-hover': '0 8px 24px rgba(15,31,76,0.14), 0 2px 6px rgba(15,31,76,0.08)',
+        'ai-card': '0 2px 10px rgba(30,94,172,0.08)',
+        panel: '0 2px 16px rgba(15,31,76,0.07)',
       },
       backgroundColor: {
         canvas: 'var(--surface-canvas)',

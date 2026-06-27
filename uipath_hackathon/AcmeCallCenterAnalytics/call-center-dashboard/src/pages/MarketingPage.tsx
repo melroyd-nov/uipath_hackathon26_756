@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Info, ChevronDown, ChevronUp, Target, TrendingUp, Star, Users } from 'lucide-react';
+import lottieRocket from '../assets/lottie/icon-rocket.json';
 import FilterBar from '../components/shared/FilterBar';
 import GlassPanel from '../components/shared/GlassPanel';
 import ChartInsight from '../components/shared/ChartInsight';
@@ -181,6 +182,8 @@ export default function MarketingPage() {
       <GlassPanel
         title="Opportunity Type Breakdown"
         subtitle="Call volume by opportunity category"
+        lottieIcon={lottieRocket}
+        accent="#0EA5E9"
         tooltip="Grouped view of all opportunity calls by category. Each bar shows total calls where that opportunity type was detected. Use this to understand which opportunity channels have the most volume."
       >
         {isLoading ? (
@@ -209,6 +212,8 @@ export default function MarketingPage() {
         <GlassPanel
           title="Top Opportunity Intents"
           subtitle="Call volume by intent — top 8"
+          lottieIcon={lottieRocket}
+          accent="#0EA5E9"
           tooltip="The call intents most frequently associated with marketing opportunities. Higher call count means more customers with buying signals for that intent — prioritise outreach and agent scripting for these intents."
         >
           {isLoading ? (
@@ -235,6 +240,8 @@ export default function MarketingPage() {
         <GlassPanel
           title="Conversion Score by Intent"
           subtitle="Likelihood to convert — benchmark: 70"
+          lottieIcon={lottieRocket}
+          accent="#0EA5E9"
           tooltip="Conversion score (0–100) per intent: green ≥70 (high), amber 50–69 (medium), red <50 (low). Focus outreach resources on high-volume intents that also carry a high conversion score."
         >
           {isLoading ? (
@@ -264,7 +271,7 @@ export default function MarketingPage() {
       </div>
 
       {/* Detail table */}
-      <GlassPanel title="All Marketing Opportunities" subtitle="Ranked by conversion score">
+      <GlassPanel title="All Marketing Opportunities" subtitle="Ranked by conversion score" lottieIcon={lottieRocket} accent="#0EA5E9">
         {isLoading ? (
           <div className="flex justify-center py-16">
             <LoadingSpinner size={28} />

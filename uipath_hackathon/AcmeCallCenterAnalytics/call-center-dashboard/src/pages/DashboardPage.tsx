@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import {
   PhoneCall,
   CheckCircle,
@@ -13,6 +14,10 @@ import {
   Info,
   Crown,
 } from 'lucide-react';
+import lottieHealth from '../assets/lottie/icon-pulse.json';
+import lottieTrophy from '../assets/lottie/icon-star.json';
+import lottieBars from '../assets/lottie/icon-bars.json';
+import lottieClock from '../assets/lottie/icon-clock.json';
 import FilterBar from '../components/shared/FilterBar';
 import GlassPanel from '../components/shared/GlassPanel';
 import ChartInsight from '../components/shared/ChartInsight';
@@ -76,7 +81,8 @@ function HealthScoreInfo() {
 }
 
 function CompactRing({ value, size = 40, color = '#6366F1' }: { value: number; size?: number; color?: string }) {
-  const radius = size / 2 - 4;
+  const strokeWidth = size < 36 ? 3 : 4;
+  const radius = size / 2 - strokeWidth - 1;
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.max(0, Math.min(100, value));
   const offset = circumference * (1 - clamped / 100);
@@ -85,20 +91,20 @@ function CompactRing({ value, size = 40, color = '#6366F1' }: { value: number; s
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#d6d6d6" strokeWidth={4} />
+      <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#d6d6d6" strokeWidth={strokeWidth} />
       <circle
         cx={cx}
         cy={cy}
         r={radius}
         fill="none"
         stroke={color}
-        strokeWidth={4}
+        strokeWidth={strokeWidth}
         strokeDasharray={circumference}
         strokeDashoffset={offset}
         strokeLinecap="round"
         transform={`rotate(-90 ${cx} ${cy})`}
       />
-      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize={size * 0.28} fill="#333333">
+      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize={size * 0.26} fill="#333333">
         {Math.round(clamped)}%
       </text>
     </svg>
@@ -131,6 +137,7 @@ const HEALTH_METRICS = [
 ] as const;
 
 export default function DashboardPage() {
+  const [hoveredAgent, setHoveredAgent] = useState<string | null>(null);
   const { startDate, endDate } = useFilters();
   const { entities } = useDataFabric();
 
@@ -257,39 +264,110 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
-          <section className="rounded-card-elevated border border-silver bg-paper/80 p-6 shadow-card backdrop-blur-sm">
-            <header className="mb-5 flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h1 className="font-editorial text-2xl text-obsidian">{greeting()}!</h1>
-                <p className="mt-0.5 text-sm text-slate">Here's how the call center is performing.</p>
+          <motion.section
+            initial={{ opacity: 0, y: 28, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+            className="relative overflow-hidden rounded-[20px] p-6"
+            style={{
+              background: 'rgba(255,255,255,0.80) padding-box, linear-gradient(135deg, rgba(99,102,241,0.55), rgba(59,130,246,0.25), rgba(139,92,246,0.30)) border-box',
+              border: '1.5px solid transparent',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              boxShadow: '0 6px 32px rgba(15,31,76,0.09), 0 2px 8px rgba(15,31,76,0.05), inset 0 1px 0 rgba(255,255,255,0.90)',
+            }}
+          >
+            {/* ── Background design ── */}
+
+            {/* Mesh gradient wash */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 rounded-[20px]" style={{
+              background: 'radial-gradient(ellipse at 90% 10%, rgba(99,102,241,0.07) 0%, transparent 55%), radial-gradient(ellipse at 10% 90%, rgba(59,130,246,0.06) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(139,92,246,0.04) 0%, transparent 60%)',
+            }} />
+
+            {/* Concentric rings — top-right */}
+            <svg aria-hidden className="pointer-events-none absolute -right-8 -top-8 opacity-[0.07]" width="180" height="180" viewBox="0 0 180 180" fill="none">
+              {[30,55,80,105,130].map((r, i) => (
+                <circle key={i} cx="90" cy="90" r={r} stroke="rgba(15,31,76,1)" strokeWidth="1" fill="none" />
+              ))}
+            </svg>
+
+            {/* Scattered small dots */}
+            <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.06]" preserveAspectRatio="xMidYMid slice">
+              {[[15,40],[8,75],[22,55],[35,20],[55,65],[70,30],[85,80],[92,18],[78,55],[48,85]].map(([cx, cy], i) => (
+                <circle key={i} cx={`${cx}%`} cy={`${cy}%`} r="2" fill="rgba(15,31,76,1)" />
+              ))}
+            </svg>
+
+            {/* Diagonal line texture — bottom-left corner */}
+            <svg aria-hidden className="pointer-events-none absolute bottom-0 left-0 opacity-[0.04]" width="120" height="120" viewBox="0 0 120 120" fill="none">
+              {[-20,0,20,40,60,80,100,120,140].map((offset, i) => (
+                <line key={i} x1={offset} y1="0" x2={offset + 120} y2="120" stroke="rgba(15,31,76,1)" strokeWidth="1" />
+              ))}
+            </svg>
+
+            {/* Decorative accent dots row */}
+            <div aria-hidden className="pointer-events-none absolute right-6 top-5 flex gap-1.5">
+              {[0,1,2,3,4].map(i => (
+                <span key={i} className="block h-1 w-1 rounded-full" style={{ background: `rgba(15,31,76,${0.08 + i * 0.05})` }} />
+              ))}
+            </div>
+
+            {/* Thin accent bar left of greeting */}
+            <header className="relative mb-5 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-start gap-3">
+                <div className="mt-1 h-8 w-[3px] shrink-0 rounded-full" style={{ background: 'linear-gradient(180deg, rgba(15,31,76,0.35), rgba(15,31,76,0.10))' }} />
+                <div>
+                  <motion.h1
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.15, ease: [0.23, 1, 0.32, 1] }}
+                    className="text-[22px] font-bold leading-tight text-[#0F1F4C]"
+                    style={{ fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.02em' }}
+                  >
+                    {greeting()}!
+                  </motion.h1>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.4, delay: 0.28 }}
+                    className="mt-0.5 text-[12px] text-[#6B7280]"
+                  >
+                    Here's how the call center is performing.
+                  </motion.p>
+                </div>
               </div>
-              <span className="rounded-pill bg-bone px-3 py-1 text-xs font-medium text-graphite">
+              <motion.span
+                initial={{ opacity: 0, x: 12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.20, ease: [0.23, 1, 0.32, 1] }}
+                className="rounded-full px-3 py-1 text-[11px] font-semibold text-[rgba(15,31,76,0.55)]"
+                style={{ background: 'rgba(15,31,76,0.04)', border: '1px solid rgba(15,31,76,0.10)' }}
+              >
                 {startDate && endDate ? `${startDate} → ${endDate}` : 'All time'}
-              </span>
+              </motion.span>
             </header>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              {kpiCards.slice(0, 4).map((card) => (
-                <KpiHeroCard key={card.label} {...card} />
+            <div className="relative grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {kpiCards.slice(0, 4).map((card, i) => (
+                <KpiHeroCard key={card.label} {...card} delay={i * 0.07} />
               ))}
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
-              {kpiCards.slice(4, 8).map((card) => (
-                <KpiHeroCard key={card.label} {...card} />
+            <div className="relative mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {kpiCards.slice(4, 8).map((card, i) => (
+                <KpiHeroCard key={card.label} {...card} delay={0.28 + i * 0.07} />
               ))}
             </div>
-          </section>
+          </motion.section>
 
           <AiCommandCenter kpi={summary} />
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            <GlassPanel className="lg:col-span-4">
-              <header className="mb-4 flex items-center justify-between gap-2">
+            <GlassPanel className="lg:col-span-4" title="Health Score" accent="#6366F1" lottieIcon={lottieHealth}>
+              <div className="mb-4 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <AiOrbIcon size={16} />
-                  <h2 className="font-editorial text-lg text-obsidian">Health Score</h2>
                 </div>
                 <HealthScoreInfo />
-              </header>
+              </div>
               <HealthGauge score={healthScore} size={160} />
               <p className="mt-2 text-center text-sm text-slate">{metricsOnTarget}/4 metrics on target</p>
               <div className="mt-4 space-y-3">
@@ -319,43 +397,134 @@ export default function DashboardPage() {
               </div>
             </GlassPanel>
 
-            <GlassPanel className="lg:col-span-8">
-              <header className="mb-4 flex items-center justify-between gap-2">
-                <h2 className="font-editorial text-lg text-obsidian">Top Performers</h2>
-                <Link to="/agents" className="text-sm text-slate hover:text-obsidian">
-                  View all
-                </Link>
-              </header>
-
+            <GlassPanel className="lg:col-span-8" title="Top Performers" accent="#10B981" lottieIcon={lottieTrophy} overflowVisible>
               {topAgents.length === 0 ? (
                 <p className="py-8 text-center text-sm text-slate">No agent data for this period.</p>
               ) : (
                 <>
-                  {topAgents.length >= 3 && (
-                    <div className="mb-6 flex items-end justify-center gap-4">
-                      {[topAgents[1], topAgents[0], topAgents[2]].map((agent, i) => {
-                        const isFirst = agent === topAgents[0];
-                        const podiumHeight = isFirst ? 'h-24' : i === 0 ? 'h-16' : 'h-12';
-                        const avatarSize = isFirst ? 'h-20 w-20' : 'h-16 w-16';
-                        const avatarPx = isFirst ? 80 : 64;
-                        return (
-                          <div key={agent.agent} className="flex flex-col items-center gap-2">
-                            {isFirst && <Crown size={16} className="text-status-hold" />}
-                            <img
-                              src={`https://i.pravatar.cc/${avatarPx}?u=${encodeURIComponent(agent.agent)}`}
-                              alt={agent.agent}
-                              className={`${avatarSize} rounded-full border-2 border-paper shadow-subtle object-cover`}
-                            />
-                            <span className="max-w-[80px] truncate text-xs font-medium text-obsidian">
-                              {agent.agent}
-                            </span>
-                            <div className={`w-16 rounded-t-badge bg-bone ${podiumHeight}`} />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                  {/* ── Top 3 avatar podium ── */}
+                  {topAgents.length >= 3 && (() => {
+                    const RANK_CFG = {
+                      1: { ring: 'linear-gradient(135deg,#F59E0B,#D97706)', ringColor: '#F59E0B', avatarPx: 80, podiumH: 64 },
+                      2: { ring: 'linear-gradient(135deg,#9CA3AF,#6B7280)', ringColor: '#9CA3AF', avatarPx: 64, podiumH: 44 },
+                      3: { ring: 'linear-gradient(135deg,#CD7F32,#92400E)', ringColor: '#CD7F32', avatarPx: 64, podiumH: 32 },
+                    };
+                    return (
+                      <div className="mb-6 flex items-end justify-center gap-6">
+                        {([topAgents[1], topAgents[0], topAgents[2]] as typeof topAgents).map((agent, displayIdx) => {
+                          const rank = (agent.agent === topAgents[0]?.agent ? 1 : agent.agent === topAgents[1]?.agent ? 2 : 3) as 1 | 2 | 3;
+                          const cfg = RANK_CFG[rank];
+                          const isHovered = hoveredAgent === agent.agent;
+                          return (
+                            <motion.div
+                              key={agent.agent}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: displayIdx * 0.08, duration: 0.42, ease: [0.23, 1, 0.32, 1] }}
+                              className="relative flex flex-col items-center gap-2"
+                              onMouseEnter={() => setHoveredAgent(agent.agent)}
+                              onMouseLeave={() => setHoveredAgent(null)}
+                            >
+                              {rank === 1 && <Crown size={16} className="text-status-hold" />}
 
+                              {/* Avatar with gradient ring + rank badge */}
+                              <div className="relative">
+                                <div style={{ padding: 3, borderRadius: '50%', background: cfg.ring, boxShadow: `0 6px 20px ${cfg.ringColor}60` }}>
+                                  <img
+                                    src={`https://i.pravatar.cc/${cfg.avatarPx * 2}?u=${encodeURIComponent(agent.agent)}`}
+                                    alt={agent.agent}
+                                    style={{ width: cfg.avatarPx, height: cfg.avatarPx, borderRadius: '50%', border: '3px solid white', objectFit: 'cover', display: 'block' }}
+                                  />
+                                </div>
+                                <div
+                                  className="absolute -bottom-1 -right-1 flex h-[20px] w-[20px] items-center justify-center rounded-full text-[10px] font-bold text-white"
+                                  style={{ background: cfg.ring, boxShadow: '0 2px 6px rgba(0,0,0,0.20)', fontFamily: 'Poppins, sans-serif' }}
+                                >
+                                  {rank}
+                                </div>
+                              </div>
+
+                              {/* Name */}
+                              <span
+                                className="max-w-[90px] truncate text-[12px] font-semibold transition-colors"
+                                style={{ fontFamily: 'Poppins, sans-serif', color: isHovered ? cfg.ringColor : '#1A1A2E' }}
+                              >
+                                {agent.agent}
+                              </span>
+
+
+                              {/* Podium bar */}
+                              <div
+                                className="w-20 rounded-t-lg"
+                                style={{ height: cfg.podiumH, background: `linear-gradient(180deg, ${cfg.ringColor}30, ${cfg.ringColor}10)`, border: `1px solid ${cfg.ringColor}30` }}
+                              />
+
+                              {/* Stats tooltip */}
+                              {isHovered && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                                  className="absolute bottom-full left-1/2 z-[9999] mb-3 w-[172px] -translate-x-1/2 overflow-hidden rounded-xl p-3 text-left"
+                                  style={{
+                                    background: 'rgba(255,255,255,0.98)',
+                                    backdropFilter: 'blur(14px)',
+                                    WebkitBackdropFilter: 'blur(14px)',
+                                    boxShadow: `0 10px 32px ${cfg.ringColor}40, 0 2px 10px rgba(15,31,76,0.16)`,
+                                    border: `1px solid ${cfg.ringColor}45`,
+                                  }}
+                                >
+                                  <div className="absolute inset-x-0 top-0 h-[3px] rounded-t-xl" style={{ background: cfg.ring }} />
+                                  <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.10em]" style={{ color: cfg.ringColor, fontFamily: 'Poppins, sans-serif' }}>
+                                    {agent.agent}
+                                  </p>
+                                  <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] text-slate">Resolution</span>
+                                      <div className="flex items-center gap-1.5">
+                                        <div className="h-1 w-14 rounded-full bg-silver">
+                                          <div className="h-1 rounded-full bg-emerald-500" style={{ width: `${Math.min(100, num(agent.resolution_pct))}%` }} />
+                                        </div>
+                                        <span className="text-[10px] font-semibold text-obsidian">{num(agent.resolution_pct).toFixed(0)}%</span>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] text-slate">Escalation</span>
+                                      <span className="rounded-pill bg-status-escalated-bg px-1.5 py-0.5 text-[9px] text-status-escalated">
+                                        {num(agent.escalation_pct).toFixed(1)}%
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] text-slate">Compliance</span>
+                                      <CompactRing value={100 - num(agent.compliance_fail_pct)} size={28} />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] text-slate">Sentiment</span>
+                                      <span className="flex items-center gap-1 text-[10px] font-semibold text-obsidian">
+                                        <span className={`h-2 w-2 rounded-full ${num(agent.avg_sentiment) > 0.1 ? 'bg-status-live' : num(agent.avg_sentiment) < -0.1 ? 'bg-status-escalated' : 'bg-status-hold'}`} />
+                                        {num(agent.avg_sentiment) > 0 ? '+' : ''}{num(agent.avg_sentiment).toFixed(2)}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] text-slate">Calls</span>
+                                      <span className="text-[10px] font-semibold text-obsidian">{agent.call_count}</span>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── Original agent table ── */}
+                  <div className="mb-4 flex items-center justify-end">
+                    <Link to="/agents" className="text-[11px] font-medium text-[#1E5EAC] hover:text-[#0F1F4C] transition-colors">
+                      View all →
+                    </Link>
+                  </div>
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-left text-[11px] text-slate">
@@ -368,9 +537,9 @@ export default function DashboardPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {topAgents.map((agent, i) => (
+                      {topAgents.slice(3).map((agent, i) => (
                         <tr key={agent.agent} className="border-t border-silver">
-                          <td className="py-2 text-slate">{i + 1}</td>
+                          <td className="py-2 text-slate">{i + 4}</td>
                           <td className="py-2">
                             <Link to={`/agents/${encodeURIComponent(agent.agent)}`} className="font-medium text-obsidian hover:underline">
                               {agent.agent}
@@ -414,6 +583,7 @@ export default function DashboardPage() {
                 </>
               )}
             </GlassPanel>
+
           </div>
         </>
       )}
@@ -421,14 +591,14 @@ export default function DashboardPage() {
       <FollowupStatusWidget />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <GlassPanel title="Monthly Call Volume">
+        <GlassPanel title="Monthly Call Volume" accent="#3B82F6" lottieIcon={lottieBars}>
           <CallVolumeTrendChart data={kpiTrends ?? []} />
           <ChartInsight
             prompt={`Given this monthly call volume trend: ${JSON.stringify(kpiTrends ?? [])}, give one short insight about the pattern.`}
             cacheKey="call-volume-df"
           />
         </GlassPanel>
-        <GlassPanel title="Avg Handle Time">
+        <GlassPanel title="Avg Handle Time" accent="#F59E0B" lottieIcon={lottieClock}>
           <AvgHandleTimeChart data={kpiTrends ?? []} />
           <ChartInsight
             prompt={`Given this monthly average handle time trend: ${JSON.stringify(kpiTrends ?? [])}, give one short insight about the pattern.`}

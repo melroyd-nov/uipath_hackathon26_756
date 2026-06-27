@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Info, ChevronDown, ChevronUp, ShieldCheck, TrendingUp } from 'lucide-react';
+import lottieShield from '../assets/lottie/icon-shield.json';
 import FilterBar from '../components/shared/FilterBar';
 import GlassPanel from '../components/shared/GlassPanel';
 import ChartInsight from '../components/shared/ChartInsight';
@@ -108,6 +109,8 @@ export default function CompliancePage() {
         <GlassPanel
           title="Compliance Failure Rate by Agent"
           subtitle="Benchmark: 5% (amber line) — lower is better"
+          lottieIcon={lottieShield}
+          accent="#10B981"
           tooltip="Compliance_Flag = 'No' means the agent failed to follow required protocol on that call. Rate = failures ÷ total calls × 100. Benchmark is ≤5%. Any agent above the line poses regulatory exposure — treat as high priority."
         >
           {byAgentLoading ? (
@@ -128,6 +131,8 @@ export default function CompliancePage() {
         <GlassPanel
           title="Compliance Failure Trend"
           subtitle="Monthly failure % over time"
+          lottieIcon={lottieShield}
+          accent="#10B981"
           tooltip="Monthly compliance failure rate over the selected period. Upward trends or sudden spikes may indicate a process change, new product rollout, or inadequate refresher training. The amber line marks the 5% benchmark."
         >
           {trendLoading ? (
@@ -151,7 +156,7 @@ export default function CompliancePage() {
       </div>
 
       {/* Summary table */}
-      <GlassPanel title="Agent Compliance Summary">
+      <GlassPanel title="Agent Compliance Summary" lottieIcon={lottieShield} accent="#10B981">
         {byAgentLoading ? (
           <div className="flex justify-center py-16">
             <LoadingSpinner size={28} />

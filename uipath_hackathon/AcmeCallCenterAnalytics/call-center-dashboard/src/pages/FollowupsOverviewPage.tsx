@@ -5,6 +5,8 @@ import {
   ListChecks, Search, AlertTriangle, ArrowUpRight, Sparkles, User,
   Smile, Frown, Meh, CheckCheck, ShieldAlert,
 } from 'lucide-react';
+import lottieFilter from '../assets/lottie/icon-filter.json';
+import lottieFlow from '../assets/lottie/icon-flow.json';
 import GlassPanel from '../components/shared/GlassPanel';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import { useDataFabric, ENTITY_IDS } from '../lib/dataFabric';
@@ -406,7 +408,7 @@ export default function FollowupsOverviewPage() {
       </div>
 
       {/* Filters */}
-      <GlassPanel title="Filters">
+      <GlassPanel title="Filters" lottieIcon={lottieFilter} accent="#6366F1">
         <div className="flex flex-wrap gap-2 mb-3">
           {STATUS_CHIPS.map((chip) => (
             <FilterChip
@@ -461,7 +463,7 @@ export default function FollowupsOverviewPage() {
       </GlassPanel>
 
       {/* Results */}
-      <GlassPanel title={isLoading ? 'Loading…' : `${total} follow-up${total === 1 ? '' : 's'}`} subtitle={`Page ${page} of ${pages}`}>
+      <GlassPanel title={isLoading ? 'Loading…' : `${total} follow-up${total === 1 ? '' : 's'}`} subtitle={`Page ${page} of ${pages}`} lottieIcon={lottieFlow} accent="#8B5CF6">
         {isLoading ? (
           <div className="flex justify-center py-16">
             <LoadingSpinner size={28} />

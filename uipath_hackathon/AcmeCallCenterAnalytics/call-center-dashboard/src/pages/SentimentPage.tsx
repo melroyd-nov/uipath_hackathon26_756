@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Info, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import lottieWave from '../assets/lottie/icon-wave.json';
 import FilterBar from '../components/shared/FilterBar';
 import GlassPanel from '../components/shared/GlassPanel';
 import ChartInsight from '../components/shared/ChartInsight';
@@ -163,7 +164,7 @@ export default function SentimentPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <GlassPanel title="Mean Sentiment Score" subtitle="Monthly average of per-call sentiment (−1 to +1)">
+        <GlassPanel title="Mean Sentiment Score" subtitle="Monthly average of per-call sentiment (−1 to +1)" lottieIcon={lottieWave} accent="#10B981">
           {trendLoading ? (
             <div className="flex justify-center py-16">
               <LoadingSpinner size={28} />
@@ -179,7 +180,7 @@ export default function SentimentPage() {
           )}
         </GlassPanel>
 
-        <GlassPanel title="Monthly Sentiment Share" subtitle="Negative / Neutral / Positive % per month">
+        <GlassPanel title="Monthly Sentiment Share" subtitle="Negative / Neutral / Positive % per month" lottieIcon={lottieWave} accent="#10B981">
           {trendLoading ? (
             <div className="flex justify-center py-16">
               <LoadingSpinner size={28} />
@@ -195,7 +196,7 @@ export default function SentimentPage() {
           )}
         </GlassPanel>
 
-        <GlassPanel title="Overall Sentiment Distribution" subtitle="Aggregated across all months">
+        <GlassPanel title="Overall Sentiment Distribution" subtitle="Aggregated across all months" lottieIcon={lottieWave} accent="#10B981">
           {trendLoading ? (
             <div className="flex justify-center py-16">
               <LoadingSpinner size={28} />
@@ -212,7 +213,7 @@ export default function SentimentPage() {
         </GlassPanel>
       </div>
 
-      <GlassPanel title="Agent Sentiment Breakdown">
+      <GlassPanel title="Agent Sentiment Breakdown" lottieIcon={lottieWave} accent="#10B981">
         {byAgentLoading ? (
           <div className="flex justify-center py-16">
             <LoadingSpinner size={28} />

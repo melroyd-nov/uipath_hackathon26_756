@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Search, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import lottieBars from '../assets/lottie/icon-bars.json';
 import GlassPanel from '../components/shared/GlassPanel';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import EmptyState from '../components/shared/EmptyState';
@@ -247,6 +248,8 @@ export default function CallLogPage() {
       <GlassPanel
         title="Call Records"
         subtitle="Paginated, filtered call history"
+        lottieIcon={lottieBars}
+        accent="#3B82F6"
         onExport={items.length > 0 ? handleExport : undefined}
       >
         {isLoading ? (
