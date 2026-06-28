@@ -231,7 +231,7 @@ export default function FrictionPage() {
                   axisLine={false}
                   tickLine={false}
                   interval={0}
-                  tick={({ x, y, payload }: { x: number; y: number; payload: { value: string } }) => {
+                  tick={({ x, y, payload }: { x: number | string; y: number | string; payload: { value: string } }) => {
                     const words = String(payload.value ?? '').split(' ');
                     const mid = Math.ceil(words.length / 2);
                     const line1 = words.slice(0, mid).join(' ');

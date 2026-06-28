@@ -167,7 +167,7 @@ export function paginateMockFollowups(filters: GlobalFollowupFilters, limit: num
 
   const sorted = [...filtered].sort((a, b) => {
     if (a.is_overdue !== b.is_overdue) return a.is_overdue ? -1 : 1;
-    return b.id - a.id;
+    return String(b.id).localeCompare(String(a.id));
   });
 
   const total = sorted.length;
