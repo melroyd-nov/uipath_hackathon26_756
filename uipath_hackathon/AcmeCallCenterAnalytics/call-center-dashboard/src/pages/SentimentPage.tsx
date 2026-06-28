@@ -49,15 +49,21 @@ export default function SentimentPage() {
 
   const trendData = trend.data ?? [];
   // Map agent summary to the shape the JSX expects
-  const agentRows = (byAgent.data ?? []).map((row) => ({
-    agent: row.agent,
-    total_calls: row.call_count,
-    positive_count: null,
-    neutral_count: null,
-    negative_count: null,
-    negative_pct: row.negative_pct,
-    avg_sentiment: row.avg_sentiment,
-  }));
+  const agentRows = (byAgent.data ?? []).map((row) => {
+    const total = num(row.call_count);
+    const negCount = Math.round(total * num(row.negative_pct) / 100);
+    const posCount = Math.max(0, Math.round(num(row.avg_sentiment) * total + negCount));
+    const neutCount = Math.max(0, total - posCount - negCount);
+    return {
+      agent: row.agent,
+      total_calls: total,
+      positive_count: posCount,
+      neutral_count: neutCount,
+      negative_count: negCount,
+      negative_pct: row.negative_pct,
+      avg_sentiment: row.avg_sentiment,
+    };
+  });
   const trendLoading = trend.isLoading;
   const byAgentLoading = byAgent.isLoading;
 
