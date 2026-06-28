@@ -92,10 +92,9 @@ export default function CallLogPage() {
     queryFn: async () => {
       const result = await entities.getAllRecords(ENTITY_IDS.CallRecord);
       return result.items.map((r): CallRecordList => ({
-        call_id: Number(r.callid ?? 0),
+        call_id: String(r.callid ?? r.Id ?? ''),
         call_date: r.call_date != null ? String(r.call_date) : '',
         agent_name: r.agent_name != null ? String(r.agent_name) : null,
-        caller_nric: r.caller_nric != null ? String(r.caller_nric) : null,
         call_intent1: r.call_intent1 != null ? String(r.call_intent1) : null,
         call_sentiment: r.call_sentiment != null ? Number(r.call_sentiment) : null,
         escalation_flag: r.escalation_flag != null ? (Number(r.escalation_flag) === 0 ? 'Yes' : 'No') : null,
@@ -150,7 +149,6 @@ export default function CallLogPage() {
         call_id: c.call_id,
         call_date: c.call_date,
         agent: c.agent_name ?? '',
-        nric: c.caller_nric ?? '',
         intent: c.call_intent1 ?? '',
         sentiment: c.call_sentiment === 1 ? 'Positive' : c.call_sentiment === -1 ? 'Negative' : 'Neutral',
         escalated: c.escalation_flag ?? '',
@@ -264,7 +262,6 @@ export default function CallLogPage() {
                   <th className="py-2 pr-4 text-left">Call ID</th>
                   <th className="py-2 pr-4 text-left">Date</th>
                   <th className="py-2 pr-4 text-left">Agent</th>
-                  <th className="py-2 pr-4 text-left">NRIC</th>
                   <th className="py-2 pr-4 text-left">Intent</th>
                   <th className="py-2 pr-4 text-center">Sentiment</th>
                   <th className="py-2 pr-4 text-center">Esc</th>
@@ -276,7 +273,7 @@ export default function CallLogPage() {
               <tbody>
                 {items.length === 0 ? (
                   <tr>
-                    <td colSpan={10}>
+                    <td colSpan={9}>
                       <EmptyState title="No calls match the current filters" />
                     </td>
                   </tr>
@@ -297,7 +294,6 @@ export default function CallLogPage() {
                       </td>
                       <td className="py-2 pr-4 text-graphite text-xs">{formatDate(call.call_date)}</td>
                       <td className="py-2 pr-4 text-obsidian font-medium">{call.agent_name ?? '—'}</td>
-                      <td className="py-2 pr-4 text-slate font-mono text-xs">{call.caller_nric ?? '—'}</td>
                       <td className="py-2 pr-4 text-graphite max-w-40 truncate text-xs">
                         {call.call_intent1 ?? '—'}
                       </td>

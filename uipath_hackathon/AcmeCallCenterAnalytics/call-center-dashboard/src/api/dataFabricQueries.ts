@@ -99,6 +99,45 @@ export async function getDfFrictionScore(entities: Entities): Promise<Record<str
   }));
 }
 
+export async function getDfAgentSentimentCounts(
+  entities: Entities,
+): Promise<Record<string, { positive: number; neutral: number; negative: number; total: number }>> {
+  // call_sentiment (INTEGER) is unreliable — CLI bug silently drops INTEGER values on insert.
+  // Use agent_sentiment (DECIMAL, reliably populated from JSON) with standard thresholds.
+  const result = await entities.queryRecordsById(ENTITY_IDS.CallRecord, {
+    selectedFields: ['agent_name', 'agent_sentiment', 'customer_sentiment', 'call_sentiment'],
+  });
+
+  const map: Record<string, { positive: number; neutral: number; negative: number; total: number }> = {};
+
+  for (const row of result.items) {
+    const agent = String(row.agent_name ?? '');
+    if (!agent) continue;
+    if (!map[agent]) map[agent] = { positive: 0, neutral: 0, negative: 0, total: 0 };
+
+    map[agent].total++;
+
+    // Prefer call_sentiment integer if explicitly set, else derive from agent_sentiment decimal
+    const intSentiment = row.call_sentiment != null ? Number(row.call_sentiment) : null;
+    let category: 'positive' | 'neutral' | 'negative';
+    if (intSentiment === 1) {
+      category = 'positive';
+    } else if (intSentiment === -1) {
+      category = 'negative';
+    } else if (intSentiment === 0) {
+      category = 'neutral';
+    } else {
+      const score = Number(row.agent_sentiment ?? row.customer_sentiment ?? 0);
+      if (score > 0.1) category = 'positive';
+      else if (score < -0.1) category = 'negative';
+      else category = 'neutral';
+    }
+    map[agent][category]++;
+  }
+
+  return map;
+}
+
 export async function getDfComplianceTrend(entities: Entities): Promise<Record<string, unknown>[]> {
   const result = await entities.getAllRecords(ENTITY_IDS.ComplianceRule);
   return result.items.map((row) => ({

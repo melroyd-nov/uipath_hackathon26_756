@@ -5,8 +5,8 @@ export type FollowupSource = 'ai_generated' | 'manual';
 export type FollowupPriority = 'low' | 'medium' | 'high';
 
 export interface Followup {
-  id: number;
-  call_id: number;
+  id: string;
+  call_id: string;
   text: string;
   reason: string | null;
   source: FollowupSource;
@@ -33,7 +33,7 @@ export interface FollowupSummary {
 }
 
 export interface FollowupsResponse {
-  call_id: number;
+  call_id: string;
   summary: FollowupSummary;
   items: Followup[];
 }

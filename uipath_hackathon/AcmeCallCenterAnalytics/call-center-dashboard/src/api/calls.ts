@@ -1,10 +1,9 @@
 import { apiClient } from './client';
 
 export interface CallRecordList {
-  call_id: number;
+  call_id: string;
   call_date: string;
   agent_name: string | null;
-  caller_nric: string | null;
   call_intent1: string | null;
   call_sentiment: number | null;
   escalation_flag: string | null;

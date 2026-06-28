@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import lottieFire from '../assets/lottie/icon-fire.json';
 import lottieBars from '../assets/lottie/icon-bars.json';
+import InfoTooltip from '../components/shared/InfoTooltip';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
@@ -159,7 +160,10 @@ export default function FrictionPage() {
                       <p className="text-xl font-bold leading-none" style={{ color: scoreColor }}>
                         {num(f.friction_score).toFixed(1)}
                       </p>
-                      <p className="text-slate text-[10px] mt-0.5">friction score</p>
+                      <div className="flex items-center justify-end gap-1 mt-0.5">
+                        <p className="text-slate text-[10px]">friction score</p>
+                        <InfoTooltip text="Composite friction score (0–100) calculated as: Negative % × 0.40 + Escalation % × 0.35 + Repeat % × 0.25. Below 20 = Low, 20–39 = Medium, 40+ = High friction." />
+                      </div>
                       <ScoreLabel score={num(f.friction_score)} />
                     </div>
                   </div>
@@ -170,23 +174,29 @@ export default function FrictionPage() {
                     <div className="flex items-center justify-between gap-2">
                       <span className="flex items-center gap-1 text-slate">
                         <TrendingDown size={12} /> Negative
+                        <InfoTooltip text="Percentage of calls with this intent that had negative customer sentiment. Weighted at 40% of the friction score." />
                       </span>
                       <span className="text-red-600 font-medium">{num(f.negative_pct).toFixed(1)}%</span>
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <span className="flex items-center gap-1 text-slate">
                         <AlertTriangle size={12} /> Escalated
+                        <InfoTooltip text="Percentage of calls with this intent that were escalated to a supervisor. Weighted at 35% of the friction score." />
                       </span>
                       <span className="text-amber-600 font-medium">{num(f.escalation_pct).toFixed(1)}%</span>
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <span className="flex items-center gap-1 text-slate">
                         <RefreshCw size={12} /> Repeat
+                        <InfoTooltip text="Percentage of calls with this intent where the customer called back within 7 days. Weighted at 25% of the friction score." />
                       </span>
                       <span className="text-orange-600 font-medium">{num(f.repeat_call_pct).toFixed(1)}%</span>
                     </div>
                     <div className="flex items-center justify-between gap-2 border-t border-silver pt-1.5 mt-1.5">
-                      <span className="text-slate">Total Calls</span>
+                      <span className="flex items-center gap-1 text-slate">
+                        Total Calls
+                        <InfoTooltip text="Total number of calls with this intent in the selected period. Used as the denominator for all percentage metrics above." />
+                      </span>
                       <span className="text-obsidian font-medium">{num(f.total_calls)}</span>
                     </div>
                   </div>
@@ -213,16 +223,26 @@ export default function FrictionPage() {
           <EmptyState title="No friction data" description="No data available for this period." />
         ) : (
           <>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 40 }}>
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#D6D6D6" />
                 <XAxis
                   dataKey="name"
-                  tick={{ fill: '#7B7B7B', fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
-                  angle={-20}
-                  textAnchor="end"
+                  interval={0}
+                  tick={({ x, y, payload }: { x: number; y: number; payload: { value: string } }) => {
+                    const words = String(payload.value ?? '').split(' ');
+                    const mid = Math.ceil(words.length / 2);
+                    const line1 = words.slice(0, mid).join(' ');
+                    const line2 = words.slice(mid).join(' ');
+                    return (
+                      <text x={x} y={y} textAnchor="middle" fill="#7B7B7B" fontSize={10}>
+                        <tspan x={x} dy="0.8em">{line1}</tspan>
+                        {line2 && <tspan x={x} dy="1.2em">{line2}</tspan>}
+                      </text>
+                    );
+                  }}
                 />
                 <YAxis
                   tick={{ fill: '#7B7B7B', fontSize: 11 }}

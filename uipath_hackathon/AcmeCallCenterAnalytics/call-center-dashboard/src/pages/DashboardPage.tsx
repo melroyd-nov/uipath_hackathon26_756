@@ -168,6 +168,7 @@ export default function DashboardPage() {
           status: 'neutral' as KpiStatus,
           footer: 'All recorded calls',
           sparkline: trendSeries('total_calls'),
+          tooltip: 'Total number of calls processed in the selected period, across all agents and call types. Used as the denominator for all percentage-based KPIs.',
         },
         {
           label: 'First Call Resolution',
@@ -177,6 +178,7 @@ export default function DashboardPage() {
           status: statusFor(num(summary.resolution_pct), 80, 68, 'higher'),
           benchmark: `≥${benchmarkFor(summary, 'resolution_pct', 80)}%`,
           sparkline: trendSeries('resolution_pct'),
+          tooltip: 'Percentage of calls where the customer\'s issue was fully resolved on the first contact, without requiring a follow-up call. Target: ≥80%. Sustained dips below 68% are flagged as critical.',
         },
         {
           label: 'Sentiment',
@@ -194,6 +196,7 @@ export default function DashboardPage() {
               : num(summary.avg_sentiment) < -0.1
                 ? 'Negative trend'
                 : 'Neutral trend',
+          tooltip: 'Average customer sentiment score across all calls, derived from transcript and audio analysis. Range: −1.0 (very negative) to +1.0 (very positive). Above +0.1 is on track; below −0.1 is critical.',
         },
         {
           label: 'Escalation',
@@ -203,6 +206,7 @@ export default function DashboardPage() {
           status: statusFor(num(summary.escalation_pct), 10, 15, 'lower'),
           benchmark: `≤${benchmarkFor(summary, 'escalation_pct', 10)}%`,
           sparkline: trendSeries('escalation_pct'),
+          tooltip: 'Percentage of calls escalated to a supervisor or senior agent. Lower is better. Target: ≤10%. Above 15% is critical and may indicate insufficient agent training or a surge in complex cases.',
         },
         {
           label: 'Compliance Fail',
@@ -212,6 +216,7 @@ export default function DashboardPage() {
           status: statusFor(num(summary.compliance_fail_pct), 5, 8, 'lower'),
           benchmark: `≤${benchmarkFor(summary, 'compliance_fail_pct', 5)}%`,
           sparkline: trendSeries('compliance_fail_pct'),
+          tooltip: 'Percentage of calls with at least one compliance rule failure (e.g. missing disclosure, prohibited phrasing). Target: ≤5%. Any sustained breach warrants immediate review and refresher training.',
         },
         {
           label: 'Pre-Verified',
@@ -220,6 +225,7 @@ export default function DashboardPage() {
           accent: 'cyan' as const,
           status: statusFor(num(summary.pre_verified_pct), 80, 68, 'higher'),
           benchmark: `≥${benchmarkFor(summary, 'pre_verified_pct', 80)}%`,
+          tooltip: 'Percentage of callers successfully identity-verified before the agent engages on account details. Higher is better. Target: ≥80%. Low rates increase fraud risk and regulatory exposure.',
         },
         {
           label: 'Trigger Words',
@@ -228,6 +234,7 @@ export default function DashboardPage() {
           accent: 'amber' as const,
           status: statusFor(num(summary.trigger_words_pct), 3, 5, 'lower'),
           benchmark: `≤${benchmarkFor(summary, 'trigger_words_pct', 3)}%`,
+          tooltip: 'Percentage of calls containing flagged trigger words such as "cancel", "lawyer", "complaint", or "refund". Lower is better. Target: ≤3%. Spikes may signal a product issue or external event.',
         },
         {
           label: 'Repeat Calls',
@@ -237,6 +244,7 @@ export default function DashboardPage() {
           status: statusFor(num(summary.repeat_call_pct), 20, 30, 'lower'),
           benchmark: `≤${benchmarkFor(summary, 'repeat_call_pct', 20)}%`,
           sparkline: trendSeries('repeat_call_pct'),
+          tooltip: 'Percentage of calls where the same customer called back within 7 days for the same issue, indicating the first call did not fully resolve their concern. Lower is better. Target: ≤20%.',
         },
       ]
     : [];

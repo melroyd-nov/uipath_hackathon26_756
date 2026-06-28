@@ -65,13 +65,13 @@ export default function AgentSentimentChart({ data }: AgentSentimentChartProps) 
   });
 
   return (
-    <ResponsiveContainer width="100%" height={260}>
-      <BarChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+    <ResponsiveContainer width="100%" height={270}>
+      <BarChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 4 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#d6d6d6" />
         <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#7b7b7b' }} />
         <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#7b7b7b' }} />
         <Tooltip content={<ShareTooltip />} />
-        <Legend wrapperStyle={{ fontSize: 12 }} align="right" verticalAlign="top" />
+        <Legend wrapperStyle={{ fontSize: 12, color: '#cbd5e1' }} verticalAlign="bottom" iconType="square" iconSize={10} />
         <Bar dataKey="negative_pct" name="Negative" stackId="share" fill="#E05A4B" />
         <Bar dataKey="neutral_pct" name="Neutral" stackId="share" fill="#C0C0C0" />
         <Bar dataKey="positive_pct" name="Positive" stackId="share" fill="#3DBB6C" radius={[4, 4, 0, 0]} />

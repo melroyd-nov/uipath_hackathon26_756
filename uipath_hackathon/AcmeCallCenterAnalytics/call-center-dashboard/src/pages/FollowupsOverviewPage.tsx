@@ -3,12 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
   ListChecks, Search, AlertTriangle, ArrowUpRight, Sparkles, User,
-  Smile, Frown, Meh, CheckCheck, ShieldAlert,
+  Smile, Frown, Meh, CheckCheck, ShieldAlert, Clock, Calendar,
 } from 'lucide-react';
 import lottieFilter from '../assets/lottie/icon-filter.json';
 import lottieFlow from '../assets/lottie/icon-flow.json';
 import GlassPanel from '../components/shared/GlassPanel';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
+import InfoTooltip from '../components/shared/InfoTooltip';
 import { useDataFabric, ENTITY_IDS } from '../lib/dataFabric';
 import type { GlobalFollowup, GlobalFollowupFilters, FollowupStatus } from '../api/followups';
 
@@ -18,7 +19,7 @@ type StatusFilter = 'all' | FollowupStatus | 'overdue';
 
 // Darker text-safe variant for each accent color, used wherever the color renders as text on a light surface.
 const TEXT_COLOR: Record<string, string> = {
-  '#F59E0B': '#B45309',
+  '#F59E0B': '#D97706',
   '#38BDF8': '#0369A1',
   '#A78BFA': '#6D28D9',
   '#34D399': '#047857',
@@ -47,19 +48,19 @@ const STATUS_CHIPS: { value: StatusFilter; label: string; color: string; countKe
   { value: 'overdue', label: 'Overdue', color: '#EF4444', countKey: 'overdue' },
 ];
 
-const SUMMARY_TILES: { key: keyof FollowupSummaryShape; label: string; color: string; alert?: boolean; isPercent?: boolean }[] = [
-  { key: 'total', label: 'Total', color: '#9CA3AF' },
-  { key: 'pending', label: 'Needs Review', color: '#F59E0B' },
-  { key: 'approved', label: 'Approved', color: '#38BDF8' },
-  { key: 'in_progress', label: 'In Progress', color: '#A78BFA' },
-  { key: 'completed', label: 'Completed', color: '#34D399' },
-  { key: 'overdue', label: 'Overdue', color: '#EF4444', alert: true },
-  { key: 'completion_rate', label: 'Completion Rate', color: '#6366F1', isPercent: true },
+const SUMMARY_TILES: { key: keyof FollowupSummaryShape; label: string; color: string; alert?: boolean; isPercent?: boolean; tooltip: string }[] = [
+  { key: 'total', label: 'Total', color: '#9CA3AF', tooltip: 'Total follow-up actions created across all calls in the selected period.' },
+  { key: 'pending', label: 'Needs Review', color: '#F59E0B', tooltip: 'Follow-ups waiting for a supervisor to review and approve before any action is taken.' },
+  { key: 'approved', label: 'Approved', color: '#38BDF8', tooltip: 'Follow-ups that a supervisor has reviewed and approved for action.' },
+  { key: 'in_progress', label: 'In Progress', color: '#A78BFA', tooltip: 'Follow-ups currently being actioned by an agent.' },
+  { key: 'completed', label: 'Completed', color: '#34D399', tooltip: 'Follow-ups that have been fully resolved and closed.' },
+  { key: 'overdue', label: 'Overdue', color: '#EF4444', alert: true, tooltip: 'Follow-ups that have passed their due date without being completed. Requires immediate attention.' },
+  { key: 'completion_rate', label: 'Completion Rate', color: '#6366F1', isPercent: true, tooltip: 'Percentage of all follow-ups that have been completed. Calculated as completed ÷ total × 100.' },
 ];
 
 function SummaryTile({
-  label, value, color, alert,
-}: { label: string; value: string | number; color: string; alert?: boolean }) {
+  label, value, color, alert, tooltip,
+}: { label: string; value: string | number; color: string; alert?: boolean; tooltip?: string }) {
   return (
     <div
       className="rounded-xl px-3 py-2.5 border"
@@ -68,9 +69,12 @@ function SummaryTile({
         borderColor: alert ? `${color}55` : `${color}25`,
       }}
     >
-      <p className="text-[10px] uppercase tracking-wider font-bold" style={{ color: TEXT_COLOR[color] ?? color }}>
-        {label}
-      </p>
+      <div className="flex items-center gap-1.5 mb-0.5">
+        <p className="text-[10px] uppercase tracking-wider font-bold" style={{ color: TEXT_COLOR[color] ?? color }}>
+          {label}
+        </p>
+        {tooltip && <InfoTooltip text={tooltip} />}
+      </div>
       <p className="text-xl font-extrabold text-obsidian" style={{ fontFeatureSettings: "'tnum' 1" }}>
         {value}
       </p>
@@ -193,76 +197,85 @@ function formatDate(value: string | null): string {
 function FollowupRow({ f }: { f: GlobalFollowup }) {
   const meta = STATUS_META[f.status];
   const intents = [f.call_intent1, f.call_intent2, f.call_intent3].filter(Boolean) as string[];
-  const hasOutcomeRow = intents.length > 0 || f.call_resolved_flag || f.escalation_flag === 'Yes' || f.call_sentiment != null;
+  const hasChips = intents.length > 0 || f.call_sentiment != null || f.escalation_flag === 'Yes' || f.call_resolved_flag != null;
+
+  const priorityStyle =
+    f.priority === 'high' ? 'bg-red-50 text-red-600' :
+    f.priority === 'medium' ? 'bg-amber-50 text-amber-600' :
+    'bg-bone text-slate';
 
   return (
-    <div
-      className={`rounded-xl border flex overflow-hidden ${
-        f.is_overdue
-          ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/60'
-          : 'bg-paper border-silver'
-      }`}
-    >
-      <div className="w-1 shrink-0" style={{ backgroundColor: meta.color }} />
-      <div className="flex-1 p-4">
-        <div className="flex items-center justify-between gap-2 mb-1.5">
+    <div className={`group relative rounded-2xl bg-paper border transition-all duration-150 hover:shadow-card ${
+      f.is_overdue ? 'border-red-300' : 'border-silver'
+    }`}>
+      {/* Left accent */}
+      <div
+        className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-sm"
+        style={{ backgroundColor: f.is_overdue ? '#EF4444' : meta.color }}
+      />
+
+      <div className="pl-5 pr-4 pt-3.5 pb-3.5">
+        {/* Top row: status + priority + manage */}
+        <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2 flex-wrap">
             <StatusPill status={f.status} />
-            <SourceDot source={f.source} />
             {f.is_overdue && <OverduePill days={f.days_overdue} />}
-            {f.priority && <span className="text-[11px] uppercase font-semibold text-slate">{f.priority}</span>}
+            {f.priority && (
+              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${priorityStyle}`}>
+                {f.priority}
+              </span>
+            )}
+            <SourceDot source={f.source} />
           </div>
           <Link
             to={`/calls/${f.call_id}/followups`}
             state={{ from: '/followups' }}
-            className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-700 shrink-0"
+            className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 hover:text-emerald-700"
           >
-            Manage <ArrowUpRight size={12} />
+            Manage <ArrowUpRight size={11} />
           </Link>
         </div>
 
-        <p className="text-[13px] leading-relaxed font-medium text-obsidian mb-2">{f.text}</p>
+        {/* Task text */}
+        <p className="text-[13px] font-semibold text-obsidian leading-snug mb-3">{f.text}</p>
 
-        <div
-          className="grid gap-x-4 gap-y-1 text-xs text-slate mb-2"
-          style={{ gridTemplateColumns: 'auto 1fr auto 1fr' }}
-        >
-          <span className="text-slate">Call</span>
-          <span>
-            <Link to={`/calls/${f.call_id}`} className="text-blue-600 hover:text-blue-700 font-mono">
+        {/* Context strip */}
+        <div className="flex items-center gap-3.5 flex-wrap text-[11px] text-slate">
+          {f.agent_name && (
+            <span className="flex items-center gap-1">
+              <User size={10} className="shrink-0 text-mist" />
+              {f.agent_name}
+            </span>
+          )}
+          {f.call_id && (
+            <Link to={`/calls/${f.call_id}`} className="font-mono text-blue-500 hover:text-blue-600 transition-colors">
               #{f.call_id}
             </Link>
-            {' · '}
-            {formatDate(f.call_date)}
-          </span>
-          <span className="text-slate">Agent</span>
-          <span className="text-graphite">{f.agent_name ?? '—'}</span>
-          <span className="text-slate">Caller</span>
-          <span className="text-graphite">
-            {f.caller_name ?? '—'}
-            {f.policy_number && <span className="text-slate"> {f.policy_number}</span>}
-          </span>
+          )}
+          {f.caller_name && <span>{f.caller_name}</span>}
+          {f.policy_number && <span className="font-mono text-mist">{f.policy_number}</span>}
+          {f.call_date && (
+            <span className="flex items-center gap-1">
+              <Calendar size={10} className="shrink-0 text-mist" />
+              {formatDate(f.call_date)}
+            </span>
+          )}
           {f.due_date && (
-            <>
-              <span className="text-slate">Due</span>
-              <span className={f.is_overdue ? 'text-red-600' : 'text-graphite'}>
-                {formatDate(f.due_date)}
-                {f.is_overdue && f.days_overdue != null ? ` (${f.days_overdue}d late)` : ''}
-              </span>
-            </>
+            <span className={`flex items-center gap-1 ${f.is_overdue ? 'text-red-500 font-semibold' : ''}`}>
+              <Clock size={10} className="shrink-0" />
+              {f.is_overdue && f.days_overdue != null
+                ? `${f.days_overdue}d overdue`
+                : `Due ${formatDate(f.due_date)}`}
+            </span>
           )}
-          {f.approved_by && (
-            <>
-              <span className="text-slate">Approved by</span>
-              <span className="text-graphite">{f.approved_by}</span>
-            </>
-          )}
+          {f.approved_by && <span>Approved · {f.approved_by}</span>}
         </div>
 
-        {hasOutcomeRow && (
-          <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-silver">
-            {intents.slice(0, 3).map((intent) => (
-              <span key={intent} className="px-2 py-0.5 rounded-full text-[11px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+        {/* Chips row */}
+        {hasChips && (
+          <div className="flex items-center gap-1.5 flex-wrap mt-3 pt-2.5 border-t border-silver/60">
+            {intents.map((intent) => (
+              <span key={intent} className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#F3F0FF] text-purple-700">
                 {intent}
               </span>
             ))}
@@ -309,41 +322,79 @@ export default function FollowupsOverviewPage() {
     queryFn: () => entities.getAllRecords(ENTITY_IDS.CallFollowup),
   });
 
+  const allCallsQuery = useQuery({
+    queryKey: ['df-call-records'],
+    queryFn: () => entities.getAllRecords(ENTITY_IDS.CallRecord),
+  });
+
   const STATUS_MAP: Record<number, FollowupStatus> = { 0: 'pending', 1: 'approved', 2: 'rejected', 3: 'in_progress', 4: 'completed' };
   const SOURCE_MAP: Record<number, 'ai_generated' | 'manual'> = { 0: 'ai_generated', 1: 'manual' };
   const PRIORITY_MAP: Record<number, string> = { 0: 'low', 1: 'medium', 2: 'high' };
 
-  const allItems: GlobalFollowup[] = (allFollowupsQuery.data?.items ?? []).map((r) => ({
-    id: Number(r.Id ?? 0),
-    call_id: Number(r.callid ?? 0),
-    text: String(r.text ?? ''),
-    reason: r.reason != null ? String(r.reason) : null,
-    source: SOURCE_MAP[Number(r.source)] ?? 'ai_generated',
-    status: STATUS_MAP[Number(r.status)] ?? 'pending',
-    priority: r.priority != null ? (PRIORITY_MAP[Number(r.priority)] as 'low' | 'medium' | 'high') : null,
-    assigned_to: r.assigned_to != null ? String(r.assigned_to) : null,
-    due_date: r.due_date != null ? String(r.due_date) : null,
-    approved_by: r.approved_by != null ? String(r.approved_by) : null,
-    approved_at: r.approved_at != null ? String(r.approved_at) : null,
-    completed_at: r.completed_at != null ? String(r.completed_at) : null,
-    completion_notes: r.completion_notes != null ? String(r.completion_notes) : null,
-    created_at: String(r.CreatedOn ?? ''),
-    updated_at: String(r.ModifiedOn ?? ''),
-    agent_name: null,
-    call_date: null,
-    is_overdue: false,
-    days_overdue: null,
-    caller_name: null,
-    policy_number: null,
-    call_intent1: null,
-    call_intent2: null,
-    call_intent3: null,
-    call_summary: null,
-    call_sentiment: null,
-    escalation_flag: null,
-    compliance_flag: null,
-    call_resolved_flag: null,
-  }));
+  // Build a lookup map from callid → CallRecord row
+  const callMap = new Map<string, Record<string, unknown>>();
+  for (const r of allCallsQuery.data?.items ?? []) {
+    const cid = String(r.callid ?? '');
+    if (cid) callMap.set(cid, r as Record<string, unknown>);
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const allItems: GlobalFollowup[] = (allFollowupsQuery.data?.items ?? []).map((r) => {
+    const callid = String(r.callid ?? '');
+    const call = callMap.get(callid);
+
+    const dueDateStr = r.due_date != null ? String(r.due_date) : null;
+    const dueDate = dueDateStr ? new Date(dueDateStr) : null;
+    const isOverdue = dueDate != null && dueDate < today;
+    const daysOverdue = isOverdue && dueDate ? Math.floor((today.getTime() - dueDate.getTime()) / 86400000) : null;
+
+    // Derive call_sentiment from agent_sentiment decimal if call_sentiment integer is absent
+    const rawSentiment = call?.call_sentiment != null ? Number(call.call_sentiment) : null;
+    const agentSentiment = call?.agent_sentiment != null ? Number(call.agent_sentiment) : null;
+    let callSentiment: number | null = null;
+    if (rawSentiment === 1 || rawSentiment === 0 || rawSentiment === -1) {
+      callSentiment = rawSentiment;
+    } else if (agentSentiment != null) {
+      callSentiment = agentSentiment > 0.1 ? 1 : agentSentiment < -0.1 ? -1 : 0;
+    }
+
+    const flagVal = (v: unknown) => v != null ? (Number(v) === 0 ? 'Yes' : 'No') : null;
+
+    return {
+      id: String(r.Id ?? ''),
+      call_id: callid || String(r.Id ?? ''),
+      text: String(r.text ?? ''),
+      reason: r.reason != null ? String(r.reason) : null,
+      source: SOURCE_MAP[Number(r.source)] ?? 'ai_generated',
+      status: STATUS_MAP[Number(r.status)] ?? 'pending',
+      priority: r.priority != null ? (PRIORITY_MAP[Number(r.priority)] as 'low' | 'medium' | 'high') : null,
+      assigned_to: r.assigned_to != null ? String(r.assigned_to) : null,
+      due_date: dueDateStr,
+      approved_by: r.approved_by != null ? String(r.approved_by) : null,
+      approved_at: r.approved_at != null ? String(r.approved_at) : null,
+      completed_at: r.completed_at != null ? String(r.completed_at) : null,
+      completion_notes: r.completion_notes != null ? String(r.completion_notes) : null,
+      created_at: String(r.CreatedOn ?? ''),
+      updated_at: String(r.ModifiedOn ?? ''),
+      // Joined from CallRecord
+      agent_name: call?.agent_name != null ? String(call.agent_name) : null,
+      call_date: call?.call_date != null ? String(call.call_date) : null,
+      caller_name: call?.caller_name != null ? String(call.caller_name) : null,
+      policy_number: call?.policy_number != null ? String(call.policy_number) : null,
+      call_intent1: call?.call_intent1 != null ? String(call.call_intent1) : null,
+      call_intent2: call?.call_intent2 != null ? String(call.call_intent2) : null,
+      call_intent3: call?.call_intent3 != null ? String(call.call_intent3) : null,
+      call_summary: call?.call_summary != null ? String(call.call_summary) : null,
+      call_sentiment: callSentiment,
+      escalation_flag: flagVal(call?.escalation_flag),
+      compliance_flag: flagVal(call?.compliance_flag),
+      call_resolved_flag: flagVal(call?.call_resolved_flag),
+      is_overdue: isOverdue,
+      days_overdue: daysOverdue,
+    };
+  });
 
   // Apply client-side filters
   const filteredItems = allItems.filter((f) => {
@@ -372,7 +423,7 @@ export default function FollowupsOverviewPage() {
       : 0,
   };
 
-  const isLoading = allFollowupsQuery.isLoading;
+  const isLoading = allFollowupsQuery.isLoading || allCallsQuery.isLoading;
 
   const hasActiveFilters = !!(search || agent || source || priority || statusFilter !== 'all');
 
@@ -401,7 +452,7 @@ export default function FollowupsOverviewPage() {
             const raw = summary?.[tile.key] ?? 0;
             const value = tile.isPercent ? `${raw}%` : raw;
             return (
-              <SummaryTile key={tile.key} label={tile.label} value={value} color={tile.color} alert={tile.alert} />
+              <SummaryTile key={tile.key} label={tile.label} value={value} color={tile.color} alert={tile.alert} tooltip={tile.tooltip} />
             );
           })}
         </div>
@@ -471,7 +522,7 @@ export default function FollowupsOverviewPage() {
         ) : items.length === 0 ? (
           <p className="text-sm text-slate italic py-6 text-center">No follow-ups match the current filters.</p>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {items.map((f) => (
               <FollowupRow key={f.id} f={f} />
             ))}

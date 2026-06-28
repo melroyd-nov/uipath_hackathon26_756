@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Star, Award, MessageSquare, Send } from 'lucide-react';
+import InfoTooltip from '../components/shared/InfoTooltip';
 import lottieChat from '../assets/lottie/icon-chat.json';
 import lottieTarget from '../assets/lottie/icon-target.json';
 import FilterBar from '../components/shared/FilterBar';
@@ -80,13 +81,17 @@ interface KpiTileProps {
   label: string;
   value: string;
   status: Status;
+  tooltip?: string;
 }
 
-function KpiTile({ label, value, status }: KpiTileProps) {
+function KpiTile({ label, value, status, tooltip }: KpiTileProps) {
   return (
     <div className="rounded-xl border border-silver bg-bone p-4 text-center">
       <p className={`text-2xl font-bold ${COLOR_MAP[status]}`}>{value}</p>
-      <p className="text-slate text-xs mt-1">{label}</p>
+      <div className="flex items-center justify-center gap-1 mt-1">
+        <p className="text-slate text-xs">{label}</p>
+        {tooltip && <InfoTooltip text={tooltip} />}
+      </div>
     </div>
   );
 }
@@ -230,38 +235,44 @@ export default function AgentDetailPage() {
 
       {/* KPI Tiles */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
-        <KpiTile label="Total Calls" value={num(kpi.total_calls).toLocaleString()} status="neutral" />
+        <KpiTile label="Total Calls" value={num(kpi.total_calls).toLocaleString()} status="neutral" tooltip="Total number of calls handled by this agent in the selected period." />
         <KpiTile
           label="Avg Sentiment"
           value={kpi.avg_sentiment != null ? num(kpi.avg_sentiment).toFixed(2) : '—'}
           status={sentimentStatus(kpi.avg_sentiment)}
+          tooltip="Average customer sentiment score for this agent's calls. Range: −1.0 (very negative) to +1.0 (very positive). Above +0.1 is on track."
         />
         <KpiTile
           label="Escalation %"
           value={formatPct(kpi.escalation_pct)}
           status={benchmarkStatus('escalation_pct', kpi.escalation_pct)}
+          tooltip="Percentage of this agent's calls that were escalated to a supervisor. Target: ≤10%. High rates may indicate a training need."
         />
         <KpiTile
           label="Compliance Fail %"
           value={formatPct(kpi.compliance_fail_pct)}
           status={benchmarkStatus('compliance_fail_pct', kpi.compliance_fail_pct)}
+          tooltip="Percentage of this agent's calls with at least one compliance rule failure. Target: ≤5%. Any breach should be reviewed and addressed promptly."
         />
         <KpiTile
           label="Resolution %"
           value={formatPct(kpi.resolution_pct)}
           status={benchmarkStatus('resolution_pct', kpi.resolution_pct)}
+          tooltip="Percentage of this agent's calls resolved on first contact without a follow-up call required. Target: ≥80%."
         />
         <KpiTile
           label="Pre-Verified %"
           value={formatPct(kpi.preverified_pct)}
           status={benchmarkStatus('preverified_pct', kpi.preverified_pct)}
+          tooltip="Percentage of callers this agent successfully identity-verified before discussing account details. Target: ≥80%."
         />
         <KpiTile
           label="Trigger Word %"
           value={formatPct(kpi.trigger_word_pct)}
           status={benchmarkStatus('trigger_word_pct', kpi.trigger_word_pct)}
+          tooltip="Percentage of this agent's calls that contained flagged trigger words (e.g. 'cancel', 'lawyer', 'complaint'). Target: ≤3%."
         />
-        <KpiTile label="Avg Duration" value={formatDuration(kpi.avg_duration_seconds)} status="neutral" />
+        <KpiTile label="Avg Duration" value={formatDuration(kpi.avg_duration_seconds)} status="neutral" tooltip="Average length of this agent's calls in the selected period. The system target is 6.5 minutes (AHT)." />
       </div>
 
       {/* Radar + Feedback */}

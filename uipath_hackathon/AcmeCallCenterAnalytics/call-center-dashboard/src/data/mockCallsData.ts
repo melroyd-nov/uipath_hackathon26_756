@@ -40,10 +40,9 @@ function buildMockCalls(): CallRecordList[] {
     date.setDate(date.getDate() - i);
 
     calls.push({
-      call_id: 1000 + i,
+      call_id: String(1000 + i),
       call_date: date.toISOString().slice(0, 10),
       agent_name: AGENTS[i % AGENTS.length],
-      caller_nric: `S${1000 + Math.floor(r5 * 8999)}${['A', 'B', 'C', 'D'][i % 4]}`,
       call_intent1: INTENTS[i % INTENTS.length],
       call_sentiment: sentiment,
       escalation_flag: escalated ? 'Yes' : 'No',

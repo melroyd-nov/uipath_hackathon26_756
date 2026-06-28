@@ -4,13 +4,14 @@ import { Info, ChevronDown, ChevronUp, AlertTriangle, TrendingUp } from 'lucide-
 import lottieZap from '../assets/lottie/icon-zap.json';
 import FilterBar from '../components/shared/FilterBar';
 import GlassPanel from '../components/shared/GlassPanel';
+import InfoTooltip from '../components/shared/InfoTooltip';
 import ChartInsight from '../components/shared/ChartInsight';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import EmptyState from '../components/shared/EmptyState';
 import HorizontalBarChart from '../components/charts/HorizontalBarChart';
 import TrendLineChart from '../components/charts/TrendLineChart';
 import { useDataFabric } from '../lib/dataFabric';
-import { getDfTriggerWordCount } from '../api/dataFabricQueries';
+import { getDfTriggerWordCount, getDfKpiTrends } from '../api/dataFabricQueries';
 import { num } from '../utils/num';
 
 const BRAND_COLOR = '#6366F1';
@@ -34,12 +35,19 @@ export default function TriggerWordsPage() {
     },
   });
 
+  const kpiTrends = useQuery({
+    queryKey: ['df-kpi-trends'],
+    queryFn: () => getDfKpiTrends(entities),
+  });
+
   const countsRows = counts.data ?? [];
-  // Trigger word trend not available in DF — render empty
-  const trendRows: Record<string, unknown>[] = [];
+  const trendRows = (kpiTrends.data ?? []).map((r) => ({
+    month: r.month,
+    trigger_count: r.trigger_count,
+  }));
 
   const countsLoading = counts.isLoading;
-  const trendLoading = false;
+  const trendLoading = kpiTrends.isLoading;
 
   const totalFlags = countsRows.reduce((sum, r) => sum + num(r.count), 0);
   const highRiskTotal = countsRows
@@ -99,22 +107,22 @@ export default function TriggerWordsPage() {
       {/* KPI summary strip */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <p className="text-xs text-slate">Total Flags</p>
+          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">Total Flags</p><InfoTooltip text="Total number of trigger word occurrences detected across all calls in the selected period." /></div>
           <p className="mt-1 text-2xl font-bold text-obsidian">{totalFlags.toLocaleString()}</p>
           <p className="mt-0.5 text-xs text-slate">this period</p>
         </div>
         <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <p className="text-xs text-slate">Unique Words</p>
+          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">Unique Words</p><InfoTooltip text="Number of distinct trigger words detected across all calls in the period. A higher count indicates broader language risk exposure." /></div>
           <p className="mt-1 text-2xl font-bold text-obsidian">{countsRows.length}</p>
           <p className="mt-0.5 text-xs text-slate">flagged terms</p>
         </div>
         <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <p className="text-xs text-slate">High-Risk Flags</p>
+          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">High-Risk Flags</p><InfoTooltip text="Total occurrences of high-risk terms such as 'lawyer', 'fraud', or 'legal action' that indicate potential legal or regulatory exposure. These require immediate supervisor review." /></div>
           <p className="mt-1 text-2xl font-bold text-red-600">{highRiskTotal.toLocaleString()}</p>
           <p className="mt-0.5 text-xs text-slate">legal / fraud terms</p>
         </div>
         <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <p className="text-xs text-slate">Top Word</p>
+          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">Top Word</p><InfoTooltip text="The single most frequently occurring trigger word across all calls in the selected period. Focus training efforts on reducing usage of this term." /></div>
           <p className="mt-1 text-2xl font-bold text-amber-600">
             {countsRows[0]?.word ?? '—'}
           </p>
@@ -169,6 +177,7 @@ export default function TriggerWordsPage() {
             <>
               <TrendLineChart
                 data={trendRows}
+                xDataKey="month"
                 series={[{ dataKey: 'trigger_count', label: 'Trigger Flags', stroke: BRAND_COLOR }]}
                 yFormatter={(v) => v.toLocaleString()}
               />

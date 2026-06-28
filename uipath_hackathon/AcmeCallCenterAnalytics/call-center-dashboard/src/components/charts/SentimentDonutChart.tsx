@@ -1,4 +1,4 @@
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { SentimentMonthlyPoint } from '../../api/dashboard';
 import EmptyState from '../shared/EmptyState';
 
@@ -68,6 +68,7 @@ export default function SentimentDonutChart({ data }: SentimentDonutChartProps) 
             return [`${v} (${((v / total) * 100).toFixed(1)}%)`, String(name)];
           }}
         />
+        <Legend wrapperStyle={{ fontSize: 12, color: '#cbd5e1' }} verticalAlign="bottom" iconType="square" iconSize={10} />
       </PieChart>
     </ResponsiveContainer>
   );

@@ -4,6 +4,7 @@ import { Info, ChevronDown, ChevronUp, Target, TrendingUp, Star, Users } from 'l
 import lottieRocket from '../assets/lottie/icon-rocket.json';
 import FilterBar from '../components/shared/FilterBar';
 import GlassPanel from '../components/shared/GlassPanel';
+import InfoTooltip from '../components/shared/InfoTooltip';
 import ChartInsight from '../components/shared/ChartInsight';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import EmptyState from '../components/shared/EmptyState';
@@ -155,22 +156,22 @@ export default function MarketingPage() {
       {/* KPI strip */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <p className="text-xs text-slate">Opportunity Calls</p>
+          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">Opportunity Calls</p><InfoTooltip text="Total number of calls in the period that were identified as containing a marketing or upsell opportunity based on call intent." /></div>
           <p className="mt-1 text-2xl font-bold text-obsidian">{totalCalls.toLocaleString()}</p>
           <p className="mt-0.5 text-xs text-slate">this period</p>
         </div>
         <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <p className="text-xs text-slate">Unique Intents</p>
+          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">Unique Intents</p><InfoTooltip text="Number of distinct call intent types that contain at least one marketing or upsell opportunity in the selected period." /></div>
           <p className="mt-1 text-2xl font-bold text-obsidian">{rows.length}</p>
           <p className="mt-0.5 text-xs text-slate">opportunity types</p>
         </div>
         <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <p className="text-xs text-slate">High-Conversion</p>
+          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">High-Conversion</p><InfoTooltip text="Number of intent types with a conversion score of 70 or above. These represent the strongest upsell opportunities and should be prioritised in outreach campaigns." /></div>
           <p className="mt-1 text-2xl font-bold text-emerald-600">{highConversionCount}</p>
           <p className="mt-0.5 text-xs text-slate">intents scoring ≥70</p>
         </div>
         <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <p className="text-xs text-slate">Avg Conversion Score</p>
+          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">Avg Conversion Score</p><InfoTooltip text="Average conversion score across all intent types, on a scale of 0–100. Above 70 is high, 50–69 is medium, below 50 is low likelihood of successful upsell." /></div>
           <p className={`mt-1 text-2xl font-bold ${conversionColor(avgConversion)}`}>
             {avgConversion > 0 ? avgConversion.toFixed(1) : '—'}
           </p>

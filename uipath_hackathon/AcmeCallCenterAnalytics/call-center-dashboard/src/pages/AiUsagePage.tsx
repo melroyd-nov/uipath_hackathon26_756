@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Brain, Gauge, Clock, Cpu, Activity } from 'lucide-react';
+import InfoTooltip from '../components/shared/InfoTooltip';
 import lottiePulse from '../assets/lottie/icon-pulse.json';
 import GlassPanel from '../components/shared/GlassPanel';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
@@ -15,8 +16,8 @@ function formatDateTime(value: string | null): string {
 }
 
 function StatTile({
-  icon: Icon, label, value, color,
-}: { icon: typeof Brain; label: string; value: string | number; color: string }) {
+  icon: Icon, label, value, color, tooltip,
+}: { icon: typeof Brain; label: string; value: string | number; color: string; tooltip?: string }) {
   return (
     <div className="rounded-xl px-4 py-3 border" style={{ backgroundColor: `${color}14`, borderColor: `${color}40` }}>
       <div className="flex items-center gap-1.5 mb-1">
@@ -24,6 +25,7 @@ function StatTile({
         <span className="text-[10px] uppercase tracking-wider font-bold" style={{ color }}>
           {label}
         </span>
+        {tooltip && <InfoTooltip text={tooltip} />}
       </div>
       <p className="text-2xl font-extrabold text-obsidian" style={{ fontFeatureSettings: "'tnum' 1" }}>
         {value}
@@ -78,10 +80,10 @@ export default function AiUsagePage() {
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-              <StatTile icon={Activity} label="Calls Today" value={usage.calls_today} color="#34D399" />
-              <StatTile icon={Brain} label="Total Calls" value={usage.total_calls} color="#6366F1" />
-              <StatTile icon={Cpu} label="Last Model" value={usage.last_model ?? '—'} color="#A78BFA" />
-              <StatTile icon={Clock} label="Last Endpoint" value={usage.last_endpoint ?? '—'} color="#38BDF8" />
+              <StatTile icon={Activity} label="Calls Today" value={usage.calls_today} color="#34D399" tooltip="Number of calls processed by the AI agent today. Resets at midnight each day." />
+              <StatTile icon={Brain} label="Total Calls" value={usage.total_calls} color="#6366F1" tooltip="Cumulative total of all calls ever processed by the AI agent since the system was first deployed." />
+              <StatTile icon={Cpu} label="Last Model" value={usage.last_model ?? '—'} color="#A78BFA" tooltip="The AI model (e.g. Gemini 2.5 Flash) used for the most recently processed call." />
+              <StatTile icon={Clock} label="Last Endpoint" value={usage.last_endpoint ?? '—'} color="#38BDF8" tooltip="The API endpoint called for the most recent AI analysis request." />
             </div>
 
             <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm border-t border-silver pt-4">

@@ -170,6 +170,7 @@ export default function ResolutionPage() {
             <>
               <TrendLineChart
                 data={resTrendRows as Record<string, unknown>[]}
+                xDataKey="month"
                 series={[{ dataKey: 'resolution_pct', label: 'Resolution %', stroke: BRAND_COLOR }]}
                 benchmark={{ value: 80, label: '80%', color: BRAND_COLOR }}
               />
@@ -199,6 +200,7 @@ export default function ResolutionPage() {
             <>
               <TrendLineChart
                 data={repeatTrendRows as Record<string, unknown>[]}
+                xDataKey="month"
                 series={[{ dataKey: 'repeat_pct', label: 'Repeat Call %', stroke: '#F59E0B' }]}
                 benchmark={{ value: REPEAT_BENCH, label: '20% bench', color: '#F59E0B' }}
               />

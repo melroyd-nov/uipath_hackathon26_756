@@ -72,8 +72,8 @@ function buildMockFollowups(): GlobalFollowup[] {
     const approved = status === 'approved' || status === 'in_progress' || status === 'completed' || status === 'rejected';
 
     items.push({
-      id: 5000 + i,
-      call_id: 4800 + i,
+      id: String(5000 + i),
+      call_id: String(4800 + i),
       text: FOLLOWUP_TEXTS[i % FOLLOWUP_TEXTS.length],
       reason: r1 < 0.6 ? 'customer asked us to call back next week' : null,
       source,

@@ -178,7 +178,7 @@ export function useAriaChat({ restoreHistory = true, enabled = true }: UseAriaCh
         } else {
           step = 'creating conversation';
           conv = await agent.conversations.create({ label: 'Aria Chat' });
-          console.log(CHAT_TAG, 'Fresh conversation created:', conv.conversationId ?? '(no id field)');
+          console.log(CHAT_TAG, 'Fresh conversation created:', conv.id ?? '(no id field)');
         }
 
         if (cancelled) { console.log(CHAT_TAG, 'setup() cancelled before openSession'); return; }

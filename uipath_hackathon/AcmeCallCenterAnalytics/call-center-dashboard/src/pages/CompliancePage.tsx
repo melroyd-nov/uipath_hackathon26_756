@@ -48,7 +48,7 @@ export default function CompliancePage() {
   ).map((r) => ({
     ...r,
     compliance_fail_pct: r.total_calls > 0 ? (r.fail_count / r.total_calls) * 100 : 0,
-  }));
+  })).sort((a, b) => b.compliance_fail_pct - a.compliance_fail_pct);
 
   // trendRows: use DF rows directly — already has month + compliance_fail_pct
   const trendRows = dfRows;
@@ -143,6 +143,7 @@ export default function CompliancePage() {
             <>
               <TrendLineChart
                 data={trendRows}
+                xDataKey="month"
                 series={[{ dataKey: 'compliance_fail_pct', label: 'Fail %', stroke: '#EF4444' }]}
                 benchmark={{ value: BENCHMARK, label: '5% bench', color: '#F59E0B' }}
               />

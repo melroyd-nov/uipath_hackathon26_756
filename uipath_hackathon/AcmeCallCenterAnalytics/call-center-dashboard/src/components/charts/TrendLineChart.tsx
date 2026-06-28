@@ -13,6 +13,7 @@ interface TrendLineChartProps<T> {
   benchmark?: { value: number; label: string; color?: string };
   height?: number;
   yFormatter?: (value: number) => string;
+  xDataKey?: string;
 }
 
 function formatMonthLabel(raw: unknown): string {
@@ -28,18 +29,19 @@ function num(value: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-export default function TrendLineChart<T extends { date?: unknown }>({
+export default function TrendLineChart<T extends Record<string, unknown>>({
   data,
   series,
   benchmark,
   height = 260,
   yFormatter = (v) => `${v}%`,
+  xDataKey = 'date',
 }: TrendLineChartProps<T>) {
   if (data.length === 0) {
     return <EmptyState title="No trend data" description="No data available for this period." />;
   }
 
-  const chartData = data.map((d) => ({ ...d, _label: formatMonthLabel(d.date) }));
+  const chartData = data.map((d) => ({ ...d, _label: formatMonthLabel(d[xDataKey]) }));
 
   return (
     <ResponsiveContainer width="100%" height={height}>

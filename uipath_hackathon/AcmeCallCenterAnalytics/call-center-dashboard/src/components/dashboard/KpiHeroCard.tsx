@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { useId } from 'react';
+import { Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export type KpiStatus = 'good' | 'watch' | 'critical' | 'neutral';
@@ -72,6 +73,7 @@ interface KpiHeroCardProps {
   footer?: string;
   sparkline?: number[];
   delay?: number;
+  tooltip?: string;
 }
 
 function Sparkline({ data, uid }: { data: number[]; uid: string }) {
@@ -167,6 +169,7 @@ export default function KpiHeroCard({
   footer,
   sparkline,
   delay = 0,
+  tooltip,
 }: KpiHeroCardProps) {
   const uid = useId();
   const cfg = ACCENT_CONFIG[accent] ?? ACCENT_CONFIG.indigo;
@@ -174,6 +177,7 @@ export default function KpiHeroCard({
   const hasViz = sparkline && sparkline.length > 1;
 
   return (
+    <div className="relative">
     <motion.div
       initial={{ opacity: 0, y: 28, scale: 0.94 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -254,5 +258,22 @@ export default function KpiHeroCard({
         </div>
       </div>
     </motion.div>
+
+    {/* Tooltip trigger — lives outside overflow-hidden so it can escape the card */}
+    {tooltip && (
+      <div className="group/tip absolute top-3 right-3 z-10">
+        <button
+          type="button"
+          className="flex h-5 w-5 items-center justify-center rounded-full bg-white/15 hover:bg-white/30 transition-colors"
+        >
+          <Info size={10} className="text-white/70" />
+        </button>
+        <div className="pointer-events-none absolute right-0 top-7 z-50 w-56 rounded-xl border border-white/10 bg-[#0D0D1F]/95 px-3 py-2.5 text-[11px] leading-relaxed text-white/80 opacity-0 shadow-2xl backdrop-blur-md transition-opacity duration-150 group-hover/tip:opacity-100">
+          <div className="absolute -top-1.5 right-1.5 h-3 w-3 rotate-45 rounded-sm border-l border-t border-white/10 bg-[#0D0D1F]/95" />
+          {tooltip}
+        </div>
+      </div>
+    )}
+    </div>
   );
 }

@@ -31,7 +31,7 @@ export default function EscalationsPage() {
 
   const dfRows = escalation.data ?? [];
 
-  // byAgent: aggregate per agent across all months
+  // byAgent: aggregate per agent across all months, sorted descending by escalation rate
   const byAgentRows = Object.values(
     dfRows.reduce<Record<string, { agent_name: string; total_calls: number; escalation_count: number; escalation_pct: number }>>(
       (acc, row) => {
@@ -48,7 +48,7 @@ export default function EscalationsPage() {
   ).map((r) => ({
     ...r,
     escalation_pct: r.total_calls > 0 ? (r.escalation_count / r.total_calls) * 100 : 0,
-  }));
+  })).sort((a, b) => b.escalation_pct - a.escalation_pct);
 
   // trendRows: aggregate per month across all agents
   const trendRows = Object.values(
@@ -69,12 +69,23 @@ export default function EscalationsPage() {
     escalation_pct: r.total_calls > 0 ? (r.escalation_count / r.total_calls) * 100 : 0,
   }));
 
-  // root cause by intent — not available in DF, render empty
-  const intentData: { label: string; value: number }[] = [];
+  // Aggregate escalation counts by top_intent and second_intent from the summary rows
+  const intentTotals: Record<string, number> = {};
+  for (const row of dfRows) {
+    const count = num(row.escalation_count);
+    if (count <= 0) continue;
+    const top = String(row.top_intent ?? '').trim();
+    const second = String(row.second_intent ?? '').trim();
+    if (top) intentTotals[top] = (intentTotals[top] ?? 0) + count;
+    if (second) intentTotals[second] = (intentTotals[second] ?? 0) + Math.round(count * 0.5);
+  }
+  const intentData = Object.entries(intentTotals)
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
 
   const byAgentLoading = escalation.isLoading;
   const trendLoading = escalation.isLoading;
-  const rootCauseLoading = false;
+  const rootCauseLoading = escalation.isLoading;
 
   return (
     <div className="space-y-6">
@@ -157,6 +168,7 @@ export default function EscalationsPage() {
             <>
               <TrendLineChart
                 data={trendRows as Record<string, unknown>[]}
+                xDataKey="month"
                 series={[{ dataKey: 'escalation_pct', label: 'Escalation %', stroke: '#EF4444' }]}
                 benchmark={{ value: 10, label: '10% bench', color: '#F59E0B' }}
               />

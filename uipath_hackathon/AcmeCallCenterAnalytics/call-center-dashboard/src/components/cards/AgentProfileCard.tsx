@@ -53,14 +53,21 @@ interface KpiBadgeProps {
   label: string;
   value: string;
   status: Status;
+  tooltip?: string;
 }
 
-function KpiBadge({ label, value, status }: KpiBadgeProps) {
+function KpiBadge({ label, value, status, tooltip }: KpiBadgeProps) {
   return (
-    <div className="flex flex-col items-center">
+    <div className="group/tip relative flex flex-col items-center">
       <span className="text-obsidian font-semibold text-sm">{value}</span>
       <span className="text-slate text-xs">{label}</span>
       <span className={`w-1.5 h-1.5 rounded-full mt-1 ${STATUS_DOT[status]}`} />
+      {tooltip && (
+        <div className="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-50 w-48 rounded-xl border border-silver bg-paper px-3 py-2 text-[11px] leading-relaxed text-graphite opacity-0 shadow-card transition-opacity duration-150 group-hover/tip:opacity-100">
+          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 h-3 w-3 rotate-45 border-b border-r border-silver bg-paper" />
+          {tooltip}
+        </div>
+      )}
     </div>
   );
 }
@@ -106,18 +113,20 @@ export default function AgentProfileCard({ agent, colorIndex }: AgentProfileCard
 
       {/* KPI row */}
       <div className="grid grid-cols-4 gap-2 py-3 border-y border-silver">
-        <KpiBadge label="Calls" value={num(kpi.total_calls).toLocaleString()} status="neutral" />
+        <KpiBadge label="Calls" value={num(kpi.total_calls).toLocaleString()} status="neutral" tooltip="Total calls handled by this agent in the selected period." />
         <KpiBadge
           label="Esc %"
           value={formatPct(kpi.escalation_pct)}
           status={benchmarkStatus('escalation_pct', kpi.escalation_pct)}
+          tooltip="Escalation rate — percentage of calls escalated to a supervisor. Target: ≤10%."
         />
         <KpiBadge
           label="Res %"
           value={formatPct(kpi.resolution_pct)}
           status={benchmarkStatus('resolution_pct', kpi.resolution_pct)}
+          tooltip="First-call resolution rate — percentage of calls resolved without a follow-up. Target: ≥80%."
         />
-        <KpiBadge label="Avg Dur" value={formatDuration(kpi.avg_duration_seconds)} status="neutral" />
+        <KpiBadge label="Avg Dur" value={formatDuration(kpi.avg_duration_seconds)} status="neutral" tooltip="Average call duration for this agent. System target is 6.5 minutes (AHT)." />
       </div>
 
       {/* Certifications */}

@@ -207,6 +207,28 @@ function buildFeedback(feedbackRecords: EntityRecord[], agentRecordId: string): 
     }));
 }
 
+// Known agent specialisations from the business domain (CLAUDE.md §8.3)
+const AGENT_TEAMS: Record<string, string> = {
+  Sam: 'Claims / Grievances',
+  John: 'Policy Services',
+  David: 'Escalations / Quality',
+  Mike: 'New Business / Renewals',
+  Mary: 'Billing / Amendments',
+};
+
+function buildProfileFromName(name: string): AgentProfile {
+  return {
+    id: name,
+    full_name: name,
+    role: 'Agent',
+    team: AGENT_TEAMS[name] ?? '',
+    experience_years: 0,
+    manager: '',
+    certifications: [],
+    avatar_initials: name.slice(0, 2).toUpperCase(),
+  };
+}
+
 export const agentsApi = {
   list: async (entities: Entities, filters?: AgentFilters): Promise<AgentDetail[]> => {
     const [agentRecords, feedbackRecords, kpiMap] = await Promise.all([
@@ -214,6 +236,15 @@ export const agentsApi = {
       fetchAllRecords(entities, ENTITY_IDS.AgentFeedback),
       fetchKpisByAgentName(entities, filters),
     ]);
+
+    if (agentRecords.length === 0) {
+      // Agents entity not yet seeded — build profiles from CallRecord agent names (kpiMap keys)
+      return [...kpiMap.entries()].map(([name, kpi]) => ({
+        profile: buildProfileFromName(name),
+        kpi,
+        feedback: [],
+      }));
+    }
 
     return agentRecords.map((record) => {
       const profile = buildProfile(record);
