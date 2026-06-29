@@ -2,7 +2,7 @@
 %% Regenerated on every `uipath init`.
 flowchart TB
   __start__(__start__)
-  fetch_audio(fetch_audio)
+  download_file(download_file)
   create_session(create_session)
   load_audio(load_audio)
   transcribe(transcribe)
@@ -19,13 +19,13 @@ flowchart TB
   finalize(finalize)
   push_outputs(push_outputs)
   __end__(__end__)
-  __start__ --> fetch_audio
+  __start__ --> download_file
   align --> roles
   compliance --> followup
   create_session --> load_audio
   diarize --> align
+  download_file --> create_session
   emotion --> compliance
-  fetch_audio --> create_session
   finalize --> push_outputs
   followup --> rollup
   followup_actions --> identity

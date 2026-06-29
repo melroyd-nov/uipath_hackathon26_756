@@ -9,26 +9,20 @@
             "input": {
                 "type": "object",
                 "properties": {
-                    "audio_blob_path": {
-                        "description": "Path to the audio file inside the input bucket (e.g. 'calls/recording.wav')",
-                        "title": "Audio Blob Path",
+                    "file_id": {
+                        "description": "Google Drive file ID of the audio file to analyze (from the Drive trigger item).",
+                        "title": "File Id",
                         "type": "string"
                     },
-                    "api_url": {
-                        "description": "Base URL of your local analytics server (e.g. 'https://xxxx.ngrok-free.app')",
-                        "title": "Api Url",
+                    "file_name": {
                         "type": "string"
                     },
-                    "api_key": {
-                        "default": "",
-                        "description": "Shared secret for the local server's X-API-Key header (optional)",
-                        "title": "Api Key",
+                    "metadata_file_id": {
                         "type": "string"
                     }
                 },
                 "required": [
-                    "audio_blob_path",
-                    "api_url"
+                    "file_id"
                 ]
             },
             "output": {
@@ -67,8 +61,8 @@
                         "metadata": {}
                     },
                     {
-                        "id": "fetch_audio",
-                        "name": "fetch_audio",
+                        "id": "download_file",
+                        "name": "download_file",
                         "type": "node",
                         "subgraph": null,
                         "metadata": {}
@@ -189,7 +183,7 @@
                 "edges": [
                     {
                         "source": "__start__",
-                        "target": "fetch_audio",
+                        "target": "download_file",
                         "label": null
                     },
                     {
@@ -213,13 +207,13 @@
                         "label": null
                     },
                     {
-                        "source": "emotion",
-                        "target": "compliance",
+                        "source": "download_file",
+                        "target": "create_session",
                         "label": null
                     },
                     {
-                        "source": "fetch_audio",
-                        "target": "create_session",
+                        "source": "emotion",
+                        "target": "compliance",
                         "label": null
                     },
                     {
