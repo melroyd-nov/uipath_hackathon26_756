@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     api_key: str | None = None                   # shared secret required in X-API-Key header
     max_upload_mb: int = 50                       # reject /analyze uploads larger than this
 
+    # --- API concurrency (single GPU: serialize the heavy pipeline) ---
+    api_max_concurrency: int = 1                  # pipelines allowed to run at once
+    api_max_queue: int = 50                       # requests allowed to wait; overflow -> 503 (< 0 = unbounded, never reject)
+    session_ttl_sec: int = 1800                   # drop idle step-sessions after this many seconds
+
     # --- secrets / audio models ---
     hf_token: str | None = None
     asr_model: str = "deepdml/faster-whisper-large-v3-turbo-ct2"

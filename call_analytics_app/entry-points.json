@@ -4,7 +4,7 @@
     "entryPoints": [
         {
             "filePath": "agent",
-            "uniqueId": "ecd1794e-57b3-4a02-9872-ab8ed48b0aa7",
+            "uniqueId": "1af3348b-d8bc-4161-8425-e20b9139ea06",
             "type": "agent",
             "input": {
                 "type": "object",
@@ -17,6 +17,12 @@
                     "api_url": {
                         "description": "Base URL of your local analytics server (e.g. 'https://xxxx.ngrok-free.app')",
                         "title": "Api Url",
+                        "type": "string"
+                    },
+                    "api_key": {
+                        "default": "",
+                        "description": "Shared secret for the local server's X-API-Key header (optional)",
+                        "title": "Api Key",
                         "type": "string"
                     }
                 },
@@ -32,6 +38,12 @@
                         "additionalProperties": true,
                         "description": "Full CallReport as a dictionary",
                         "title": "Report",
+                        "type": "object"
+                    },
+                    "steps": {
+                        "additionalProperties": true,
+                        "description": "Per-step JSON outputs (transcription, diarization, \u2026)",
+                        "title": "Steps",
                         "type": "object"
                     },
                     "artifacts": {
@@ -62,8 +74,99 @@
                         "metadata": {}
                     },
                     {
-                        "id": "call_local_api",
-                        "name": "call_local_api",
+                        "id": "create_session",
+                        "name": "create_session",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "load_audio",
+                        "name": "load_audio",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "transcribe",
+                        "name": "transcribe",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "diarize",
+                        "name": "diarize",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "align",
+                        "name": "align",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "roles",
+                        "name": "roles",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "sentiment",
+                        "name": "sentiment",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "emotion",
+                        "name": "emotion",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "compliance",
+                        "name": "compliance",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "followup",
+                        "name": "followup",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "rollup",
+                        "name": "rollup",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "followup_actions",
+                        "name": "followup_actions",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "identity",
+                        "name": "identity",
+                        "type": "node",
+                        "subgraph": null,
+                        "metadata": {}
+                    },
+                    {
+                        "id": "finalize",
+                        "name": "finalize",
                         "type": "node",
                         "subgraph": null,
                         "metadata": {}
@@ -90,13 +193,78 @@
                         "label": null
                     },
                     {
-                        "source": "call_local_api",
-                        "target": "push_outputs",
+                        "source": "align",
+                        "target": "roles",
+                        "label": null
+                    },
+                    {
+                        "source": "compliance",
+                        "target": "followup",
+                        "label": null
+                    },
+                    {
+                        "source": "create_session",
+                        "target": "load_audio",
+                        "label": null
+                    },
+                    {
+                        "source": "diarize",
+                        "target": "align",
+                        "label": null
+                    },
+                    {
+                        "source": "emotion",
+                        "target": "compliance",
                         "label": null
                     },
                     {
                         "source": "fetch_audio",
-                        "target": "call_local_api",
+                        "target": "create_session",
+                        "label": null
+                    },
+                    {
+                        "source": "finalize",
+                        "target": "push_outputs",
+                        "label": null
+                    },
+                    {
+                        "source": "followup",
+                        "target": "rollup",
+                        "label": null
+                    },
+                    {
+                        "source": "followup_actions",
+                        "target": "identity",
+                        "label": null
+                    },
+                    {
+                        "source": "identity",
+                        "target": "finalize",
+                        "label": null
+                    },
+                    {
+                        "source": "load_audio",
+                        "target": "transcribe",
+                        "label": null
+                    },
+                    {
+                        "source": "roles",
+                        "target": "sentiment",
+                        "label": null
+                    },
+                    {
+                        "source": "rollup",
+                        "target": "followup_actions",
+                        "label": null
+                    },
+                    {
+                        "source": "sentiment",
+                        "target": "emotion",
+                        "label": null
+                    },
+                    {
+                        "source": "transcribe",
+                        "target": "diarize",
                         "label": null
                     },
                     {
