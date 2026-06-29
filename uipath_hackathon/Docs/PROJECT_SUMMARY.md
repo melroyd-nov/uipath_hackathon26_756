@@ -1,6 +1,6 @@
 # Call Center Analytics Platform — Full Project Summary
 
-> Reflects the actual codebase existing. No UiPath branding applied.
+> Reference documentation for the Acme Call Center Analytics platform.
 
 ---
 

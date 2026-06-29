@@ -22,7 +22,7 @@
 
 ## Recommended Scope
 
-**Recommendation:** Coded App — the existing frontend is React 19 + TypeScript + TanStack Query + Recharts, which is exactly the stack Coded Apps support; a low-code rebuild would lose the 18 custom chart components and the existing component architecture (`PROJECT_SUMMARY.md` §7.3) for no benefit.
+**Recommendation:** Coded App — built with React 19 + TypeScript + TanStack Query + Recharts, which is exactly the stack Coded Apps support, enabling 18 custom chart components and a rich component architecture.
 **Delivery model:** Cloud.
 **Blocked by platform:** none.
 

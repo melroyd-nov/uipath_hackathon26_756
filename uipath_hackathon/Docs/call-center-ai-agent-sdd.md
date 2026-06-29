@@ -22,7 +22,7 @@
 
 ## Recommended Scope
 
-**Recommendation:** Coded Agent (Python) — the existing logic is already Python (`google-generativeai` SDK, SQL aggregation functions); built as a Coded Agent using UiPath's LLM Gateway and the DB layer to Data Fabric.
+**Recommendation:** Coded Agent (Python) — built using UiPath's LLM Gateway for AI inference and Data Fabric for data access.
 **Delivery model:** Cloud.
 **Blocked by platform:** none.
 
@@ -227,7 +227,7 @@ Feed a known transcript (one of the sample `.txt` files referenced in `PROJECT_S
 
 ### Evaluation Dataset
 
-`[SME REVIEW]` — build a labeled set from a sample of existing transcripts once available; until then, manual spot-checking against the existing Gemini outputs (if historical results are exported) is the fallback.
+`[SME REVIEW]` — build a labeled set from a sample of existing transcripts once available; until then, manual spot-checking against LLM Gateway outputs is the fallback.
 
 ### Regression Strategy
 

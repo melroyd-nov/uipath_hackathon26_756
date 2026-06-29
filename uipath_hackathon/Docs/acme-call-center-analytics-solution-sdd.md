@@ -46,17 +46,17 @@
 
 **Business context:** Acme operates an insurance contact centre. Every customer call produces a transcript that must be analysed for sentiment, intent, compliance, escalation risk, and follow-up actions, then surfaced to supervisors for approval/tracking and to the business via a live KPI dashboard and natural-language Q&A.
 
-**Objective:** build UiPath platform (FastAPI + SQLAlchemy/PostgreSQL + Gemini 2.5 Flash + React/Vite, ) with an equivalent-or-better UiPath-native architecture, maximizing platform product coverage per the user's request:
+**Objective:** build a UiPath-native call center analytics platform maximizing platform product coverage:
 
-| Capability (existing) | UiPath replacement |
+| Capability | UiPath Product |
 |---|---|
-| FastAPI backend (6 routers) + orchestration logic | **Maestro Flow** |
-| `ai_service.py` + `analytics_service.py` (Gemini 2.5 Flash) | **Coded Agent** (Python) using UiPath LLM Gateway |
-| React/Vite frontend (15+ pages) | **Coded App** |
-| PostgreSQL (`call_records`, `call_followups`, `ai_usage`) | **Data Fabric** entities |
-| `load_transcripts.py` local file reads | **Orchestrator Storage Bucket** + **Time Trigger** |
-| Follow-up approval UI/router (`followups.py`) | **Maestro BPMN** project (`call-center-followup-case`) with inline HITL tasks |
-| Docker / Google Cloud Run deployment | **`.uipx` Solution** deployed to Orchestrator (Cloud) |
+| Orchestration pipeline | **Maestro Flow** |
+| AI analysis & analytics | **Coded Agent** (Python) using UiPath LLM Gateway |
+| Supervisor dashboard (15+ pages) | **Coded App** |
+| Data persistence | **Data Fabric** entities |
+| Transcript file ingestion | **Orchestrator Storage Bucket** + **Time Trigger** |
+| Follow-up approval lifecycle | **Maestro BPMN** project (`call-center-followup-case`) with inline HITL tasks |
+| Packaging & deployment | **`.uipx` Solution** deployed to Orchestrator (Cloud) |
 
 **Primary source document:** `Docs/call-center-transcript-process.bpmn` — a 3-lane (System / UiPath Generative AI Service / Supervisor), 25-node BPMN process already authored with UiPath terminology (Data Fabric, UiPath Generative AI, UiPath Apps, UiPath Agent, UiPath Orchestrator), confirming this is a native implementation rather than a greenfield design.
 **Secondary source:** `Docs/PROJECT_SUMMARY.md` — existing documentation of the predecessor system, used to recover concrete field names, endpoint shapes, and business logic not visible in the BPMN's documentation blocks alone (e.g. exact KPI SQL formulas, the friction/marketing scoring weights, the follow-up dedup rule).
@@ -75,7 +75,7 @@
 ### Out of Scope
 
 - Telephony recording itself (`Task_RecordCall` is the call centre's existing telephony system — out of this Solution's build scope; we consume its output files)
-- Migrating historical PostgreSQL data (a one-time data-implementation task is flagged `[SME REVIEW]` in §4 — out of the BPMN's described scope)
+- Historical data backfill (a one-time task flagged `[SME REVIEW]` in §4 — out of the BPMN's described scope)
 - MAS regulatory reporting integration (mentioned as an *impact* of compliance failure in the BPMN documentation, not as a system requirement)
 
 ---
@@ -164,7 +164,7 @@ These are referenced by more than one project and are not themselves separate bu
 | `AiUsage` entity (8 fields, single row, mirrors `ai_usage`) | Data Fabric | Agent (upsert on every AI call), Coded App (read for usage badge) | `[SME REVIEW]` — Data Fabric has no native singleton-row pattern; see `call-center-ai-agent-sdd.md` §9 for the chosen workaround |
 | `cc-transcripts-incoming` bucket | Orchestrator Storage Bucket | Flow (read) | Replaces local `.txt` / `transcripts.zip` reads from `load_transcripts.py` |
 | Daily ingestion trigger | Orchestrator Time Trigger | Flow | `[DEFAULT]` schedule: daily 06:00 org timezone — matches no explicit PDD cadence, adjust as needed |
-| UiPath LLM Gateway connection | LLM Gateway (BYO or platform-default model) | Agent | Replaces `GEMINI_API_KEY` / `google-generativeai` SDK |
+| UiPath LLM Gateway connection | LLM Gateway (BYO or platform-default model) | Agent | LLM provider for all AI analysis and Q&A |
 | `[SME REVIEW]` — historical PostgreSQL data implementation | n/a | n/a | The BPMN/PROJECT_SUMMARY describe the *running* system, not a one-time backfill; if historical call records must be carried over, scope a separate one-off data-implementation task before go-live |
 
 ---
