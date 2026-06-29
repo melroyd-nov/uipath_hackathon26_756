@@ -451,5 +451,15 @@ See **`Claude.md` §6** for the full task table and build graph.
 
 ---
 
+## License
+
+Released under the **MIT License** — see [`LICENSE`](LICENSE) for the full text.
+
+The UiPath-native ML models bundled into the pipeline retain their own upstream licenses (Whisper —
+MIT, pyannote.audio — MIT, wav2vec2/SUPERB — Apache-2.0, Llama — Meta community license, Qwen —
+Apache-2.0); see [§5](#5-the-ml-analysis-engine-call_analytics_app) for details.
+
+---
+
 *Acme Call Center Analytics  built on UiPath. See `Claude.md` for detailed, continuously-updated
 project state.*
