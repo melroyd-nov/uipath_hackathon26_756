@@ -58,10 +58,10 @@ ollama pull llama3.2          # default LLM
 ollama pull qwen2.5:7b        # sharper compliance/rollup -> set JUDGE_MODEL=qwen2.5:7b
 ```
 
-Then provide a local **`.env`** (gitignored — never committed). Copy `.env.example` and fill in
-`HF_TOKEN`, `API_KEY`, the proprietary `*_PROMPT` / `RUBRIC_*` blocks, and `DATA_DIR` (absolute path
-to your audio dir, needed when the package lives outside the data workspace). Provider swap:
-`LLM_PROVIDER=ollama` (default) or `anthropic` (set `ANTHROPIC_API_KEY`).
+Then copy `.env.example` to a local **`.env`**. The `*_PROMPT` / `RUBRIC_*` blocks are already
+filled in (shared for hackathon judging); you only set `HF_TOKEN`, `API_KEY`, and optionally
+`DATA_DIR` (absolute path to your audio dir, needed when the package lives outside the data
+workspace). Provider swap: `LLM_PROVIDER=ollama` (default) or `anthropic` (set `ANTHROPIC_API_KEY`).
 
 > Verified end-to-end on RTX 5060 (Blackwell, cu128), Python 3.13, torch 2.11.0+cu128 — one real
 > call through the full graph (ASR → diarize → roles → sentiment → emotion → compliance → followup

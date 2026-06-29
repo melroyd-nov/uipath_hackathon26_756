@@ -35,8 +35,76 @@ with governance, traceability, and human oversight built in rather than bolted o
 
 ---
 
+## ▶ For judges — replicate & test the local LLM agent
+
+The whole UiPath side (Maestro Flow, Coded Agent, BPMN approvals, Data Fabric, the Coded
+App, Aria) is **already deployed to UiPath Cloud (Staging)** in org `hackathon26_756` — you can
+review it there directly. The **one piece that can't live in the cloud** is the GPU-bound ML
+engine: it transcribes and analyzes **raw customer audio (PII, NRIC, policy numbers) on-prem**,
+by design, so that audio never leaves the local boundary (see [§5](#5-the-ml-analysis-engine-call_analytics_app)).
+This guide runs that engine.
+
+> **Note on the prompts.** The LLM prompts + compliance rubric were originally proprietary and
+> kept out of the repo. For judging we now ship them in
+> [`call_analytics_app/.env.example`](call_analytics_app/.env.example) so the agent runs end-to-end
+> — just copy it to `.env`. You only supply two secrets of your own (a free Hugging Face token and
+> any random API key); we do **not** ship our personal credentials.
+
+### Prerequisites
+- **NVIDIA GPU** strongly recommended (tested on RTX 5060, CUDA cu128). CPU-only works but is slow —
+  set `DEVICE=cpu` in `.env`.
+- **Python 3.13**, [`uv`](https://docs.astral.sh/uv/), [`ollama`](https://ollama.com), and a free
+  **Hugging Face** account (for the gated pyannote model).
+- A call-audio file (`.mp3`/`.wav`). Any call-center recording works; an insurance/banking call best
+  exercises the compliance + identity steps.
+
+### Setup (≈10 min, mostly model downloads)
+```powershell
+git clone https://github.com/melroyd-nov/uipath_hackathon26_756.git
+cd uipath_hackathon26_756/call_analytics_app
+
+uv venv --python 3.13 --clear
+uv pip install -e . -r requirements-local-ml.txt `
+  --extra-index-url https://download.pytorch.org/whl/cu128 --index-strategy unsafe-best-match
+uv pip uninstall torchcodec          # its DLLs break the transformers/pyannote audio path
+
+ollama pull llama3.2
+ollama pull qwen2.5:7b
+
+Copy-Item .env.example .env           # prompts/rubric already filled in
+#  → edit .env: set HF_TOKEN (your free token) and API_KEY (any random string)
+```
+
+### Path A — verify the local LLM agent on its own (fastest, no UiPath needed)
+Runs the full pipeline (ASR → diarize → roles → sentiment → emotion → compliance → follow-up →
+rollup → identity) and prints the `CallReport` JSON:
+```powershell
+.venv\Scripts\python.exe -m call_analytics run path\to\your_call.mp3
+#   writes call_<rec>.json + heatmap to call_analytics_app/outputs/
+```
+
+### Path B — full end-to-end through the deployed UiPath solution
+Exposes your local engine to the deployed cloud agent and runs the real Maestro flow, so each
+pipeline step shows up as its own span in the Orchestrator trace:
+1. **Start the server** (`.\run-server.ps1`) — it loads the ML models, then listens on `:8000`.
+   Wait for `Uvicorn running` (first start downloads models; can take a minute).
+2. **Expose it** (`.\run-ngrok.ps1`) — copy the `https://….ngrok-free.app` URL it prints.
+3. **Point the cloud agent at your tunnel** — in the staging Orchestrator folder
+   `Acme/CallCenterAnalytics`, set the assets the agent reads at runtime:
+   - `call-analytics-api-url` (Text) → your ngrok URL
+   - `call-analytics-api-key` (Secret) → the same `API_KEY` you put in `.env`
+4. **Trigger a run** (upload a call to the watched Google Drive folder, or run the
+   `call-center-orchestration` flow) and watch the per-step trace; the resulting `CallRecord`
+   lands in **Data Fabric** and surfaces on the dashboard.
+
+Full reference: [§10 Local development & run](#10-local-development--run) ·
+[§11 Target environment](#11-target-environment--deployment).
+
+---
+
 ## Table of Contents
 
+0. [**For judges — replicate & test the local LLM agent**](#-for-judges--replicate--test-the-local-llm-agent)
 1. [What this system does](#1-what-this-system-does)
 2. [How we built it](#2-how-we-built-it)
 3. [Architecture at a glance](#3-architecture-at-a-glance)
@@ -361,8 +429,9 @@ ollama pull llama3.2          # default LLM
 ollama pull qwen2.5:7b        # sharper compliance/rollup -> set JUDGE_MODEL=qwen2.5:7b
 ```
 
-Provide a local **`.env`** (gitignored  never committed). Copy `.env.example` and fill
-`HF_TOKEN`, `API_KEY`, the proprietary `*_PROMPT` / `RUBRIC_*` blocks, and `DATA_DIR`.
+Provide a local **`.env`** (gitignored  never committed). Copy `.env.example` to `.env`
+— the `*_PROMPT` / `RUBRIC_*` blocks are already filled in (shared for judging); you only set
+`HF_TOKEN`, `API_KEY`, and optionally `DATA_DIR`.
 Provider swap: `LLM_PROVIDER=ollama` (default) or `anthropic` (set `ANTHROPIC_API_KEY`).
 
 ```powershell
