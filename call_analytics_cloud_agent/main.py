@@ -1,11 +1,24 @@
+"""Cloud LangGraph: orchestrates the call-analytics pipeline ON the local server,
+one step at a time, so each step (transcribe, diarize, …) is its own Orchestrator
+trace span with its output captured as JSON.
+
+The heavy ML and the proprietary prompts stay on the local server. This graph never
+sees the audio waveform or intermediate state — it downloads the audio from Google
+Drive, opens a session on the local server, then drives the per-step API by
+reference; each call returns only that step's compact JSON, which lands in the
+trace. Audio (and optional metadata) come from Drive; the report is uploaded to a
+bucket.
+"""
 from __future__ import annotations
 import json
 import os
 import tempfile
 from typing import TypedDict
 
+import httpx
 from pydantic import BaseModel, Field
 from langgraph.graph import StateGraph, START, END
+from langgraph.types import RetryPolicy
 
 # Bucket the report JSON is uploaded to — overridable per environment via bindings.
 OUTPUT_BUCKET = "call-analytics-results"
@@ -23,6 +36,39 @@ API_URL_ASSET = "call-analytics-api-url"
 # baked into the package.
 GDRIVE_CONN_ID_ASSET = "call-analytics-gdrive-conn-id"
 
+# Pipeline steps run on the local server, in order. Each becomes a graph node and
+# therefore a trace span. Mirrors the local call_analytics.graph node order.
+STEPS = [
+    "load_audio", "transcribe", "diarize", "align", "roles", "sentiment",
+    "emotion", "compliance", "followup", "rollup", "followup_actions", "identity",
+]
+
+_STEP_TIMEOUT = 600.0  # a single GPU step (e.g. transcribe) can take a minute+
+
+
+# --- per-step retry (in-agent, so a transient blip costs 1 agent run, not N) ----
+# Under load (e.g. 4 parallel instances queueing on the single GPU) the ngrok hop
+# occasionally drops a connection or times out mid-step. LangGraph retries the
+# FAILING NODE in-process — same agent run, same session — so we don't re-bill the
+# whole agent. Only transient failures retry; permanent ones (4xx) fail fast.
+def _is_transient(exc: Exception) -> bool:
+    # httpx.TransportError covers connect/read/write/timeout/protocol errors
+    # (dropped tunnel, server busy). HTTPStatusError: retry only 429 / 5xx.
+    if isinstance(exc, httpx.HTTPStatusError):
+        return exc.response.status_code == 429 or exc.response.status_code >= 500
+    return isinstance(exc, httpx.TransportError)
+
+
+# max_attempts counts the first try, so 4 = 1 initial attempt + up to 3 retries.
+_RETRY = RetryPolicy(
+    max_attempts=4,
+    initial_interval=1.0,
+    backoff_factor=2.0,
+    max_interval=30.0,
+    jitter=True,
+    retry_on=_is_transient,
+)
+
 
 class AgentState(TypedDict, total=False):
     file_id: str
@@ -30,6 +76,9 @@ class AgentState(TypedDict, total=False):
     metadata_file_id: str
     audio_local_path: str
     call_metadata: dict
+    api_url: str            # resolved once from the text asset (NOT secret)
+    session_id: str
+    steps: dict             # per-step JSON projections, accumulated for output/trace
     report: dict
     artifacts: dict
 
@@ -50,10 +99,45 @@ class GraphInput(BaseModel):
 
 class GraphOutput(BaseModel):
     report: dict = Field(description="Full CallReport as a dictionary")
+    steps: dict = Field(
+        default_factory=dict,
+        description="Per-step JSON outputs (transcription, diarization, …)",
+    )
     artifacts: dict = Field(
         default_factory=dict,
         description="Bucket paths of uploaded output artifacts",
     )
+
+
+# --- credential seam ------------------------------------------------------------
+# api_url (the local server base URL) comes from a Text asset; the X-API-Key from a
+# Secret asset. The URL is resolved once and carried in state (non-secret, fine to
+# trace); the secret is fetched fresh per HTTP call and NEVER stored in graph state
+# (so it can't leak into the trace).
+def _resolve_url() -> str:
+    from uipath.platform import UiPath
+
+    sdk = UiPath()
+    url_asset = sdk.assets.retrieve(name=API_URL_ASSET)
+    api_url = url_asset.value or url_asset.string_value
+    if not api_url:
+        raise ValueError(
+            "The 'call-analytics-api-url' asset is empty — set it to the current server URL."
+        )
+    return api_url.rstrip("/")
+
+
+def _headers() -> dict[str, str]:
+    from uipath.platform import UiPath
+
+    sdk = UiPath()
+    api_key = sdk.assets.retrieve_secret(name=API_KEY_ASSET)
+    return {"X-API-Key": api_key} if api_key else {}
+
+
+# NOTE: no eager session-delete on failure. With per-node retry, the session must
+# survive a failed attempt so the retry can resume it. A session abandoned after
+# retries are exhausted is reaped by the local server's idle TTL sweep.
 
 
 def _parse_metadata(data: bytes) -> dict:
@@ -89,8 +173,6 @@ def _parse_metadata(data: bytes) -> dict:
 
 def _drive_download(file_id: str, access_token: str) -> bytes:
     """Fetch a Google Drive file's raw bytes via the Drive API."""
-    import httpx
-
     resp = httpx.get(
         f"https://www.googleapis.com/drive/v3/files/{file_id}",
         params={"alt": "media"},
@@ -136,46 +218,62 @@ def n_download_file(state: AgentState) -> dict:
     return out
 
 
-def n_call_local_api(state: AgentState) -> dict:
-    import httpx
-    from uipath.platform import UiPath
-
+def n_create_session(state: AgentState) -> dict:
+    """Upload the audio to the local server once and open a per-step session."""
+    base_url = _resolve_url()
     local_path = state["audio_local_path"]
     filename = state.get("file_name") or os.path.basename(local_path)
-
-    sdk = UiPath()
-
-    # Server URL always comes from the Text asset (update it on each ngrok restart).
-    url_asset = sdk.assets.retrieve(name=API_URL_ASSET)
-    api_url = url_asset.value or url_asset.string_value
-    if not api_url:
-        raise ValueError(
-            "The 'call-analytics-api-url' asset is empty — set it to the current server URL."
-        )
-    api_url = api_url.rstrip("/")
-
-    # Pull the server's API key from a UiPath Secret asset at runtime — keeps the
-    # secret out of the deployed package.
-    api_key = sdk.assets.retrieve_secret(name=API_KEY_ASSET)
-
     with open(local_path, "rb") as f:
         audio_bytes = f.read()
+    try:
+        resp = httpx.post(
+            f"{base_url}/sessions",
+            files={"file": (filename, audio_bytes)},
+            headers=_headers(),
+            timeout=_STEP_TIMEOUT,
+        )
+        resp.raise_for_status()
+    finally:
+        try:
+            os.remove(local_path)
+        except OSError:
+            pass
+    return {"api_url": base_url, "session_id": resp.json()["session_id"], "steps": {}}
 
+
+def _make_step_node(step: str):
+    """Build a graph node that runs one pipeline step on the local server and
+    records its JSON output. Each node = one trace span."""
+
+    def _node(state: AgentState) -> dict:
+        base_url = state["api_url"]
+        sid = state["session_id"]
+        # On a transient failure this raises; the node's RetryPolicy re-runs it
+        # (same session) up to the retry limit.
+        resp = httpx.post(
+            f"{base_url}/sessions/{sid}/steps/{step}",
+            headers=_headers(),
+            timeout=_STEP_TIMEOUT,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        # Accumulate into `steps` so the node's delta shows this step's output and
+        # the final output carries every step. Read-merge: plain TypedDict has no reducer.
+        return {"steps": {**state.get("steps", {}), step: data}}
+
+    _node.__name__ = f"n_{step}"
+    return _node
+
+
+def n_finalize(state: AgentState) -> dict:
+    base_url = state["api_url"]
+    sid = state["session_id"]
     resp = httpx.post(
-        f"{api_url}/analyze",
-        files={"file": (filename, audio_bytes)},
-        headers={"X-API-Key": api_key},
-        timeout=600.0,  # pipeline can take several minutes on GPU
+        f"{base_url}/sessions/{sid}/finalize", headers=_headers(), timeout=_STEP_TIMEOUT
     )
     resp.raise_for_status()
     report: dict = resp.json()
-
-    try:
-        os.remove(local_path)
-    except OSError:
-        pass
-
-    # scrub local artifact paths — they're meaningless in the cloud context
+    # Local artifact paths are meaningless in the cloud context — scrub them.
     report["artifacts"] = {}
     return {"report": report}
 
@@ -206,13 +304,21 @@ def n_push_outputs(state: AgentState) -> dict:
     return {"report": report, "artifacts": artifacts}
 
 
+# Every node gets the same in-agent retry policy: a transient blip retries the
+# single node, not the whole agent (keeps billed agent runs at 1).
 _builder = StateGraph(AgentState, input_schema=GraphInput, output_schema=GraphOutput)
-_builder.add_node("download_file", n_download_file)
-_builder.add_node("call_local_api", n_call_local_api)
-_builder.add_node("push_outputs", n_push_outputs)
-_builder.add_edge(START, "download_file")
-_builder.add_edge("download_file", "call_local_api")
-_builder.add_edge("call_local_api", "push_outputs")
-_builder.add_edge("push_outputs", END)
+_builder.add_node("download_file", n_download_file, retry_policy=_RETRY)
+_builder.add_node("create_session", n_create_session, retry_policy=_RETRY)
+for _step in STEPS:
+    _builder.add_node(_step, _make_step_node(_step), retry_policy=_RETRY)
+_builder.add_node("finalize", n_finalize, retry_policy=_RETRY)
+_builder.add_node("push_outputs", n_push_outputs, retry_policy=_RETRY)
+
+# Linear wiring: download_file -> create_session -> <12 steps> -> finalize -> push_outputs
+_chain = ["download_file", "create_session", *STEPS, "finalize", "push_outputs"]
+_builder.add_edge(START, _chain[0])
+for _a, _b in zip(_chain, _chain[1:]):
+    _builder.add_edge(_a, _b)
+_builder.add_edge(_chain[-1], END)
 
 graph = _builder.compile()

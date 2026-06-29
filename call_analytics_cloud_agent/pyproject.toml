@@ -1,6 +1,6 @@
 [project]
 name = "call-analytics"
-version = "0.3.1"
+version = "0.4.2"
 description = "Call-center audio analytics — UiPath cloud orchestrator (ML runs on local server via API)"
 authors = [{ name = "Vineeth Shenoy" }]
 requires-python = ">=3.11"

@@ -3,10 +3,36 @@
 flowchart TB
   __start__(__start__)
   download_file(download_file)
-  call_local_api(call_local_api)
+  create_session(create_session)
+  load_audio(load_audio)
+  transcribe(transcribe)
+  diarize(diarize)
+  align(align)
+  roles(roles)
+  sentiment(sentiment)
+  emotion(emotion)
+  compliance(compliance)
+  followup(followup)
+  rollup(rollup)
+  followup_actions(followup_actions)
+  identity(identity)
+  finalize(finalize)
   push_outputs(push_outputs)
   __end__(__end__)
   __start__ --> download_file
-  call_local_api --> push_outputs
-  download_file --> call_local_api
+  align --> roles
+  compliance --> followup
+  create_session --> load_audio
+  diarize --> align
+  download_file --> create_session
+  emotion --> compliance
+  finalize --> push_outputs
+  followup --> rollup
+  followup_actions --> identity
+  identity --> finalize
+  load_audio --> transcribe
+  roles --> sentiment
+  rollup --> followup_actions
+  sentiment --> emotion
+  transcribe --> diarize
   push_outputs --> __end__
