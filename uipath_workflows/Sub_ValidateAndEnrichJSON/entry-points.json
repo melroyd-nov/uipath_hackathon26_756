@@ -1,0 +1,48 @@
+{
+  "$schema": "https://cloud.uipath.com/draft/2024-12/entry-point",
+  "entryPoints": [
+    {
+      "filePath": "Main.xaml",
+      "uniqueId": "faf84727-5ee5-406a-ab79-8c8777f0d936",
+      "type": "process",
+      "input": {
+        "type": "object",
+        "properties": {
+          "in_ReportJson": {
+            "type": "object",
+            "additionalProperties": true,
+            "x-default-expression": "Newtonsoft.Json.Linq.JObject.Parse(\"{\"\"recording\"\":\"\"9879879879_21-06-2026_13-23_To_14_30.mp3\"\",\"\"duration_sec\"\":65.9,\"\"summary\"\":\"\"The caller initially wanted to cancel their insurance policy due to an increased premium but agreed to keep it after being offered a 15% retention discount.\"\",\"\"intent\"\":\"\"Cancellations\"\",\"\"resolution\"\":\"\"resolved\"\",\"\"fraud_risk\"\":\"\"low\"\",\"\"fraud_reason\"\":\"\"The caller accepted the discount and provided personal information as requested.\"\",\"\"is_followup\"\":false,\"\"followup_evidence\"\":\"\"None of the cues 'as I mentioned', 'last time', or 'called yesterday' are present in the transcript, nor is there any mention of a previously-named agent/manager or ticket numbers.\"\",\"\"sentiment_avg\"\":{\"\"agent\"\":0.5,\"\"customer\"\":-0.33},\"\"talk_ratio_pct\"\":{\"\"AGENT\"\":59.6,\"\"CUSTOMER\"\":40.4},\"\"audio_emotion\"\":{\"\"AGENT\"\":\"\"neutral\"\",\"\"CUSTOMER\"\":\"\"neutral\"\"},\"\"compliance\"\":[{\"\"id\"\":\"\"purpose_disclosure\"\",\"\"rule\"\":\"\"The agent identified themselves (name/company) and stated the purpose of the call.\"\",\"\"status\"\":\"\"PASS\"\",\"\"evidence\"\":\"\"The agent identified themselves as Mike from Acme Insurance Renewals and stated the purpose of the call, which was to process the cancellation request.\"\",\"\"reason\"\":\"\"Agent provided name and purpose at the beginning of the interaction.\"\"},{\"\"id\"\":\"\"recording_disclosure\"\",\"\"rule\"\":\"\"The agent disclosed that the call may be recorded or monitored.\"\",\"\"status\"\":\"\"FAIL\"\",\"\"evidence\"\":\"\"The agent did not disclose that the call may be recorded or monitored.\"\",\"\"reason\"\":\"\"No mention of recording or monitoring was made during the conversation.\"\"},{\"\"id\"\":\"\"identity_verification\"\",\"\"rule\"\":\"\"The agent verified the customer's identity before discussing account-specific details.\"\",\"\"status\"\":\"\"PASS\"\",\"\"evidence\"\":\"\"The agent verified Mr. Chen’s identity by asking for his full name, N-R-I-C, and date of birth before discussing account-specific details.\"\",\"\"reason\"\":\"\"Identity verification occurred prior to discussing account-specific details.\"\"},{\"\"id\"\":\"\"no_guarantees\"\",\"\"rule\"\":\"\"The agent did NOT promise guaranteed investment returns, profits, or financial outcomes. Routine service commitments — processing a refund, escalating or reviewing a complaint, scheduling a callback, reprocessing a claim if an investigation confirms an error — are normal and are NOT prohibited guarantees; judge those as PASS.\"\",\"\"status\"\":\"\"FAIL\"\",\"\"evidence\"\":\"\"The agent offered an immediate 15% retention discount, which is a guaranteed financial outcome.\"\",\"\"reason\"\":\"\"Offering a discount as an incentive to keep the policy violates the rule.\"\"},{\"\"id\"\":\"\"no_sensitive_data_insecure\"\",\"\"rule\"\":\"\"No full card/account numbers, PINs, OTPs, or passwords were solicited or read aloud.\"\",\"\"status\"\":\"\"PASS\"\",\"\"evidence\"\":\"\"The agent only requested the customer's N-R-I C (National Registration Identity Card) number, which is not considered a full card/account number or password under the rule.\"\",\"\"reason\"\":\"\"No sensitive information such as full card/account numbers, PINs, OTPs, or passwords were solicited or read aloud.\"\"},{\"\"id\"\":\"\"no_remote_access\"\",\"\"rule\"\":\"\"The agent did NOT instruct the customer to install remote-access software (AnyDesk/TeamViewer) or grant device/screen control.\"\",\"\"status\"\":\"\"PASS\"\",\"\"evidence\"\":\"\"The agent did not instruct the customer to install any remote-access software or grant device/screen control.\"\",\"\"reason\"\":\"\"No instructions related to remote access were given by the agent.\"\"},{\"\"id\"\":\"\"no_fund_movement\"\",\"\"rule\"\":\"\"The agent did NOT pressure the customer to move, withdraw, or transfer money to 'verify' or 'secure' it.\"\",\"\"status\"\":\"\"PASS\"\",\"\"evidence\"\":\"\"The agent offered a retention discount but did not pressure the customer to move, withdraw, or transfer money.\"\",\"\"reason\"\":\"\"No pressure tactics were used regarding financial transactions.\"\"},{\"\"id\"\":\"\"professional_conduct\"\",\"\"rule\"\":\"\"The agent remained professional, non-abusive, and non-misleading throughout.\"\",\"\"status\"\":\"\"PASS\"\",\"\"evidence\"\":\"\"The agent remained professional by verifying identity properly and did not use abusive language. Although offering a discount, the agent did not mislead the customer about the terms or conditions.\"\",\"\"reason\"\":\"\"The agent maintained professionalism and did not engage in misleading practices.\"\"}],\"\"compliance_violations\"\":[\"\"recording_disclosure\"\",\"\"no_guarantees\"\"],\"\"pii_digits_detected\"\":true,\"\"triggers\"\":[],\"\"quality\"\":{\"\"diarization_ok\"\":true,\"\"num_speakers\"\":2,\"\"roles_resolved\"\":true,\"\"opening_present\"\":true,\"\"warnings\"\":[]},\"\"transcript\"\":[{\"\"start\"\":0,\"\"end\"\":4.14,\"\"role\"\":\"\"AGENT\"\",\"\"speaker\"\":\"\"SPEAKER_00\"\",\"\"sentiment\"\":1,\"\"text\"\":\"\"Welcome to Acme Insurance Renewals. My name is Mike. How\"\"},{\"\"start\"\":4.14,\"\"end\"\":11.4,\"\"role\"\":\"\"CUSTOMER\"\",\"\"speaker\"\":\"\"SPEAKER_01\"\",\"\"sentiment\"\":-1,\"\"text\"\":\"\"can I help you today? Hi. I received my renewal notice, and the premium increased too much. I want to cancel my policy completely.\"\"},{\"\"start\"\":11.88,\"\"end\"\":22.94,\"\"role\"\":\"\"AGENT\"\",\"\"speaker\"\":\"\"SPEAKER_00\"\",\"\"sentiment\"\":-1,\"\"text\"\":\"\"I understand you are looking to cancel, and I can process that for you. For data protection, could you please state your full name, N-R-I-C, and date of birth?\"\"},{\"\"start\"\":22.94,\"\"end\"\":36.84,\"\"role\"\":\"\"CUSTOMER\"\",\"\"speaker\"\":\"\"SPEAKER_01\"\",\"\"sentiment\"\":-1,\"\"text\"\":\"\"Sure. I am David Chen. My N-R-I-C is S-1-2-3-4-5-6-7-D, and my date of birth is January 5, 1985.\"\"},{\"\"start\"\":38.34,\"\"end\"\":51.14,\"\"role\"\":\"\"AGENT\"\",\"\"speaker\"\":\"\"SPEAKER_00\"\",\"\"sentiment\"\":1,\"\"text\"\":\"\"Thank you, Mr. Chen. Identity verified. Before I finalize the cancellation, we highly value your loyalty. I can offer an immediate 15% retention discount on your premium if you choose to stay.\"\"},{\"\"start\"\":51.14,\"\"end\"\":57.12,\"\"role\"\":\"\"CUSTOMER\"\",\"\"speaker\"\":\"\"SPEAKER_01\"\",\"\"sentiment\"\":1,\"\"text\"\":\"\"Oh, a 15% discount. In that case, let's keep the policy active. I'll accept that offer.\"\"},{\"\"start\"\":57.9,\"\"end\"\":65.42,\"\"role\"\":\"\"AGENT\"\",\"\"speaker\"\":\"\"SPEAKER_00\"\",\"\"sentiment\"\":1,\"\"text\"\":\"\"Wonderful. I will apply the discount right now and email you the updated policy documents. Have a great day.\"\"}],\"\"artifacts\"\":{\"\"report_json\"\":\"\"bucket://call-analytics-results/call-analytics/9879879879_21-06-2026_13-23_To_14_30/call_9879879879_21-06-2026_13-23_To_14_30.json\"\"},\"\"call_metadata\"\":{\"\"Call_Date\"\":\"\"22-06-2026\"\",\"\"Call_Start_Time\"\":\"\"22-06-2026 13:26:00\"\",\"\"Call_End_Time\"\":\"\"22-06-2026 13:27:30\"\",\"\"Caller_Number\"\":9879879879,\"\"Caller_Name\"\":\"\"David Chen\"\",\"\"Agent_Name\"\":\"\"Mike\"\",\"\"Agent_Id\"\":1001}}\")"
+          },
+          "in_CallRecordEntityId": {
+            "type": "string"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "out_ErrorMessage": {
+            "type": "string"
+          },
+          "out_ReviewFlag": {
+            "type": "boolean"
+          },
+          "out_RouteToQueue": {
+            "type": "string"
+          },
+          "out_EnrichedJson": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "out_ValidationPassed": {
+            "type": "boolean"
+          },
+          "out_ValidationErrors": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  ]
+}

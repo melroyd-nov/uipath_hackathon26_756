@@ -1,0 +1,226 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="Main" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:a="clr-namespace:Action_FollowUp;assembly=DataService.Action_FollowUp" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:s="clr-namespace:System;assembly=System.Private.CoreLib" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:this="clr-namespace:" xmlns:uda="clr-namespace:UiPath.DataService.Activities;assembly=UiPath.DataService.Activities.Core" xmlns:udam="clr-namespace:UiPath.DataService.Activities.Models;assembly=UiPath.DataService.Activities.Core" xmlns:upama="clr-namespace:UiPath.Persistence.Activities.Model.Apps;assembly=UiPath.Persistence.Activities" xmlns:upat="clr-namespace:UiPath.Persistence.Activities.Tasks;assembly=UiPath.Persistence.Activities" xmlns:upau="clr-namespace:UiPath.Persistence.Activities.UserAction;assembly=UiPath.Persistence.Activities" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="UiPathEventObjectId" Type="InArgument(s:Guid)" />
+  </x:Members>
+  <this:Main.UiPathEventObjectId>
+    <InArgument x:TypeArguments="s:Guid" />
+  </this:Main.UiPathEventObjectId>
+  <VisualBasic.Settings>
+    <x:Null />
+  </VisualBasic.Settings>
+  <sap2010:WorkflowViewState.IdRef>ActivityBuilder_1</sap2010:WorkflowViewState.IdRef>
+  <TextExpression.NamespacesForImplementation>
+    <sco:Collection x:TypeArguments="x:String">
+      <x:String>System.Activities</x:String>
+      <x:String>System.Activities.Statements</x:String>
+      <x:String>System.Activities.Expressions</x:String>
+      <x:String>System.Activities.Validation</x:String>
+      <x:String>System.Activities.XamlIntegration</x:String>
+      <x:String>Microsoft.VisualBasic</x:String>
+      <x:String>Microsoft.VisualBasic.Activities</x:String>
+      <x:String>System</x:String>
+      <x:String>System.Collections</x:String>
+      <x:String>System.Collections.Generic</x:String>
+      <x:String>System.Collections.ObjectModel</x:String>
+      <x:String>System.Data</x:String>
+      <x:String>System.Diagnostics</x:String>
+      <x:String>System.Drawing</x:String>
+      <x:String>System.IO</x:String>
+      <x:String>System.Linq</x:String>
+      <x:String>System.Net.Mail</x:String>
+      <x:String>System.Xml</x:String>
+      <x:String>System.Xml.Linq</x:String>
+      <x:String>UiPath.Core</x:String>
+      <x:String>UiPath.Core.Activities</x:String>
+      <x:String>System.Windows.Markup</x:String>
+      <x:String>GlobalVariablesNamespace</x:String>
+      <x:String>GlobalConstantsNamespace</x:String>
+      <x:String>System.Reflection</x:String>
+      <x:String>UiPath.Platform.Triggers</x:String>
+      <x:String>UiPath.Shared.Activities</x:String>
+      <x:String>UiPath.Platform.Triggers.Scope</x:String>
+      <x:String>System.Runtime.Serialization</x:String>
+      <x:String>UiPath.Persistence.Activities.Model.Apps</x:String>
+      <x:String>UiPath.Persistence.Activities.Model.TaskTimer</x:String>
+      <x:String>UiPath.Persistence.Activities.Model.Task</x:String>
+      <x:String>UiPath.Persistence.Activities.Tasks</x:String>
+      <x:String>UiPath.Persistence.Activities.UserAction</x:String>
+      <x:String>UiPath.Persistence.Activities.BaseTask</x:String>
+      <x:String>UiPath.Persistence.Activities</x:String>
+      <x:String>System.Linq.Expressions</x:String>
+      <x:String>UiPath.DataService.Activities</x:String>
+      <x:String>UiPath.DataService.Definition</x:String>
+      <x:String>Action_FollowUp</x:String>
+      <x:String>UiPath.DataService.Activities.Models</x:String>
+    </sco:Collection>
+  </TextExpression.NamespacesForImplementation>
+  <TextExpression.ReferencesForImplementation>
+    <sco:Collection x:TypeArguments="AssemblyReference">
+      <AssemblyReference>Microsoft.VisualBasic</AssemblyReference>
+      <AssemblyReference>mscorlib</AssemblyReference>
+      <AssemblyReference>PresentationCore</AssemblyReference>
+      <AssemblyReference>PresentationFramework</AssemblyReference>
+      <AssemblyReference>System</AssemblyReference>
+      <AssemblyReference>System.Activities</AssemblyReference>
+      <AssemblyReference>System.ComponentModel.TypeConverter</AssemblyReference>
+      <AssemblyReference>System.Core</AssemblyReference>
+      <AssemblyReference>System.Data</AssemblyReference>
+      <AssemblyReference>System.Data.Common</AssemblyReference>
+      <AssemblyReference>System.Data.DataSetExtensions</AssemblyReference>
+      <AssemblyReference>System.Drawing</AssemblyReference>
+      <AssemblyReference>System.Drawing.Common</AssemblyReference>
+      <AssemblyReference>System.Drawing.Primitives</AssemblyReference>
+      <AssemblyReference>System.Linq</AssemblyReference>
+      <AssemblyReference>System.Net.Mail</AssemblyReference>
+      <AssemblyReference>System.ObjectModel</AssemblyReference>
+      <AssemblyReference>System.Private.CoreLib</AssemblyReference>
+      <AssemblyReference>System.Xaml</AssemblyReference>
+      <AssemblyReference>System.Xml</AssemblyReference>
+      <AssemblyReference>System.Xml.Linq</AssemblyReference>
+      <AssemblyReference>UiPath.System.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.UiAutomation.Activities</AssemblyReference>
+      <AssemblyReference>WindowsBase</AssemblyReference>
+      <AssemblyReference>UiPath.Studio.Constants</AssemblyReference>
+      <AssemblyReference>System.Reflection.DispatchProxy</AssemblyReference>
+      <AssemblyReference>System.Reflection.TypeExtensions</AssemblyReference>
+      <AssemblyReference>System.Reflection.Metadata</AssemblyReference>
+      <AssemblyReference>UiPath.Platform</AssemblyReference>
+      <AssemblyReference>UiPath.DataService.Activities.Core</AssemblyReference>
+      <AssemblyReference>System.Private.ServiceModel</AssemblyReference>
+      <AssemblyReference>System.Private.DataContractSerialization</AssemblyReference>
+      <AssemblyReference>System.Runtime.Serialization.Formatters</AssemblyReference>
+      <AssemblyReference>System.Runtime.Serialization.Primitives</AssemblyReference>
+      <AssemblyReference>UiPath.Persistence.Activities</AssemblyReference>
+      <AssemblyReference>System.Console</AssemblyReference>
+      <AssemblyReference>System.Security.Permissions</AssemblyReference>
+      <AssemblyReference>System.Configuration.ConfigurationManager</AssemblyReference>
+      <AssemblyReference>System.ComponentModel</AssemblyReference>
+      <AssemblyReference>System.Memory</AssemblyReference>
+      <AssemblyReference>System.Private.Uri</AssemblyReference>
+      <AssemblyReference>System.Collections</AssemblyReference>
+      <AssemblyReference>System.Linq.Async</AssemblyReference>
+      <AssemblyReference>System.Collections.NonGeneric</AssemblyReference>
+      <AssemblyReference>System.Linq.Expressions</AssemblyReference>
+      <AssemblyReference>netstandard</AssemblyReference>
+      <AssemblyReference>UiPath.DataService.Definition</AssemblyReference>
+      <AssemblyReference>DataService.Action_FollowUp</AssemblyReference>
+      <AssemblyReference>System.CodeDom</AssemblyReference>
+      <AssemblyReference>Microsoft.VisualBasic.Forms</AssemblyReference>
+      <AssemblyReference>Microsoft.VisualBasic.Core</AssemblyReference>
+    </sco:Collection>
+  </TextExpression.ReferencesForImplementation>
+  <Sequence DisplayName="Main Sequence" sap:VirtualizedContainerService.HintSize="897.2,1301.6" sap2010:WorkflowViewState.IdRef="Sequence_1">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="decision" />
+      <Variable x:TypeArguments="scg:IList(a:CallFollowup)" Name="OutputRecords" />
+      <Variable x:TypeArguments="upau:UserActionData" Name="TaskOutput" />
+    </Sequence.Variables>
+    <sap:WorkflowViewStateService.ViewState>
+      <scg:Dictionary x:TypeArguments="x:String, x:Object">
+        <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+      </scg:Dictionary>
+    </sap:WorkflowViewStateService.ViewState>
+    <uda:QueryEntityRecords x:TypeArguments="a:CallFollowup" TotalRecords="{x:Null}" ContinueOnError="False" DisplayName="Query Entity Records" EntityId="993c2c06-be6b-f111-8fcb-000d3ab36606" ExpansionDepth="2" sap:VirtualizedContainerService.HintSize="449.6,172.8" sap2010:WorkflowViewState.IdRef="QueryEntityRecords`1_1" OutputRecords="[OutputRecords]" QueriedEntityId="993c2c06-be6b-f111-8fcb-000d3ab36606" Skip="0" SortAscending="True" SortByField="Id" TimeoutInMs="30000" Top="1">
+      <uda:QueryEntityRecords.FilterArguments>
+        <uda:FilterArgument FilterActivityType="{x:Null}">
+          <uda:FilterArgument.Filter>
+            <uda:GroupFilter Index="0" Operator="AND">
+              <uda:GroupFilter.Filters>
+                <scg:List x:TypeArguments="uda:SimpleFilter" Capacity="4">
+                  <uda:SimpleFilter ExpressionValue="{x:Null}" FieldName="Id" FieldType="UiPath.DataService.Core.Models.EntityField" Operator="=" ValueIndex="0" />
+                </scg:List>
+              </uda:GroupFilter.Filters>
+              <uda:GroupFilter.Groups>
+                <scg:List x:TypeArguments="uda:GroupFilter" Capacity="0" />
+              </uda:GroupFilter.Groups>
+            </uda:GroupFilter>
+          </uda:FilterArgument.Filter>
+        </uda:FilterArgument>
+      </uda:QueryEntityRecords.FilterArguments>
+      <uda:QueryEntityRecords.FilterValues>
+        <scg:List x:TypeArguments="InArgument" Capacity="4">
+          <InArgument x:TypeArguments="s:Guid">[UiPathEventObjectId]</InArgument>
+        </scg:List>
+      </uda:QueryEntityRecords.FilterValues>
+    </uda:QueryEntityRecords>
+    <upau:CreateUserAction AutoCompleteOutcome="{x:Null}" ExternalTag="{x:Null}" Group="{x:Null}" Labels="{x:Null}" PrimaryActionableOutcome="{x:Null}" PrimaryButtonLabel="{x:Null}" ReassignUser="{x:Null}" SecondaryActionableOutcome="{x:Null}" SecondaryButtonLabel="{x:Null}" SolutionTaskCatalog="{x:Null}" TaskCatalog="{x:Null}" TaskFieldsForDesktop="{x:Null}" TaskFieldsForWeb="{x:Null}" TimeoutMs="{x:Null}" TimerDuration="{x:Null}" UserNameOrEmail="{x:Null}" ActionableNotification="False" DisplayName="Create App Task" EndCriteria="TaskAssigned" EnforcePropertyRefresh="False" sap:VirtualizedContainerService.HintSize="449.6,526.4" sap2010:WorkflowViewState.IdRef="CreateUserAction_1" Outcome="Notify" SolutionApp="Review Follow-up Items" StartCriteria="TaskCreated" TaskOutput="[TaskOutput]" TaskPriority="Medium" TaskTimerEnabled="False" TaskTitle="[OutputRecords(0).priority.ToString+ &quot;_&quot; + OutputRecords(0).callid]">
+      <upau:CreateUserAction.AppActionData>
+        <InArgument x:TypeArguments="x:String" x:Key="CallRecordEntityId">[OutputRecords(0).call_record.Id.ToString]</InArgument>
+        <OutArgument x:TypeArguments="x:String" x:Key="decision">[decision]</OutArgument>
+      </upau:CreateUserAction.AppActionData>
+      <upau:CreateUserAction.AppActionPropertiesMetadata>
+        <upama:SchemaPropertiesMetadata Format="{x:Null}" x:Key="CallRecordEntityId" />
+        <upama:SchemaPropertiesMetadata Format="{x:Null}" x:Key="decision" />
+      </upau:CreateUserAction.AppActionPropertiesMetadata>
+      <upau:CreateUserAction.AssignmentCriteria>
+        <upat:Criteria Description="SingleUserDescription" Id="SingleUser" Name="Activity_AssignTasks_AssignmentCriteria_SingleUserName" />
+      </upau:CreateUserAction.AssignmentCriteria>
+      <upau:CreateUserAction.CurrentAppTaskState>
+        <upama:AppTaskState CodeBehindRuntimeType="{x:Null}" AppId="IDe0035964cd854c7fb79a1cd2976e5d77" AppName="Review Follow-up Items" AppVersion="1" CodeBehindProcessKey="742f9678-4e13-4639-9939-cc7448e4aace" FolderKey="0404061e-a993-4bd9-94b1-0c1d21689077" SemVersion="1.0.1" />
+      </upau:CreateUserAction.CurrentAppTaskState>
+      <upau:CreateUserAction.SolutionAppResources>
+        <scg:Dictionary x:TypeArguments="x:String, x:String" />
+      </upau:CreateUserAction.SolutionAppResources>
+      <upau:CreateUserAction.State>
+        <upama:RecordDynamicActionPropertiesState>
+          <upama:RecordDynamicActionPropertiesState.AllowedActions>
+            <scg:List x:TypeArguments="x:String" Capacity="2">
+              <x:String>approve</x:String>
+              <x:String>reject</x:String>
+            </scg:List>
+          </upama:RecordDynamicActionPropertiesState.AllowedActions>
+          <upama:RecordDynamicActionPropertiesState.SelectedFields>
+            <scg:List x:TypeArguments="upama:DynamicActionDefinitionSchemaField" Capacity="2">
+              <upama:DynamicActionDefinitionSchemaField PropertyFormat="{x:Null}" Direction="In" IsRequired="False" Name="CallRecordEntityId" PropertyType="System.String">
+                <upama:DynamicActionDefinitionSchemaField.ArgumentValue>
+                  <InArgument x:TypeArguments="x:String">[OutputRecords(0).call_record.Id.ToString]</InArgument>
+                </upama:DynamicActionDefinitionSchemaField.ArgumentValue>
+              </upama:DynamicActionDefinitionSchemaField>
+              <upama:DynamicActionDefinitionSchemaField PropertyFormat="{x:Null}" Direction="Out" IsRequired="True" Name="decision" PropertyType="System.String">
+                <upama:DynamicActionDefinitionSchemaField.ArgumentValue>
+                  <OutArgument x:TypeArguments="x:String">[decision]</OutArgument>
+                </upama:DynamicActionDefinitionSchemaField.ArgumentValue>
+              </upama:DynamicActionDefinitionSchemaField>
+            </scg:List>
+          </upama:RecordDynamicActionPropertiesState.SelectedFields>
+        </upama:RecordDynamicActionPropertiesState>
+      </upau:CreateUserAction.State>
+    </upau:CreateUserAction>
+    <upau:WaitForUserActionAndResume StatusMessage="{x:Null}" TaskAction="{x:Null}" TimeoutMs="{x:Null}" WaitItemDataObject="{x:Null}" DisplayName="Wait for App Task and Resume" sap:VirtualizedContainerService.HintSize="449.6,122.4" sap2010:WorkflowViewState.IdRef="WaitForUserActionAndResume_1" TaskInput="[TaskOutput]" TaskOutput="[TaskOutput]" />
+    <uda:UpdateEntityRecord x:TypeArguments="a:CallFollowup" InputEntity="{x:Null}" IsInRecordView="{x:Null}" OutputEntity="{x:Null}" VisibleDynamicPropertiesInfo="{x:Null}" ContinueOnError="False" DisplayName="Update Entity Record" EntityId="993c2c06-be6b-f111-8fcb-000d3ab36606" ExpansionDepth="2" sap:VirtualizedContainerService.HintSize="449.6,456.8" sap2010:WorkflowViewState.IdRef="UpdateEntityRecord`1_1" InputEntityInFieldView="[new Action_FollowUp.CallFollowup() With {  .approved_by = TaskOutput.AssignedToUser.EmailAddress,  .assigned_to = TaskOutput.AssignedToUser.EmailAddress,  .status = If(decision.Equals(&quot;1&quot;) , Action_FollowUp.FollowupStatus.approved , Action_FollowUp.FollowupStatus.rejected ), .Id = OutputRecords(0).Id }]" RecordId="[OutputRecords(0).Id]" TimeoutInMs="30000">
+      <uda:UpdateEntityRecord.State>
+        <udam:RecordState RequiredFieldCount="4">
+          <udam:RecordState.SelectedFields>
+            <scg:List x:TypeArguments="udam:DynamicEntityField" Capacity="5">
+              <udam:DynamicEntityField Id="594a230c-be6b-f111-8fcb-000d3ab36606" Name="approved_at">
+                <udam:DynamicEntityField.ArgumentValue>
+                  <InArgument x:TypeArguments="x:String">[Now.ToString()]</InArgument>
+                </udam:DynamicEntityField.ArgumentValue>
+              </udam:DynamicEntityField>
+              <udam:DynamicEntityField Id="584a230c-be6b-f111-8fcb-000d3ab36606" Name="approved_by">
+                <udam:DynamicEntityField.ArgumentValue>
+                  <InArgument x:TypeArguments="x:String">[TaskOutput.AssignedToUser.EmailAddress]</InArgument>
+                </udam:DynamicEntityField.ArgumentValue>
+              </udam:DynamicEntityField>
+              <udam:DynamicEntityField Id="ab3c2c06-be6b-f111-8fcb-000d3ab36606" Name="assigned_to">
+                <udam:DynamicEntityField.ArgumentValue>
+                  <InArgument x:TypeArguments="x:String">[TaskOutput.AssignedToUser.EmailAddress]</InArgument>
+                </udam:DynamicEntityField.ArgumentValue>
+              </udam:DynamicEntityField>
+              <udam:DynamicEntityField Id="5a4a230c-be6b-f111-8fcb-000d3ab36606" Name="completed_at">
+                <udam:DynamicEntityField.ArgumentValue>
+                  <InArgument x:TypeArguments="x:String">[Now.ToString()]</InArgument>
+                </udam:DynamicEntityField.ArgumentValue>
+              </udam:DynamicEntityField>
+              <udam:DynamicEntityField Id="a93c2c06-be6b-f111-8fcb-000d3ab36606" Name="status">
+                <udam:DynamicEntityField.ArgumentValue>
+                  <InArgument x:TypeArguments="a:FollowupStatus">[If(decision.Equals("1") , Action_FollowUp.FollowupStatus.approved , Action_FollowUp.FollowupStatus.rejected )]</InArgument>
+                </udam:DynamicEntityField.ArgumentValue>
+              </udam:DynamicEntityField>
+            </scg:List>
+          </udam:RecordState.SelectedFields>
+        </udam:RecordState>
+      </uda:UpdateEntityRecord.State>
+    </uda:UpdateEntityRecord>
+  </Sequence>
+</Activity>
