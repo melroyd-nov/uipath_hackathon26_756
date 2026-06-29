@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ReferenceLine, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ReferenceLine, CartesianGrid, ResponsiveContainer } from 'recharts';
 import EmptyState from '../shared/EmptyState';
 
 export interface TrendLineSeries {
@@ -11,7 +11,7 @@ interface TrendLineChartProps<T> {
   data: T[];
   series: TrendLineSeries[];
   benchmark?: { value: number; label: string; color?: string };
-  height?: number;
+  height?: number | '100%';
   yFormatter?: (value: number) => string;
   xDataKey?: string;
 }
@@ -46,6 +46,7 @@ export default function TrendLineChart<T extends Record<string, unknown>>({
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 4, left: 4 }}>
+        <CartesianGrid strokeDasharray="4 4" stroke="rgba(107,114,128,0.12)" vertical={false} />
         <XAxis dataKey="_label" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
         <YAxis
           tick={{ fill: '#6B7280', fontSize: 11 }}

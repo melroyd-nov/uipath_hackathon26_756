@@ -256,8 +256,8 @@ export default function CallLogPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
+          <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10 bg-white">
                 <tr className="border-b border-silver text-slate text-xs uppercase tracking-wide">
                   <th className="py-2 pr-4 text-left">Call ID</th>
                   <th className="py-2 pr-4 text-left">Date</th>

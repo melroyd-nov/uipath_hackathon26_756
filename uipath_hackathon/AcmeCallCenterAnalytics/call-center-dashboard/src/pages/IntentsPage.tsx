@@ -81,7 +81,7 @@ export default function IntentsPage() {
           </div>
         ) : (
           <>
-            <IntentParetoChart data={rows} />
+            <IntentParetoChart data={sortedRows.slice(0, 5)} />
             <ChartInsight
               prompt={`Which call intents drive the most volume? Among the top intents, which have poor sentiment or high escalation rates? What automation or self-service opportunities exist? Data: ${JSON.stringify(rows)}`}
               cacheKey={`intents-pareto-${JSON.stringify(filters)}`}
@@ -171,7 +171,7 @@ export default function IntentsPage() {
           </table>
         ) : (
           <table className="mt-4 w-full text-sm">
-            <thead>
+            <thead className="sticky top-0 z-10 bg-white">
               <tr className="text-left text-[11px] text-slate">
                 <th className="pb-2">Intent</th>
                 <th className="pb-2">Calls</th>

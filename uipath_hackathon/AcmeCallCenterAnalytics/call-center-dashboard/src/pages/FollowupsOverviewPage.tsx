@@ -4,12 +4,13 @@ import { Link } from 'react-router-dom';
 import {
   ListChecks, Search, AlertTriangle, ArrowUpRight, Sparkles, User,
   Smile, Frown, Meh, CheckCheck, ShieldAlert, Clock, Calendar,
+  TrendingUp, ThumbsUp, Activity,
 } from 'lucide-react';
 import lottieFilter from '../assets/lottie/icon-filter.json';
 import lottieFlow from '../assets/lottie/icon-flow.json';
 import GlassPanel from '../components/shared/GlassPanel';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
-import InfoTooltip from '../components/shared/InfoTooltip';
+import KpiHeroCard from '../components/dashboard/KpiHeroCard';
 import { useDataFabric, ENTITY_IDS } from '../lib/dataFabric';
 import type { GlobalFollowup, GlobalFollowupFilters, FollowupStatus } from '../api/followups';
 
@@ -48,39 +49,6 @@ const STATUS_CHIPS: { value: StatusFilter; label: string; color: string; countKe
   { value: 'overdue', label: 'Overdue', color: '#EF4444', countKey: 'overdue' },
 ];
 
-const SUMMARY_TILES: { key: keyof FollowupSummaryShape; label: string; color: string; alert?: boolean; isPercent?: boolean; tooltip: string }[] = [
-  { key: 'total', label: 'Total', color: '#9CA3AF', tooltip: 'Total follow-up actions created across all calls in the selected period.' },
-  { key: 'pending', label: 'Needs Review', color: '#F59E0B', tooltip: 'Follow-ups waiting for a supervisor to review and approve before any action is taken.' },
-  { key: 'approved', label: 'Approved', color: '#38BDF8', tooltip: 'Follow-ups that a supervisor has reviewed and approved for action.' },
-  { key: 'in_progress', label: 'In Progress', color: '#A78BFA', tooltip: 'Follow-ups currently being actioned by an agent.' },
-  { key: 'completed', label: 'Completed', color: '#34D399', tooltip: 'Follow-ups that have been fully resolved and closed.' },
-  { key: 'overdue', label: 'Overdue', color: '#EF4444', alert: true, tooltip: 'Follow-ups that have passed their due date without being completed. Requires immediate attention.' },
-  { key: 'completion_rate', label: 'Completion Rate', color: '#6366F1', isPercent: true, tooltip: 'Percentage of all follow-ups that have been completed. Calculated as completed ÷ total × 100.' },
-];
-
-function SummaryTile({
-  label, value, color, alert, tooltip,
-}: { label: string; value: string | number; color: string; alert?: boolean; tooltip?: string }) {
-  return (
-    <div
-      className="rounded-xl px-3 py-2.5 border"
-      style={{
-        backgroundColor: `${color}14`,
-        borderColor: alert ? `${color}55` : `${color}25`,
-      }}
-    >
-      <div className="flex items-center gap-1.5 mb-0.5">
-        <p className="text-[10px] uppercase tracking-wider font-bold" style={{ color: TEXT_COLOR[color] ?? color }}>
-          {label}
-        </p>
-        {tooltip && <InfoTooltip text={tooltip} />}
-      </div>
-      <p className="text-xl font-extrabold text-obsidian" style={{ fontFeatureSettings: "'tnum' 1" }}>
-        {value}
-      </p>
-    </div>
-  );
-}
 
 function FilterChip({
   label, color, count, active, onClick,
@@ -438,24 +406,91 @@ export default function FollowupsOverviewPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header + summary tiles */}
-      <div className="rounded-2xl bg-paper border border-silver p-5">
-        <div className="flex items-center gap-2 mb-1">
-          <ListChecks size={20} className="text-emerald-600" />
-          <h1 className="text-xl font-bold text-obsidian">Follow-ups Overview</h1>
-        </div>
-        <p className="text-slate text-xs mb-4">
-          Review, approve and track every AI-suggested or supervisor-added follow-up across all calls.
-        </p>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-          {SUMMARY_TILES.map((tile) => {
-            const raw = summary?.[tile.key] ?? 0;
-            const value = tile.isPercent ? `${raw}%` : raw;
-            return (
-              <SummaryTile key={tile.key} label={tile.label} value={value} color={tile.color} alert={tile.alert} tooltip={tile.tooltip} />
-            );
-          })}
-        </div>
+      {/* Page title */}
+      <div className="flex items-center gap-2">
+        <ListChecks size={20} className="text-emerald-600" />
+        <h1 className="text-xl font-bold text-obsidian">Follow-ups Overview</h1>
+      </div>
+
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
+        <KpiHeroCard
+          label="Total"
+          value={summary.total.toLocaleString()}
+          icon={ListChecks}
+          accent="indigo"
+          status="neutral"
+          footer="all follow-ups"
+          delay={0}
+          mini
+          tooltip="Total follow-up actions created across all calls in the selected period."
+        />
+        <KpiHeroCard
+          label="Needs Review"
+          value={summary.pending.toLocaleString()}
+          icon={Clock}
+          accent="sky"
+          status={summary.pending > 0 ? 'watch' : 'good'}
+          footer="awaiting approval"
+          delay={0.06}
+          mini
+          tooltip="Follow-ups waiting for a supervisor to review and approve before any action is taken."
+        />
+        <KpiHeroCard
+          label="Approved"
+          value={summary.approved.toLocaleString()}
+          icon={ThumbsUp}
+          accent="emerald"
+          status="neutral"
+          footer="ready to action"
+          delay={0.12}
+          mini
+          tooltip="Follow-ups that a supervisor has reviewed and approved for action."
+        />
+        <KpiHeroCard
+          label="In Progress"
+          value={summary.in_progress.toLocaleString()}
+          icon={Activity}
+          accent="violet"
+          status="neutral"
+          footer="being actioned"
+          delay={0.18}
+          mini
+          tooltip="Follow-ups currently being actioned by an agent."
+        />
+        <KpiHeroCard
+          label="Completed"
+          value={summary.completed.toLocaleString()}
+          icon={CheckCheck}
+          accent="cyan"
+          status={summary.completed > 0 ? 'good' : 'neutral'}
+          footer="fully resolved"
+          delay={0.24}
+          mini
+          tooltip="Follow-ups that have been fully resolved and closed."
+        />
+        <KpiHeroCard
+          label="Overdue"
+          value={summary.overdue.toLocaleString()}
+          icon={AlertTriangle}
+          accent="rose"
+          status={summary.overdue > 0 ? 'critical' : 'good'}
+          footer="past due date"
+          delay={0.30}
+          mini
+          tooltip="Follow-ups that have passed their due date without being completed. Requires immediate attention."
+        />
+        <KpiHeroCard
+          label="Completion Rate"
+          value={`${summary.completion_rate}%`}
+          icon={TrendingUp}
+          accent="orange"
+          status={summary.completion_rate >= 80 ? 'good' : summary.completion_rate >= 50 ? 'watch' : 'critical'}
+          footer="completed ÷ total"
+          delay={0.36}
+          mini
+          tooltip="Percentage of all follow-ups that have been completed. Calculated as completed ÷ total × 100."
+        />
       </div>
 
       {/* Filters */}

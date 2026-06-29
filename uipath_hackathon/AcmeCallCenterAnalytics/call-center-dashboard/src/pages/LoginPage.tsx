@@ -1,7 +1,10 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Headset, Mail, Lock, ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Headset, BarChart3, Users, ClipboardCheck } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import acmeIcon from '../public/Acme-Transparent-Icon.png';
+import acmeLogo from '../public/Acme-Transparent-Logo.png';
+import uiPathLogo from '../public/UiPath-Icon.png';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -15,169 +18,165 @@ export default function LoginPage() {
   }, [isAuthenticated, navigate]);
 
   return (
-    <div className="flex h-screen bg-[#F7F8FC]">
-      {/* Left brand panel */}
+    <div className="flex h-screen overflow-hidden" style={{ fontFamily: 'Poppins, sans-serif' }}>
+      {/* ── Left brand panel ── */}
       <div
-        className="hidden w-[45%] shrink-0 flex-col justify-between p-10 lg:flex"
-        style={{ background: 'linear-gradient(160deg, #241660 0%, #1C1248 45%, #160E3A 100%)' }}
+        className="hidden lg:flex w-[52%] shrink-0 flex-col justify-start gap-4 p-12 relative overflow-hidden"
+        style={{ background: 'linear-gradient(155deg, #1a3a5c 0%, #0f2744 40%, #0a1e38 100%)' }}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 border border-white/20">
-            <span className="text-base font-bold text-white" style={{ fontFamily: 'Poppins, sans-serif' }}>A</span>
-          </div>
-          <span className="text-[13px] font-semibold tracking-[-0.01em] text-white/90" style={{ fontFamily: 'Poppins, sans-serif' }}>
-            Acme Analytics
-          </span>
+        {/* Subtle grid overlay */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+          }}
+        />
+
+        {/* Glow orb */}
+        <div
+          className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #2a8fc7 0%, transparent 70%)' }}
+        />
+        <div
+          className="pointer-events-none absolute bottom-0 right-0 w-80 h-80 rounded-full opacity-10"
+          style={{ background: 'radial-gradient(circle, #4ab5d4 0%, transparent 70%)' }}
+        />
+
+        {/* Acme Logo (full — icon + "ACME INSURANCE" text) */}
+        <div className="relative z-10">
+          <img
+            src={acmeLogo}
+            alt="Acme Insurance"
+            className="h-20 w-auto"
+            style={{ filter: 'brightness(0) invert(1)' }}
+          />
+        </div>
+
+        {/* UiPath logo — powered-by mark, left-aligned below Acme logo */}
+        <div className="relative z-10 flex gap-2" style={{ alignItems: 'center', marginTop: '-12px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', lineHeight: 1 }}>Powered by</span>
+          <img
+            src={uiPathLogo}
+            alt="UiPath"
+            style={{ height: '14px', width: 'auto', display: 'block', filter: 'brightness(0) invert(1)', opacity: 0.45, transform: 'translateY(-2px)' }}
+          />
         </div>
 
         {/* Hero copy */}
-        <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.10em] text-[#93C5FD]">
+        <div className="relative z-10">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#7dd3f0]">
             <Headset size={11} />
             Call Center Intelligence
           </span>
+
           <h1
-            className="mt-5 max-w-xs text-[32px] font-bold leading-tight text-white"
-            style={{ fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.025em' }}
+            className="mt-3 max-w-sm text-[28px] font-bold leading-[1.2] text-white"
+            style={{ letterSpacing: '-0.025em' }}
           >
-            Your live queue, sentiment, and follow-ups in one view.
+            Live insights for every call, agent, and compliance signal.
           </h1>
-          <p className="mt-3 max-w-xs text-[13px] leading-relaxed text-white/50">
-            Monitor calls, agents, and compliance signals as they happen across every line.
+          <p className="mt-2 max-w-sm text-[12px] leading-relaxed text-white/50">
+            Powered by UiPath Maestro — your AI-driven contact centre analytics platform.
           </p>
 
-          {/* Feature pills */}
-          <div className="mt-8 flex flex-wrap gap-2">
-            {['AI Sentiment Analysis', 'Live Compliance', 'Agent Insights', 'Follow-up Tracking'].map((f) => (
-              <span
-                key={f}
-                className="inline-flex items-center gap-1 rounded-full bg-white/8 border border-white/12 px-2.5 py-1 text-[10px] font-medium text-white/60"
+          {/* Feature tiles */}
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            {[
+              { icon: BarChart3, label: 'AI Sentiment Analysis', desc: 'Real-time emotion scoring' },
+              { icon: ClipboardCheck, label: 'Live Compliance', desc: 'Flag issues as they happen' },
+              { icon: Users, label: 'Agent Insights', desc: 'Per-agent KPI breakdowns' },
+              { icon: ShieldCheck, label: 'Follow-up Tracking', desc: 'Human-in-the-loop approvals' },
+            ].map(({ icon: Icon, label, desc }) => (
+              <div
+                key={label}
+                className="rounded-lg border border-white/10 bg-white/[0.05] p-2.5 backdrop-blur-sm"
               >
-                <span className="h-1 w-1 rounded-full bg-[#3B82F6]" />
-                {f}
-              </span>
+                <Icon size={13} className="text-[#7dd3f0] mb-1" />
+                <p className="text-[11px] font-semibold text-white/90">{label}</p>
+                <p className="text-[10px] text-white/40 mt-0.5">{desc}</p>
+              </div>
             ))}
           </div>
         </div>
 
-        <p className="text-[10px] font-medium text-white/25">
-          © {new Date().getFullYear()} Acme Call Center Analytics · Powered by UiPath
-        </p>
       </div>
 
-      {/* Right auth panel */}
-      <div className="flex flex-1 items-center justify-center p-6">
-        <div className="w-full max-w-[360px]">
-          {/* Mobile brand */}
-          <div className="mb-6 flex items-center gap-2 lg:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#241660]">
-              <span className="text-sm font-bold text-white" style={{ fontFamily: 'Poppins, sans-serif' }}>A</span>
-            </div>
-            <span className="text-[13px] font-semibold text-[#0A053A]" style={{ fontFamily: 'Poppins, sans-serif' }}>
-              Acme Analytics
-            </span>
+      {/* ── Right auth panel ── */}
+      <div className="flex flex-1 flex-col items-center justify-center p-6 bg-[#F4F6FB]">
+        <div className="w-full max-w-[380px]">
+
+          {/* Mobile brand — only visible on small screens */}
+          <div className="mb-8 flex justify-center lg:hidden">
+            <img src={acmeLogo} alt="Acme Insurance" className="h-10 w-auto" />
           </div>
 
-          {/* Card */}
-          <div className="rounded-[16px] border border-[rgba(15,31,76,0.10)] bg-white p-8 shadow-[0_12px_36px_rgba(0,0,0,0.08)]">
-            <h2
-              className="text-[22px] font-bold tracking-[-0.02em] text-[#0A053A]"
-              style={{ fontFamily: 'Poppins, sans-serif' }}
-            >
+          {/* Auth card */}
+          <div className="rounded-2xl border border-white/80 bg-white p-8 shadow-[0_16px_48px_rgba(10,30,60,0.10)]">
+
+            {/* Acme icon centred at top */}
+            <div className="flex justify-center mb-6">
+              <div className="h-16 w-16 rounded-2xl flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #e8f4f8 0%, #d0eaf4 100%)' }}>
+                <img src={acmeIcon} alt="Acme" className="h-10 w-10 object-contain" />
+              </div>
+            </div>
+
+            <h2 className="text-center text-[22px] font-bold tracking-tight text-[#0a1e38]">
               Welcome back
             </h2>
-            <p className="mt-1 text-[12px] text-[#565A7F]">Sign in to your analytics workspace</p>
+            <p className="mt-1.5 text-center text-[12.5px] text-[#5a7a96]">
+              Sign in to Acme Call Center Analytics
+            </p>
 
-            <div className="mt-6 space-y-3">
-              {/* Email field (disabled) */}
-              <div>
-                <label className="mb-1.5 block text-[11.5px] font-semibold tracking-[0.02em] text-[#0F1F4C]">
-                  Email
-                </label>
-                <div className="flex items-center gap-2 rounded-[10px] border border-[rgba(15,31,76,0.12)] bg-[rgba(15,31,76,0.025)] px-[14px] py-[11px] opacity-50">
-                  <Mail size={14} className="shrink-0 text-[#9399C3]" />
-                  <input
-                    type="email"
-                    disabled
-                    placeholder="you@acme.com"
-                    className="w-full bg-transparent text-[13px] text-[#0F1F4C] outline-none placeholder:text-[#9399C3] cursor-not-allowed"
-                  />
-                </div>
-              </div>
-
-              {/* Password field (disabled) */}
-              <div>
-                <label className="mb-1.5 block text-[11.5px] font-semibold tracking-[0.02em] text-[#0F1F4C]">
-                  Password
-                </label>
-                <div className="flex items-center gap-2 rounded-[10px] border border-[rgba(15,31,76,0.12)] bg-[rgba(15,31,76,0.025)] px-[14px] py-[11px] opacity-50">
-                  <Lock size={14} className="shrink-0 text-[#9399C3]" />
-                  <input
-                    type="password"
-                    disabled
-                    placeholder="••••••••"
-                    className="w-full bg-transparent text-[13px] text-[#0F1F4C] outline-none placeholder:text-[#9399C3] cursor-not-allowed"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="button"
-                disabled
-                className="mt-1 w-full cursor-not-allowed rounded-[10px] py-[11px] px-6 text-[13.5px] font-semibold text-white opacity-40"
-                style={{ background: '#150958', boxShadow: '0 4px 18px rgba(21,9,88,0.28)' }}
-              >
-                Sign in
-              </button>
-            </div>
-
-            {/* Divider */}
-            <div className="my-5 flex items-center gap-3">
-              <span className="h-px flex-1 bg-[#E1E4F2]" />
-              <span className="text-[10px] font-medium text-[#9399C3]">or continue with</span>
-              <span className="h-px flex-1 bg-[#E1E4F2]" />
-            </div>
-
+            {/* Error banner */}
             {uiPathError && (
-              <div className="mb-3 rounded-[8px] bg-[#FEF2F2] border border-[#FCA5A5] px-3 py-2 text-[11px] font-medium text-[#D92D20]">
+              <div className="mt-5 rounded-xl border border-[#fca5a5] bg-[#fef2f2] px-4 py-3 text-[11.5px] font-medium text-[#d92d20]">
                 {uiPathError}
               </div>
             )}
 
-            {/* UiPath SSO */}
+            {/* UiPath SSO — primary action */}
             <button
               type="button"
               onClick={() => login()}
               disabled={isLoading}
-              className="group flex w-full items-center justify-center gap-2.5 rounded-[10px] border border-[rgba(15,31,76,0.14)] bg-white px-4 py-[10px] text-[13px] font-semibold text-[#0F1F4C] transition-all hover:border-[#1E5EAC] hover:bg-[rgba(30,94,172,0.04)] disabled:opacity-50"
-              style={{ boxShadow: '0 1px 3px rgba(15,31,76,0.08)' }}
+              className="mt-6 group relative flex w-full items-center justify-center gap-3 rounded-[14px] px-5 py-4 font-semibold text-white transition-all duration-200 hover:scale-[1.015] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+              style={{
+                background: isLoading
+                  ? '#888'
+                  : 'linear-gradient(135deg, #e8420a 0%, #fa4616 60%, #ff6b3d 100%)',
+                boxShadow: isLoading ? 'none' : '0 8px 24px rgba(250,70,22,0.35)',
+              }}
             >
               {isLoading ? (
                 <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[rgba(30,94,172,0.18)] border-t-[#1E5EAC]" />
-                  Connecting…
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  <span className="text-[14px]">Connecting to UiPath…</span>
                 </>
               ) : (
                 <>
-                  <svg width="16" height="16" viewBox="0 0 32 32" fill="none" aria-hidden>
-                    <circle cx="16" cy="16" r="16" fill="#FA4616" />
-                    <path d="M10 22V10h5.5c2.5 0 4.5 2 4.5 4.5S18 19 15.5 19H13v3H10zm3-6h2.5c1 0 1.5-.7 1.5-1.5S16.5 13 15.5 13H13v3z" fill="white" />
-                  </svg>
-                  Continue with UiPath
+                  <span className="text-[14.5px] tracking-[-0.01em]">Continue with</span>
+                  <img
+                    src={uiPathLogo}
+                    alt="UiPath"
+                    className="h-[22px] w-auto shrink-0"
+                    style={{ filter: 'brightness(0) invert(1)', transform: 'translateY(-4px)' }}
+                  />
                 </>
               )}
             </button>
 
             {/* Trust line */}
-            <div className="mt-5 flex items-center justify-center gap-1.5 text-[10px] text-[#9399C3]">
-              <ShieldCheck size={11} />
-              Secured by UiPath Identity
+            <div className="mt-5 flex items-center justify-center gap-1.5 text-[11px] text-[#8aacbf]">
+              <ShieldCheck size={12} className="text-[#4ab5d4]" />
+              Secured by UiPath Identity — single sign-on
             </div>
           </div>
 
-          <p className="mt-4 text-center text-[10px] text-[#9399C3]">
-            © {new Date().getFullYear()} Acme Insurance · Call Center Analytics
+          {/* Footer note */}
+          <p className="mt-6 text-center text-[11px] text-[#8aacbf]">
+            © {new Date().getFullYear()} Acme Insurance · Call Center Analytics · Powered by UiPath
           </p>
         </div>
       </div>

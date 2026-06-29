@@ -1,7 +1,27 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { X, Send } from 'lucide-react';
 import AiOrbIcon from './AiOrbIcon';
 import { useAriaChat } from '../../hooks/useAriaChat';
+
+function inlineFormat(text: string): ReactNode[] {
+  const nodes: ReactNode[] = [];
+  const re = /\*\*(.+?)\*\*|`([^`]+)`/g;
+  let last = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  while ((match = re.exec(text)) !== null) {
+    if (match.index > last) nodes.push(text.slice(last, match.index));
+    if (match[1] !== undefined) {
+      nodes.push(<strong key={key++} className="font-bold text-obsidian">{match[1]}</strong>);
+    } else {
+      nodes.push(<code key={key++} className="bg-silver/40 text-blue-700 px-1 rounded text-xs font-mono">{match[2]}</code>);
+    }
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes;
+}
 
 const SUGGESTED_QUESTIONS = [
   'What are the top escalation drivers today?',
@@ -73,7 +93,7 @@ export default function AiCopilot() {
                     ))}
                   </div>
                 ) : (
-                  m.content
+                  inlineFormat(m.content)
                 )}
               </div>
             ))}

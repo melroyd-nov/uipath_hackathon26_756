@@ -259,8 +259,7 @@ export default function DashboardPage() {
     : 0;
 
   const topAgents = [...(agentSummary ?? [])]
-    .sort((a, b) => num(b.resolution_pct) - num(a.resolution_pct))
-    .slice(0, 3);
+    .sort((a, b) => num(b.resolution_pct) - num(a.resolution_pct));
 
   return (
     <div className="space-y-6">
@@ -438,11 +437,25 @@ export default function DashboardPage() {
                               {/* Avatar with gradient ring + rank badge */}
                               <div className="relative">
                                 <div style={{ padding: 3, borderRadius: '50%', background: cfg.ring, boxShadow: `0 6px 20px ${cfg.ringColor}60` }}>
-                                  <img
-                                    src={`https://i.pravatar.cc/${cfg.avatarPx * 2}?u=${encodeURIComponent(agent.agent)}`}
-                                    alt={agent.agent}
-                                    style={{ width: cfg.avatarPx, height: cfg.avatarPx, borderRadius: '50%', border: '3px solid white', objectFit: 'cover', display: 'block' }}
-                                  />
+                                  <div
+                                    style={{
+                                      width: cfg.avatarPx,
+                                      height: cfg.avatarPx,
+                                      borderRadius: '50%',
+                                      border: '3px solid white',
+                                      background: `linear-gradient(135deg, ${cfg.ringColor}cc, ${cfg.ringColor}66)`,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontFamily: 'Poppins, sans-serif',
+                                      fontWeight: 700,
+                                      fontSize: cfg.avatarPx * 0.35,
+                                      color: 'white',
+                                      letterSpacing: '-0.01em',
+                                    }}
+                                  >
+                                    {agent.agent.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
+                                  </div>
                                 </div>
                                 <div
                                   className="absolute -bottom-1 -right-1 flex h-[20px] w-[20px] items-center justify-center rounded-full text-[10px] font-bold text-white"
@@ -534,7 +547,11 @@ export default function DashboardPage() {
                     </Link>
                   </div>
                   <table className="w-full text-sm">
-                    <thead>
+                    {/* sticky thead won't work here because the parent GlassPanel uses
+                        overflow-visible (required for the podium hover tooltip to escape
+                        the panel boundary). A sticky element needs an overflow:hidden/auto
+                        ancestor — overflow:visible disables it. Use a simple border instead. */}
+                    <thead className="border-b border-silver">
                       <tr className="text-left text-[11px] text-slate">
                         <th className="pb-2">#</th>
                         <th className="pb-2">Agent</th>

@@ -13,6 +13,7 @@ interface GlassPanelProps {
   className?: string;
   accent?: string;
   overflowVisible?: boolean;
+  fillHeight?: boolean;
 }
 
 export default function GlassPanel({
@@ -25,6 +26,7 @@ export default function GlassPanel({
   className = '',
   accent,
   overflowVisible = false,
+  fillHeight = false,
 }: GlassPanelProps) {
   const accentColor = accent ?? '#1E5EAC';
   const gradientBorder = `rgba(255,255,255,0.80) padding-box, linear-gradient(135deg, ${accentColor}70, ${accentColor}28, rgba(180,200,255,0.35)) border-box`;
@@ -40,7 +42,7 @@ export default function GlassPanel({
         boxShadow: `0 16px 48px ${accentColor}28, 0 4px 16px rgba(15,31,76,0.10), inset 0 1px 0 rgba(255,255,255,0.95)`,
         transition: { duration: 0.22, ease: 'easeOut' },
       }}
-      className={`${overflowVisible ? 'overflow-visible' : 'overflow-hidden'} rounded-2xl ${className}`}
+      className={`${overflowVisible ? 'overflow-visible' : 'overflow-hidden'} rounded-2xl ${fillHeight ? 'flex flex-col h-full' : ''} ${className}`}
       style={{
         background: gradientBorder,
         border: '1.5px solid transparent',
@@ -50,7 +52,7 @@ export default function GlassPanel({
       }}
     >
       {title && (
-        <header className="flex items-center justify-between gap-2 px-5 pb-3 pt-4">
+        <header className="relative flex items-center justify-between gap-2 overflow-visible px-5 pb-3 pt-4">
           <div className="flex items-center gap-2.5">
             {lottieIcon && (
               <Lottie animationData={lottieIcon} loop autoplay style={{ width: 28, height: 28, flexShrink: 0 }} />
@@ -80,14 +82,20 @@ export default function GlassPanel({
               </button>
             )}
             {tooltip && (
-              <span title={tooltip} className="text-[#C4C9D4] transition-colors hover:text-[#9CA3AF]">
-                <Info size={13} />
-              </span>
+              <div className="group/tip relative">
+                <span className="text-[#C4C9D4] transition-colors hover:text-[#9CA3AF]">
+                  <Info size={13} />
+                </span>
+                <div className="pointer-events-none absolute right-0 top-6 z-50 w-64 rounded-xl border border-white/10 bg-[#0D0D1F]/95 px-3 py-2.5 text-[11px] leading-relaxed text-white/80 opacity-0 shadow-2xl backdrop-blur-md transition-opacity duration-150 group-hover/tip:opacity-100">
+                  <div className="absolute -top-1.5 right-1.5 h-3 w-3 rotate-45 rounded-sm border-l border-t border-white/10 bg-[#0D0D1F]/95" />
+                  {tooltip}
+                </div>
+              </div>
             )}
           </div>
         </header>
       )}
-      <div className="p-5">{children}</div>
+      <div className={`p-5 ${fillHeight ? 'flex flex-1 flex-col' : ''}`}>{children}</div>
     </motion.section>
   );
 }

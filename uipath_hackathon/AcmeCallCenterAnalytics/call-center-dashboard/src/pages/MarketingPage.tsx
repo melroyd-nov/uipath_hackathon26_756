@@ -4,7 +4,7 @@ import { Info, ChevronDown, ChevronUp, Target, TrendingUp, Star, Users } from 'l
 import lottieRocket from '../assets/lottie/icon-rocket.json';
 import FilterBar from '../components/shared/FilterBar';
 import GlassPanel from '../components/shared/GlassPanel';
-import InfoTooltip from '../components/shared/InfoTooltip';
+import KpiHeroCard from '../components/dashboard/KpiHeroCard';
 import ChartInsight from '../components/shared/ChartInsight';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import EmptyState from '../components/shared/EmptyState';
@@ -86,12 +86,12 @@ export default function MarketingPage() {
 
   const intentBarData = [...rows]
     .sort((a, b) => num(b.call_count) - num(a.call_count))
-    .slice(0, 8)
+    .slice(0, 5)
     .map((r) => ({ label: r.intent, value: num(r.call_count) }));
 
   const conversionBarData = [...rows]
     .sort((a, b) => num(b.conversion_score) - num(a.conversion_score))
-    .slice(0, 8)
+    .slice(0, 5)
     .map((r) => ({ label: r.intent, value: num(r.conversion_score) }));
 
   return (
@@ -155,28 +155,51 @@ export default function MarketingPage() {
 
       {/* KPI strip */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">Opportunity Calls</p><InfoTooltip text="Total number of calls in the period that were identified as containing a marketing or upsell opportunity based on call intent." /></div>
-          <p className="mt-1 text-2xl font-bold text-obsidian">{totalCalls.toLocaleString()}</p>
-          <p className="mt-0.5 text-xs text-slate">this period</p>
-        </div>
-        <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">Unique Intents</p><InfoTooltip text="Number of distinct call intent types that contain at least one marketing or upsell opportunity in the selected period." /></div>
-          <p className="mt-1 text-2xl font-bold text-obsidian">{rows.length}</p>
-          <p className="mt-0.5 text-xs text-slate">opportunity types</p>
-        </div>
-        <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">High-Conversion</p><InfoTooltip text="Number of intent types with a conversion score of 70 or above. These represent the strongest upsell opportunities and should be prioritised in outreach campaigns." /></div>
-          <p className="mt-1 text-2xl font-bold text-emerald-600">{highConversionCount}</p>
-          <p className="mt-0.5 text-xs text-slate">intents scoring ≥70</p>
-        </div>
-        <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">Avg Conversion Score</p><InfoTooltip text="Average conversion score across all intent types, on a scale of 0–100. Above 70 is high, 50–69 is medium, below 50 is low likelihood of successful upsell." /></div>
-          <p className={`mt-1 text-2xl font-bold ${conversionColor(avgConversion)}`}>
-            {avgConversion > 0 ? avgConversion.toFixed(1) : '—'}
-          </p>
-          <p className="mt-0.5 text-xs text-slate">across all intents</p>
-        </div>
+        <KpiHeroCard
+          compact
+          label="Opportunity Calls"
+          value={totalCalls.toLocaleString()}
+          icon={Target}
+          accent="indigo"
+          status="neutral"
+          footer="this period"
+          tooltip="Total number of calls identified as containing a marketing or upsell opportunity based on call intent."
+          delay={0}
+        />
+        <KpiHeroCard
+          compact
+          label="Unique Intents"
+          value={String(rows.length)}
+          icon={Users}
+          accent="orange"
+          status="neutral"
+          footer="opportunity types"
+          tooltip="Number of distinct call intent types that contain at least one marketing or upsell opportunity in the selected period."
+          delay={0.05}
+        />
+        <KpiHeroCard
+          compact
+          label="High-Conversion"
+          value={String(highConversionCount)}
+          icon={Star}
+          accent="cyan"
+          status={highConversionCount > 0 ? 'good' : 'neutral'}
+          footer="intents scoring ≥70"
+          tooltip="Number of intent types with a conversion score of 70 or above — the strongest upsell opportunities, prioritise these in outreach campaigns."
+          delay={0.1}
+        />
+        <KpiHeroCard
+          compact
+          label="Avg Conversion Score"
+          value={avgConversion > 0 ? avgConversion.toFixed(1) : '—'}
+          icon={TrendingUp}
+          accent="sky"
+          status={avgConversion >= HIGH_CONVERSION_THRESHOLD ? 'good' : avgConversion >= 50 ? 'watch' : avgConversion > 0 ? 'critical' : 'neutral'}
+          footer="across all intents"
+          benchmark="≥70 high"
+          tooltip="Average conversion score across all intent types (0–100). ≥70 = high, 50–69 = medium, <50 = low likelihood of successful upsell."
+          delay={0.15}
+        />
       </div>
 
       {/* Opportunity type summary */}
@@ -212,7 +235,7 @@ export default function MarketingPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <GlassPanel
           title="Top Opportunity Intents"
-          subtitle="Call volume by intent — top 8"
+          subtitle="Call volume by intent — top 5"
           lottieIcon={lottieRocket}
           accent="#0EA5E9"
           tooltip="The call intents most frequently associated with marketing opportunities. Higher call count means more customers with buying signals for that intent — prioritise outreach and agent scripting for these intents."
@@ -289,7 +312,7 @@ export default function MarketingPage() {
           </table>
         ) : (
           <table className="mt-2 w-full text-sm">
-            <thead>
+            <thead className="sticky top-0 z-10 bg-white">
               <tr className="border-b border-silver text-left text-xs uppercase tracking-wide text-slate">
                 <th className="py-2 pr-4">Intent</th>
                 <th className="py-2 pr-4">Type</th>

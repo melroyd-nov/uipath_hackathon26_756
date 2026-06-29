@@ -61,7 +61,17 @@
   --shadow-md: 0 2px 12px rgba(15, 31, 76, 0.10), 0 1px 3px rgba(15, 31, 76, 0.06);
 }
 
+html {
+  height: 100%;
+  overflow: hidden; /* keep document-level scrollbars gone at any zoom level */
+  /* Firefox: style all page scrollbars via root-element cascade; hidden until hover */
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
 body {
+  height: 100%;
+  overflow: hidden; /* SPA scrolls inside its own container, not the page */
   font-family: var(--font-switzer);
   background-color: var(--surface-canvas);
   color: var(--color-obsidian);
@@ -76,28 +86,38 @@ h1, h2, h3, h4, h5, h6 {
   font-family: 'Poppins', system-ui, sans-serif;
 }
 
-/* Global modern scrollbar */
-html {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-silver) transparent;
+/* Global sleek auto-hiding scrollbar — Firefox hover-reveal */
+html:hover {
+  scrollbar-color: #c4c9d4 transparent;
 }
 
 *::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 1px;
+  height: 1px;
 }
 
 *::-webkit-scrollbar-track {
   background: transparent;
 }
 
+/* Hidden by default */
 *::-webkit-scrollbar-thumb {
-  background-color: var(--color-silver);
+  background: transparent;
   border-radius: 99px;
+  transition: background 0.3s ease;
 }
 
-*::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-mist);
+/* Appear on container hover */
+*:hover::-webkit-scrollbar-thumb {
+  background: #c4c9d4;
+}
+
+*:hover::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 @keyframes fade-in {

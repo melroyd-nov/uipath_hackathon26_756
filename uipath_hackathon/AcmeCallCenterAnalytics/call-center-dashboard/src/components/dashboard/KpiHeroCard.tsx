@@ -74,6 +74,8 @@ interface KpiHeroCardProps {
   sparkline?: number[];
   delay?: number;
   tooltip?: string;
+  compact?: boolean;
+  mini?: boolean;
 }
 
 function Sparkline({ data, uid }: { data: number[]; uid: string }) {
@@ -170,6 +172,8 @@ export default function KpiHeroCard({
   sparkline,
   delay = 0,
   tooltip,
+  compact = false,
+  mini = false,
 }: KpiHeroCardProps) {
   const uid = useId();
   const cfg = ACCENT_CONFIG[accent] ?? ACCENT_CONFIG.indigo;
@@ -184,11 +188,11 @@ export default function KpiHeroCard({
       transition={{ duration: 0.50, ease: [0.23, 1, 0.32, 1], delay }}
       variants={cardVariants}
       whileHover="hover"
-      className="group relative overflow-hidden rounded-[24px] p-5"
+      className={`group relative overflow-hidden rounded-[24px] ${mini ? 'p-2.5' : compact ? 'p-3.5' : 'p-5'}`}
       style={{
         background: cfg.gradient,
         boxShadow: cfg.glow,
-        minHeight: 148,
+        minHeight: mini ? 72 : compact ? 100 : 148,
       }}
     >
       {/* Shimmer sweep on hover */}
@@ -212,35 +216,38 @@ export default function KpiHeroCard({
       />
 
       <div className="relative z-10 flex h-full flex-col">
-        {/* Top row: icon + badge */}
-        <div className="flex items-start justify-between gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(255,255,255,0.14)]">
+        {/* Top row: icon left · badge centered · spacer right */}
+        <div className="flex items-center">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(255,255,255,0.14)]">
             <Icon size={14} className="text-white" />
           </span>
-          <span
-            className="rounded-full px-2.5 py-[3px] text-[9px] font-bold uppercase tracking-[0.11em] text-white"
-            style={{ background: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(4px)' }}
-          >
-            {STATUS_LABELS[status]}
-          </span>
+          <div className="flex flex-1 justify-center">
+            <span
+              className="rounded-full px-2.5 py-[3px] text-[9px] font-bold uppercase tracking-[0.11em] text-white"
+              style={{ background: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(4px)' }}
+            >
+              {STATUS_LABELS[status]}
+            </span>
+          </div>
+          <span className="h-7 w-7 shrink-0" />
         </div>
 
         {/* Main content: numeral left, viz right */}
-        <div className="mt-3 flex flex-1 items-end justify-between gap-3">
+        <div className={`${mini ? 'mt-2' : 'mt-3'} flex flex-1 items-end justify-between gap-3`}>
           {/* Left: numeral + labels */}
           <div className="flex flex-col justify-end">
             <p
-              className="text-[28px] font-semibold leading-none tracking-tight text-white"
+              className={`${mini ? 'text-[17px]' : compact ? 'text-[22px]' : 'text-[28px]'} font-semibold leading-none tracking-tight text-white`}
               style={{ fontFamily: 'Poppins, sans-serif' }}
             >
               {value}
             </p>
-            <p className="mt-2.5 text-[11px] leading-tight text-[rgba(255,255,255,0.68)]">
+            <p className={`${mini ? 'mt-1' : compact ? 'mt-1.5' : 'mt-2.5'} text-[10px] leading-tight text-[rgba(255,255,255,0.68)]`}>
               {label}
             </p>
             {(benchmark ?? footer) && (
               <p className="mt-0.5 text-[10px] text-[rgba(255,255,255,0.38)]">
-                Target {benchmark ?? footer}
+                {benchmark ? `Target ${benchmark}` : footer}
               </p>
             )}
           </div>

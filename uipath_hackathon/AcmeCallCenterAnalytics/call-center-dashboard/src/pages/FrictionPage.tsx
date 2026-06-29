@@ -283,18 +283,18 @@ export default function FrictionPage() {
           </div>
         ) : (
           <table className="mt-2 w-full text-sm">
-            <thead>
-              <tr className="border-b border-silver text-left text-xs uppercase tracking-wide text-slate">
-                <th className="py-2 pr-4">Rank</th>
-                <th className="py-2 pr-4">Intent</th>
-                <th className="py-2 pr-4 text-right">Calls</th>
-                <th className="py-2 pr-4 text-right">Neg %</th>
-                <th className="py-2 pr-4 text-right">Esc %</th>
-                <th className="py-2 pr-4 text-right">Rep %</th>
-                <th className="py-2 text-right">Friction Score</th>
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-[#F1F3F9] text-[10px] uppercase tracking-wider text-[#374151]">
+                <th className="rounded-l-lg py-2 pl-3 text-left font-bold">Rank</th>
+                <th className="py-2 text-left font-bold">Intent</th>
+                <th className="py-2 pr-3 text-right font-bold">Calls</th>
+                <th className="py-2 pr-3 text-right font-bold">Neg %</th>
+                <th className="py-2 pr-3 text-right font-bold">Esc %</th>
+                <th className="py-2 pr-3 text-right font-bold">Rep %</th>
+                <th className="rounded-r-lg py-2 pr-3 text-right font-bold">Friction Score</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-silver/50">
               {rows.length === 0 ? (
                 <tr>
                   <td colSpan={7}>
@@ -302,16 +302,16 @@ export default function FrictionPage() {
                   </td>
                 </tr>
               ) : (
-                rows.map((r) => (
-                  <tr key={r.intent} className="border-b border-silver hover:bg-bone">
-                    <td className="py-2 pr-4 text-slate text-xs">#{r.rank}</td>
-                    <td className="py-2 pr-4 text-obsidian">{r.intent}</td>
-                    <td className="py-2 pr-4 text-right text-graphite">{num(r.total_calls)}</td>
-                    <td className="py-2 pr-4 text-right text-red-600">{num(r.negative_pct).toFixed(1)}%</td>
-                    <td className="py-2 pr-4 text-right text-amber-600">{num(r.escalation_pct).toFixed(1)}%</td>
-                    <td className="py-2 pr-4 text-right text-orange-600">{num(r.repeat_call_pct).toFixed(1)}%</td>
+                rows.slice(0, 5).map((r) => (
+                  <tr key={r.intent} className="transition-colors hover:bg-bone/60">
+                    <td className="py-2 pl-3 text-xs font-semibold text-slate">#{r.rank}</td>
+                    <td className="py-2 pr-3 font-medium text-obsidian">{r.intent}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums text-graphite">{num(r.total_calls)}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums font-medium text-red-600">{num(r.negative_pct).toFixed(1)}%</td>
+                    <td className="py-2 pr-3 text-right tabular-nums font-medium text-amber-600">{num(r.escalation_pct).toFixed(1)}%</td>
+                    <td className="py-2 pr-3 text-right tabular-nums font-medium text-orange-600">{num(r.repeat_call_pct).toFixed(1)}%</td>
                     <td
-                      className="py-2 text-right font-bold text-sm"
+                      className="py-2 pr-3 text-right font-bold tabular-nums"
                       style={{ color: SCORE_COLOR(num(r.friction_score)) }}
                     >
                       {num(r.friction_score).toFixed(1)}

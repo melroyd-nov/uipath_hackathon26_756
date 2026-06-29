@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { Info, ChevronDown, ChevronUp, ShieldCheck, TrendingUp } from 'lucide-react';
+import { Info, ChevronDown, ChevronUp, ShieldCheck, TrendingUp, BarChart2 } from 'lucide-react';
 import lottieShield from '../assets/lottie/icon-shield.json';
 import FilterBar from '../components/shared/FilterBar';
 import GlassPanel from '../components/shared/GlassPanel';
@@ -72,36 +73,81 @@ export default function CompliancePage() {
           {showMetricInfo ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
         </button>
 
-        {showMetricInfo && (
-          <div className="mt-3 space-y-3 rounded-xl border border-silver bg-bone p-4 text-xs">
-            <div className="flex gap-3">
-              <ShieldCheck size={14} className="mt-0.5 shrink-0 text-red-600" />
-              <div>
-                <p className="font-semibold text-obsidian">Compliance Fail Rate</p>
-                <p className="mt-0.5 text-slate">
-                  <span className="font-mono text-amber-700">compliance_flag = 'No' ÷ total calls × 100</span>
-                  {' — '}
-                  <span className="font-medium text-obsidian">"No"</span> = failed;{' '}
-                  <span className="font-medium text-obsidian">"Yes"</span> = passed. Benchmark:{' '}
-                  <span className="text-emerald-600">≤5%</span>. Exceeding this threshold indicates regulatory risk
-                  and requires immediate coaching or process review.
-                </p>
+        <AnimatePresence initial={false}>
+          {showMetricInfo && (
+            <motion.div
+              key="compliance-info"
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="divide-y divide-silver rounded-xl border border-silver bg-bone p-4 text-xs">
+                <div className="flex gap-3 pb-3">
+                  <ShieldCheck size={14} className="mt-0.5 shrink-0 text-red-600" />
+                  <div>
+                    <p className="font-semibold text-obsidian">What counts as a compliance failure?</p>
+                    <p className="mt-0.5 text-slate">
+                      A call is marked as a compliance failure (<span className="font-mono text-amber-700">compliance_flag = No</span>) when
+                      the AI agent detects that required protocols were not followed — such as failing to read the
+                      mandatory disclosure, skipping identity verification steps, or breaching data-privacy obligations.
+                      <span className="font-mono text-amber-700"> compliance_flag = Yes</span> means the call passed all checks.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3 py-3">
+                  <ShieldCheck size={14} className="mt-0.5 shrink-0 text-amber-600" />
+                  <div>
+                    <p className="font-semibold text-obsidian">Compliance Fail Rate (per agent)</p>
+                    <p className="mt-0.5 text-slate">
+                      <span className="font-mono text-amber-700">compliance_flag = No ÷ total calls × 100</span>, grouped
+                      per agent. The benchmark is <strong>≤ 5%</strong> — any agent above this poses direct regulatory
+                      exposure. Rates are colour-coded: green ≤ 5%, red above 5%. Treat agents above the line as
+                      high priority for refresher training or call script review.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3 py-3">
+                  <TrendingUp size={14} className="mt-0.5 shrink-0 text-amber-600" />
+                  <div>
+                    <p className="font-semibold text-obsidian">Monthly Compliance Failure Trend</p>
+                    <p className="mt-0.5 text-slate">
+                      Compliance fail rate aggregated across all agents per calendar month. Upward trends or sudden
+                      spikes typically indicate a new product rollout without adequate training, a policy change
+                      agents are unaware of, or system/script issues. The amber dashed line marks the 5% benchmark —
+                      sustained time above it warrants immediate operational review.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3 py-3">
+                  <TrendingUp size={14} className="mt-0.5 shrink-0 text-blue-500" />
+                  <div>
+                    <p className="font-semibold text-obsidian">vs Benchmark column</p>
+                    <p className="mt-0.5 text-slate">
+                      Shows how far each agent is from the <span className="text-emerald-600">≤ 5%</span> target.{' '}
+                      <span className="font-mono text-amber-700">+X% over</span> = percentage points above 5% (e.g., +3.2% over means a fail rate of 8.2%).{' '}
+                      <span className="text-emerald-600">On target</span> = the agent is at or below the 5% threshold.
+                      Agents are sorted highest-to-lowest so the most at-risk appear first.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-3">
+                  <BarChart2 size={14} className="mt-0.5 shrink-0 text-slate" />
+                  <div>
+                    <p className="font-semibold text-obsidian">Agent Compliance Summary Table</p>
+                    <p className="mt-0.5 text-slate">
+                      Aggregated per-agent view of total calls handled, number of compliance failures, and the
+                      resulting fail rate. Sorted highest-to-lowest by fail rate so the riskiest agents are always
+                      at the top. Use this table alongside the bar chart to confirm rankings and to quickly identify
+                      which agents need immediate intervention vs. those who are comfortably on target.
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="border-t border-silver pt-3 flex gap-3">
-              <TrendingUp size={14} className="mt-0.5 shrink-0 text-amber-600" />
-              <div>
-                <p className="font-semibold text-obsidian">vs Benchmark column</p>
-                <p className="mt-0.5 text-slate">
-                  Shows how far each agent is from the{' '}
-                  <span className="text-emerald-600">≤5%</span> target.{' '}
-                  <span className="font-mono text-amber-700">+X% over</span> = percentage points above 5%.{' '}
-                  <span className="text-emerald-600">On target</span> = at or below 5%.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Charts row */}
@@ -157,54 +203,74 @@ export default function CompliancePage() {
       </div>
 
       {/* Summary table */}
-      <GlassPanel title="Agent Compliance Summary" lottieIcon={lottieShield} accent="#10B981">
+      <GlassPanel
+        title="Agent Compliance Summary"
+        subtitle="Per-agent totals · sorted by fail rate"
+        lottieIcon={lottieShield}
+        accent="#10B981"
+        tooltip="Per-agent breakdown of total calls handled, failures detected, and compliance fail rate. Sorted highest-to-lowest. Green = ≤ 5% (on target); red = above 5% (regulatory risk). Use alongside the bar chart to prioritise coaching conversations."
+      >
         {byAgentLoading ? (
           <div className="flex justify-center py-16">
             <LoadingSpinner size={28} />
           </div>
         ) : byAgentRows.length === 0 ? (
-          <table className="w-full text-sm">
-            <tbody>
-              <tr>
-                <td colSpan={5}>
-                  <EmptyState title="No compliance data" description="No data available for this period." />
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <EmptyState title="No compliance data" description="No data available for this period." />
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-silver text-left text-xs uppercase tracking-wide text-slate">
-                <th className="py-2 pr-4">Agent</th>
-                <th className="py-2 pr-4 text-right">Total Calls</th>
-                <th className="py-2 pr-4 text-right">Failures</th>
-                <th className="py-2 pr-4 text-right">Fail Rate</th>
-                <th className="py-2 text-right">vs Benchmark</th>
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-[#F1F3F9] text-[10px] uppercase tracking-wider text-[#374151]">
+                <th className="rounded-l-lg py-2 pl-3 text-left font-bold">Agent</th>
+                <th className="py-2 text-right font-bold">Calls</th>
+                <th className="py-2 text-right font-bold">Failures</th>
+                <th className="py-2 pl-3 text-left font-bold">Fail %</th>
+                <th className="rounded-r-lg py-2 pr-3 text-right font-bold">vs Bench</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-silver/50">
               {byAgentRows.map((row) => {
                 const pct = num(row.compliance_fail_pct);
                 const over = pct - BENCHMARK;
+                const isOver = pct > BENCHMARK;
+                const initials = row.agent_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
                 return (
-                  <tr key={row.agent_name} className="border-b border-silver hover:bg-bone">
-                    <td className="py-2 pr-4 font-medium text-obsidian">{row.agent_name}</td>
-                    <td className="py-2 pr-4 text-right text-graphite">{num(row.total_calls)}</td>
-                    <td className="py-2 pr-4 text-right text-red-600">{num(row.fail_count)}</td>
-                    <td className={`py-2 pr-4 text-right text-xs font-medium ${failRateClass(pct)}`}>
-                      {pct.toFixed(1)}%
+                  <tr key={row.agent_name} className="group transition-colors hover:bg-bone/60">
+                    {/* Agent — avatar + name */}
+                    <td className="py-2 pl-3 pr-3">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                          style={{ background: isOver ? '#ef4444' : '#10b981' }}
+                        >
+                          {initials}
+                        </span>
+                        <span className="font-semibold text-obsidian">{row.agent_name}</span>
+                      </div>
                     </td>
-                    <td className="py-2 text-right">
-                      {pct > BENCHMARK ? (
-                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-700">
-                          +{over.toFixed(1)}% over
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">
-                          On target
-                        </span>
-                      )}
+                    {/* Calls */}
+                    <td className="py-2 text-right tabular-nums font-medium text-graphite">{num(row.total_calls)}</td>
+                    {/* Failures */}
+                    <td className="py-2 text-right tabular-nums font-semibold text-red-500">{num(row.fail_count)}</td>
+                    {/* Fail % with mini bar */}
+                    <td className="py-2 px-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-silver/60">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${Math.min(100, (pct / 15) * 100)}%`,
+                              background: isOver ? '#ef4444' : '#10b981',
+                            }}
+                          />
+                        </div>
+                        <span className={`tabular-nums font-semibold ${failRateClass(pct)}`}>{pct.toFixed(1)}%</span>
+                      </div>
+                    </td>
+                    {/* vs Bench */}
+                    <td className="py-2 pr-3 text-right">
+                      <span className={`font-bold tabular-nums ${isOver ? 'text-red-500' : 'text-emerald-500'}`}>
+                        {isOver ? `+${over.toFixed(1)}%` : '✓ On target'}
+                      </span>
                     </td>
                   </tr>
                 );

@@ -95,31 +95,32 @@ export default function TopBar() {
     <header
       className="flex h-[58px] shrink-0 items-center justify-between border-b border-[rgba(15,31,76,0.07)] bg-white/90 px-5 backdrop-blur-md"
     >
-      {/* ── Left: icon + title + powered by ── */}
+      {/* ── Left: page icon + title + powered by ── */}
       <div className="flex items-center gap-3">
         {Icon && (
-          <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-            style={{
-              background: 'linear-gradient(135deg, #4F46E5, #2563EB)',
-              boxShadow: '0 2px 8px rgba(79,70,229,0.28)',
-            }}
-          >
-            <Icon size={15} color="white" />
+          <div className="flex items-center gap-2">
+            <div
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+              style={{
+                background: 'linear-gradient(135deg, #4F46E5, #2563EB)',
+                boxShadow: '0 2px 8px rgba(79,70,229,0.28)',
+              }}
+            >
+              <Icon size={15} color="white" />
+            </div>
+            <div>
+              <h1
+                className="text-[14.5px] font-semibold leading-none tracking-[-0.015em] text-[#0F1F4C]"
+                style={{ fontFamily: 'Poppins, sans-serif' }}
+              >
+                {navItem?.label ?? 'Call Center Analytics'}
+              </h1>
+              <p className="mt-[3px] text-[9.5px] font-medium uppercase tracking-[0.10em] text-[rgba(15,31,76,0.30)]">
+                Acme Call Center Analytics
+              </p>
+            </div>
           </div>
         )}
-
-        <div>
-          <h1
-            className="text-[14.5px] font-semibold leading-none tracking-[-0.015em] text-[#0F1F4C]"
-            style={{ fontFamily: 'Poppins, sans-serif' }}
-          >
-            {navItem?.label ?? 'Call Center Analytics'}
-          </h1>
-          <p className="mt-[3px] text-[9.5px] font-medium uppercase tracking-[0.10em] text-[rgba(15,31,76,0.30)]">
-            Acme Call Center Analytics
-          </p>
-        </div>
 
         <Divider />
 

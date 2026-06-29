@@ -1,10 +1,12 @@
-import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useSidebar } from '../../context/SidebarContext';
 import { ChevronLeft } from 'lucide-react';
 import { NAV_ITEMS } from '../../config/navigation';
+import acmeIcon from '../../public/Acme-Transparent-Icon.png';
+import acmeLogo from '../../public/Acme-Transparent-Logo.png';
 
 export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const { collapsed, setCollapsed } = useSidebar();
 
   return (
     <aside
@@ -28,24 +30,21 @@ export default function Sidebar() {
 
       <div className="flex min-h-0 flex-1 flex-col overflow-visible">
         {/* Brand */}
-        <div className="flex shrink-0 items-center gap-2.5 border-b border-white/[0.08] px-3 py-4">
-          <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-            style={{
-              background: 'linear-gradient(135deg, rgba(99,102,241,0.70), rgba(59,130,246,0.60))',
-              boxShadow: '0 0 12px rgba(99,102,241,0.40)',
-              border: '1px solid rgba(255,255,255,0.18)',
-            }}
-          >
-            <span className="text-xs font-bold text-white" style={{ fontFamily: 'Poppins, sans-serif' }}>A</span>
-          </div>
-          {!collapsed && (
-            <span
-              className="truncate text-[12px] font-semibold text-white/80"
-              style={{ fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.01em' }}
-            >
-              Call Center
-            </span>
+        <div className="flex shrink-0 items-center border-b border-white/[0.08] px-3 py-4">
+          {collapsed ? (
+            <img
+              src={acmeIcon}
+              alt="Acme"
+              className="h-7 w-7 object-contain mx-auto"
+              style={{ filter: 'brightness(0) invert(1)' }}
+            />
+          ) : (
+            <img
+              src={acmeLogo}
+              alt="Acme Insurance"
+              className="h-16 w-auto object-contain"
+              style={{ filter: 'brightness(0) invert(1)' }}
+            />
           )}
         </div>
 

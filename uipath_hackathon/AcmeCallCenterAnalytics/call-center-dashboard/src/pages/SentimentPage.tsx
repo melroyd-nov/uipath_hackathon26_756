@@ -228,7 +228,7 @@ export default function SentimentPage() {
           <EmptyState title="No agent sentiment data" description="No data available for this period." />
         ) : (
           <table className="w-full text-sm">
-            <thead>
+            <thead className="sticky top-0 z-10 bg-white">
               <tr className="text-left text-[11px] text-slate">
                 <th className="pb-2">Agent</th>
                 <th className="pb-2">Total</th>

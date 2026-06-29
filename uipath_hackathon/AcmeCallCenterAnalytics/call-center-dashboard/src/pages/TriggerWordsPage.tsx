@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Info, ChevronDown, ChevronUp, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Info, ChevronDown, ChevronUp, AlertTriangle, TrendingUp, Zap, Hash, ShieldAlert } from 'lucide-react';
 import lottieZap from '../assets/lottie/icon-zap.json';
 import FilterBar from '../components/shared/FilterBar';
 import GlassPanel from '../components/shared/GlassPanel';
-import InfoTooltip from '../components/shared/InfoTooltip';
+import KpiHeroCard from '../components/dashboard/KpiHeroCard';
 import ChartInsight from '../components/shared/ChartInsight';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import EmptyState from '../components/shared/EmptyState';
@@ -17,11 +17,189 @@ import { num } from '../utils/num';
 const BRAND_COLOR = '#6366F1';
 const HIGH_RISK_WORDS = new Set(['lawyer', 'fraud', 'lawsuit', 'sue', 'legal', 'attorney']);
 
+interface TriggerWordRow { word: string; count: number; pct_of_calls: number; }
+
+/* ─── colour palette: dark forest-green → olive → amber (matches reference) ── */
+const CLOUD_PALETTE = [
+  '#1a3d0a', '#2c5e18', '#3d7a24', '#4f8f2f',
+  '#6b7c18', '#8a7e1a', '#a8941c', '#bf6e0e',
+];
+
+const CW = 700, CH = 220; // SVG viewport dimensions
+
+interface PlacedWord {
+  word: string; x: number; y: number; fontSize: number; rotation: number;
+  color: string; count: number; pct_of_calls: number; isHighRisk: boolean;
+  x1: number; y1: number; x2: number; y2: number;
+}
+
+function cloudRotation(word: string, idx: number): number {
+  const hash = word.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const table = [0, 0, 0, 0, 90, -90, 0, 0, 0, 0, 90, 0, 0, -90, 0, 0];
+  return table[(hash + idx * 3) % table.length];
+}
+
+/**
+ * Archimedean spiral word-cloud layout.
+ * Words are sorted large→small, then placed outward from the centre along a
+ * tight spiral until a non-overlapping spot is found. No library needed.
+ */
+function computeCloudLayout(rows: TriggerWordRow[], highRiskWords: Set<string>): PlacedWord[] {
+  const placed: PlacedWord[] = [];
+  const sorted = [...rows].sort((a, b) => b.count - a.count);
+  if (!sorted.length) return placed;
+
+  const counts = sorted.map((r) => r.count);
+  const minC = Math.min(...counts), maxC = Math.max(...counts);
+  const rng = maxC - minC || 1;
+
+  for (let idx = 0; idx < sorted.length; idx++) {
+    const r = sorted[idx];
+    const isHighRisk = highRiskWords.has(r.word.toLowerCase());
+    const norm = (r.count - minC) / rng;
+    const fontSize = Math.round(12 + norm * 44);
+    const rotation = isHighRisk ? 0 : cloudRotation(r.word, idx);
+    const color = isHighRisk
+      ? '#c0392b'
+      : CLOUD_PALETTE[Math.round((1 - norm) * (CLOUD_PALETTE.length - 1))];
+
+    // Estimate rendered bounding box from character metrics
+    const tw = r.word.length * fontSize * 0.58;
+    const th = fontSize * 1.1;
+
+    // Axis-aligned bounding box after rotation
+    const rad = (rotation * Math.PI) / 180;
+    const cosA = Math.abs(Math.cos(rad)), sinA = Math.abs(Math.sin(rad));
+    const bbW = tw * cosA + th * sinA + 6;
+    const bbH = tw * sinA + th * cosA + 4;
+
+    // Walk the Archimedean spiral: cx = K·θ·cos(θ), cy = K·θ·sin(θ)·aspect
+    const K = 1.6;       // controls how tight the spiral coils are
+    const STEP = 0.08;   // angular step — smaller = denser packing
+    let theta = 0;
+    let placed_ok = false;
+
+    while (theta < 500 * Math.PI) {
+      const radius = K * theta;
+      const cx = Math.cos(theta) * radius;
+      const cy = Math.sin(theta) * radius * 0.50; // squash vertically → wide blob
+
+      // Skip if outside SVG bounds
+      if (Math.abs(cx) + bbW / 2 > CW / 2 - 4 || Math.abs(cy) + bbH / 2 > CH / 2 - 4) {
+        theta += STEP; continue;
+      }
+
+      const x1 = cx - bbW / 2, y1 = cy - bbH / 2;
+      const x2 = cx + bbW / 2, y2 = cy + bbH / 2;
+
+      // AABB collision against every already-placed word
+      let hit = false;
+      for (const p of placed) {
+        if (x1 < p.x2 && x2 > p.x1 && y1 < p.y2 && y2 > p.y1) { hit = true; break; }
+      }
+
+      if (!hit) {
+        placed.push({
+          word: r.word, x: cx, y: cy, fontSize, rotation, color,
+          count: r.count, pct_of_calls: r.pct_of_calls, isHighRisk,
+          x1, y1, x2, y2,
+        });
+        placed_ok = true;
+        break;
+      }
+      theta += STEP;
+    }
+
+    // If a word truly can't be placed (canvas too small), skip it silently
+    if (!placed_ok) { /* intentionally empty */ }
+  }
+
+  return placed;
+}
+
+function WordCloud({ rows, highRiskWords }: { rows: TriggerWordRow[]; highRiskWords: Set<string> }) {
+  const [hovered, setHovered] = useState<PlacedWord | null>(null);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+
+  // Recompute layout only when source data changes
+  const cloud = useMemo(() => computeCloudLayout(rows, highRiskWords), [rows, highRiskWords]);
+
+  return (
+    <div className="relative" onMouseMove={(e) => setPos({ x: e.clientX, y: e.clientY })}>
+      <svg
+        width="100%"
+        viewBox={`${-CW / 2} ${-CH / 2} ${CW} ${CH}`}
+        style={{ display: 'block', minHeight: 180 }}
+        aria-label="Trigger word cloud"
+      >
+        {cloud.map((p) => (
+          <text
+            key={p.word}
+            x={p.x}
+            y={p.y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={p.fontSize}
+            fontFamily="Poppins, Inter, sans-serif"
+            fontWeight="800"
+            fill={p.color}
+            transform={p.rotation !== 0 ? `rotate(${p.rotation},${p.x},${p.y})` : undefined}
+            style={{ cursor: 'default', userSelect: 'none' }}
+            onMouseEnter={() => setHovered(p)}
+            onMouseLeave={() => setHovered(null)}
+          >
+            {p.word}
+          </text>
+        ))}
+      </svg>
+
+      {/* Legend */}
+      <div className="mt-1 mb-2 flex w-full justify-center gap-6 text-[11px] text-slate">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#c0392b]" />
+          High Risk
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#3d7a24]" />
+          Monitor
+        </span>
+        <span className="flex items-center gap-1.5 italic text-slate/60">
+          Size = frequency
+        </span>
+      </div>
+
+      {/* Hover tooltip */}
+      {hovered && (
+        <div
+          className="pointer-events-none fixed z-50 rounded-xl border border-white/20 px-3 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.22)] backdrop-blur-md"
+          style={{
+            left: pos.x + 14,
+            top: pos.y - 90,
+            background: 'rgba(10,20,10,0.93)',
+            minWidth: 148,
+          }}
+        >
+          <p className="text-[13px] font-bold text-white">{hovered.word}</p>
+          <p className="mt-1 text-[11px] text-white/70">
+            <span className="font-semibold text-amber-400">{hovered.count.toLocaleString()}</span> occurrences
+          </p>
+          <p className="text-[11px] text-white/70">
+            <span className="font-semibold text-emerald-400">{hovered.pct_of_calls.toFixed(1)}%</span> of calls
+          </p>
+          {hovered.isHighRisk && (
+            <p className="mt-1 rounded-md bg-red-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">
+              ⚠ High Risk
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TriggerWordsPage() {
   const { entities } = useDataFabric();
   const [showMetricInfo, setShowMetricInfo] = useState(false);
-
-  interface TriggerWordRow { word: string; count: number; pct_of_calls: number; }
 
   const counts = useQuery({
     queryKey: ['df-trigger-words'],
@@ -54,10 +232,10 @@ export default function TriggerWordsPage() {
     .filter((r) => HIGH_RISK_WORDS.has(r.word.toLowerCase()))
     .reduce((sum, r) => sum + num(r.count), 0);
 
-  const barData = countsRows.map((r) => ({
-    label: r.word,
-    value: num(r.count),
-  }));
+  const barData = [...countsRows]
+    .sort((a, b) => num(b.count) - num(a.count))
+    .slice(0, 5)
+    .map((r) => ({ label: r.word, value: num(r.count) }));
 
   return (
     <div className="space-y-6">
@@ -104,41 +282,63 @@ export default function TriggerWordsPage() {
         )}
       </div>
 
-      {/* KPI summary strip */}
+      {/* KPI cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">Total Flags</p><InfoTooltip text="Total number of trigger word occurrences detected across all calls in the selected period." /></div>
-          <p className="mt-1 text-2xl font-bold text-obsidian">{totalFlags.toLocaleString()}</p>
-          <p className="mt-0.5 text-xs text-slate">this period</p>
-        </div>
-        <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">Unique Words</p><InfoTooltip text="Number of distinct trigger words detected across all calls in the period. A higher count indicates broader language risk exposure." /></div>
-          <p className="mt-1 text-2xl font-bold text-obsidian">{countsRows.length}</p>
-          <p className="mt-0.5 text-xs text-slate">flagged terms</p>
-        </div>
-        <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">High-Risk Flags</p><InfoTooltip text="Total occurrences of high-risk terms such as 'lawyer', 'fraud', or 'legal action' that indicate potential legal or regulatory exposure. These require immediate supervisor review." /></div>
-          <p className="mt-1 text-2xl font-bold text-red-600">{highRiskTotal.toLocaleString()}</p>
-          <p className="mt-0.5 text-xs text-slate">legal / fraud terms</p>
-        </div>
-        <div className="rounded-xl border border-silver bg-paper px-4 py-3">
-          <div className="flex items-center gap-1.5"><p className="text-xs text-slate">Top Word</p><InfoTooltip text="The single most frequently occurring trigger word across all calls in the selected period. Focus training efforts on reducing usage of this term." /></div>
-          <p className="mt-1 text-2xl font-bold text-amber-600">
-            {countsRows[0]?.word ?? '—'}
-          </p>
-          <p className="mt-0.5 text-xs text-slate">
-            {countsRows[0] ? `${num(countsRows[0].count).toLocaleString()} occurrences` : 'no data'}
-          </p>
-        </div>
+        <KpiHeroCard
+          label="Total Flags"
+          value={totalFlags.toLocaleString()}
+          icon={Zap}
+          accent="amber"
+          status="neutral"
+          footer="this period"
+          sparkline={trendRows.map((r) => num(r.trigger_count))}
+          delay={0}
+          compact
+          tooltip="Total trigger word occurrences detected across all calls in the selected period. Used as the baseline for all trigger-word percentage metrics."
+        />
+        <KpiHeroCard
+          label="Unique Words"
+          value={countsRows.length.toString()}
+          icon={Hash}
+          accent="indigo"
+          status="neutral"
+          footer="flagged terms"
+          delay={0.07}
+          compact
+          tooltip="Number of distinct trigger words detected across all calls in the period. A higher count indicates broader language risk exposure."
+        />
+        <KpiHeroCard
+          label="High-Risk Flags"
+          value={highRiskTotal.toLocaleString()}
+          icon={ShieldAlert}
+          accent="rose"
+          status={highRiskTotal > 0 ? 'critical' : 'good'}
+          footer="legal / fraud terms"
+          delay={0.14}
+          compact
+          tooltip="Occurrences of high-risk terms (lawyer, fraud, lawsuit, sue, legal, attorney). These require immediate supervisor review and may indicate regulatory exposure."
+        />
+        <KpiHeroCard
+          label="Top Word"
+          value={countsRows[0]?.word ?? '—'}
+          icon={TrendingUp}
+          accent="emerald"
+          status="neutral"
+          footer={countsRows[0] ? `${num(countsRows[0].count).toLocaleString()} occurrences` : 'no data'}
+          delay={0.21}
+          compact
+          tooltip="The single most frequently occurring trigger word this period. Focus de-escalation and compliance training on reducing usage of this term."
+        />
       </div>
 
       {/* Main charts row */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
         <GlassPanel
           title="Top Trigger Words"
           subtitle="Occurrences this period — sorted by count"
           lottieIcon={lottieZap}
           accent="#F59E0B"
+          fillHeight
           tooltip="Words flagged by the NLP pipeline as high-risk. Bars show raw occurrence count; hover for detail. Words associated with legal or fraud exposure appear in red when above the alert threshold."
         >
           {countsLoading ? (
@@ -167,6 +367,7 @@ export default function TriggerWordsPage() {
           subtitle="Monthly total occurrences"
           lottieIcon={lottieZap}
           accent="#F59E0B"
+          fillHeight
           tooltip="Total trigger word detections per month. Spikes may indicate a product issue, policy change, or external event driving customer frustration. Use alongside the escalation and sentiment trends to confirm root cause."
         >
           {trendLoading ? (
@@ -175,12 +376,15 @@ export default function TriggerWordsPage() {
             </div>
           ) : (
             <>
-              <TrendLineChart
-                data={trendRows}
-                xDataKey="month"
-                series={[{ dataKey: 'trigger_count', label: 'Trigger Flags', stroke: BRAND_COLOR }]}
-                yFormatter={(v) => v.toLocaleString()}
-              />
+              <div className="flex-1 min-h-[200px]">
+                <TrendLineChart
+                  data={trendRows}
+                  xDataKey="month"
+                  height="100%"
+                  series={[{ dataKey: 'trigger_count', label: 'Trigger Flags', stroke: BRAND_COLOR }]}
+                  yFormatter={(v) => v.toLocaleString()}
+                />
+              </div>
               <ChartInsight
                 prompt={`Analyse the monthly trend of trigger word detections. Is the volume rising or falling? What months show spikes and what are the likely operational causes? What interventions would reduce trigger word frequency? Data: ${JSON.stringify(trendRows)}`}
                 cacheKey="trigger-word-trend"
@@ -190,56 +394,16 @@ export default function TriggerWordsPage() {
         </GlassPanel>
       </div>
 
-      {/* Detail table */}
-      <GlassPanel title="Trigger Word Breakdown" subtitle="All flagged terms ranked by occurrence" lottieIcon={lottieZap} accent="#F59E0B">
+      {/* Word cloud */}
+      <GlassPanel title="Trigger Word Cloud" subtitle="Size = frequency · green shades = monitor · red = high-risk" lottieIcon={lottieZap} accent="#F59E0B">
         {countsLoading ? (
           <div className="flex justify-center py-16">
             <LoadingSpinner size={28} />
           </div>
         ) : countsRows.length === 0 ? (
-          <table className="w-full text-sm">
-            <tbody>
-              <tr>
-                <td colSpan={4}>
-                  <EmptyState title="No trigger word data" description="No data available for this period." />
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <EmptyState title="No trigger word data" description="No data available for this period." />
         ) : (
-          <table className="mt-2 w-full text-sm">
-            <thead>
-              <tr className="border-b border-silver text-left text-xs uppercase tracking-wide text-slate">
-                <th className="py-2 pr-4">Word</th>
-                <th className="py-2 pr-4 text-right">Occurrences</th>
-                <th className="py-2 pr-4 text-right">% of Calls</th>
-                <th className="py-2 text-right">Risk Level</th>
-              </tr>
-            </thead>
-            <tbody>
-              {countsRows.map((r) => {
-                const isHighRisk = HIGH_RISK_WORDS.has(r.word.toLowerCase());
-                return (
-                  <tr key={r.word} className="border-b border-silver hover:bg-bone">
-                    <td className="py-2 pr-4 font-medium text-obsidian">{r.word}</td>
-                    <td className="py-2 pr-4 text-right text-graphite">{num(r.count).toLocaleString()}</td>
-                    <td className="py-2 pr-4 text-right text-graphite">{num(r.pct_of_calls).toFixed(1)}%</td>
-                    <td className="py-2 text-right">
-                      {isHighRisk ? (
-                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-700">
-                          High Risk
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
-                          Monitor
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <WordCloud rows={countsRows} highRiskWords={HIGH_RISK_WORDS} />
         )}
       </GlassPanel>
     </div>

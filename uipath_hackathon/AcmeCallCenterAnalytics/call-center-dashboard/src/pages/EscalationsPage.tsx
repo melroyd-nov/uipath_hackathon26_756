@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { Info, ChevronDown, ChevronUp, AlertTriangle, BarChart2 } from 'lucide-react';
 import lottieEscalation from '../assets/lottie/icon-escalation.json';
@@ -102,32 +103,81 @@ export default function EscalationsPage() {
           {showMetricInfo ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
 
+        <AnimatePresence initial={false}>
         {showMetricInfo && (
-          <div className="mt-3 divide-y divide-silver rounded-xl border border-silver bg-bone p-4">
+          <motion.div
+            key="metric-info"
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
+            className="overflow-hidden"
+          >
+          <div className="divide-y divide-silver rounded-xl border border-silver bg-bone p-4 text-xs">
             <div className="flex gap-3 pb-3">
-              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-500" />
+              <AlertTriangle size={14} className="mt-0.5 shrink-0 text-amber-500" />
               <div>
-                <p className="text-sm font-medium text-obsidian">Escalation Rate</p>
-                <p className="mt-0.5 text-xs text-slate">
-                  escalation_flag = 'Yes' ÷ total calls × 100. A call is escalated when the agent transfers it to a
-                  supervisor/specialist because they cannot resolve it independently. Benchmark ≤10% — red above,
-                  green at/below.
+                <p className="font-semibold text-obsidian">What counts as an escalation?</p>
+                <p className="mt-0.5 text-slate">
+                  A call is flagged as escalated (<span className="font-mono text-amber-700">escalation_flag = Yes</span>) when
+                  the front-line agent transfers the call to a supervisor or specialist because they cannot resolve
+                  the customer's issue independently. This is set by the AI agent during transcript analysis.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 py-3">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0 text-red-500" />
+              <div>
+                <p className="font-semibold text-obsidian">Escalation Rate (per agent)</p>
+                <p className="mt-0.5 text-slate">
+                  <span className="font-mono text-amber-700">escalation_flag = Yes</span> ÷ total calls × 100, grouped
+                  per agent. The benchmark is <strong>≤ 10%</strong> — rates above this appear red, at or below
+                  appear green. Agents consistently above the benchmark may need additional coaching, clearer
+                  escalation guidelines, or reduced call complexity in their routing queue.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 py-3">
+              <BarChart2 size={14} className="mt-0.5 shrink-0 text-blue-500" />
+              <div>
+                <p className="font-semibold text-obsidian">Monthly Escalation Trend</p>
+                <p className="mt-0.5 text-slate">
+                  Escalation rate aggregated across all agents per calendar month. Spikes typically indicate product
+                  issues, policy changes, seasonal complexity, or system outages. The amber dashed line marks the
+                  10% benchmark — sustained periods above it warrant operational review. Improving months show the
+                  effect of training or process interventions.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 py-3">
+              <BarChart2 size={14} className="mt-0.5 shrink-0 text-red-500" />
+              <div>
+                <p className="font-semibold text-obsidian">Escalations by Intent</p>
+                <p className="mt-0.5 text-slate">
+                  Absolute count of escalated calls grouped by <span className="font-mono text-amber-700">call_intent1</span>{' '}
+                  (the primary detected intent of the call). High counts on a specific intent indicate a structural
+                  friction point — the product, policy, or process for that intent is too complex for front-line
+                  resolution and may need redesign, a decision-tree script, or a self-service alternative.
                 </p>
               </div>
             </div>
             <div className="flex gap-3 pt-3">
-              <BarChart2 size={16} className="mt-0.5 shrink-0 text-red-500" />
+              <BarChart2 size={14} className="mt-0.5 shrink-0 text-slate" />
               <div>
-                <p className="text-sm font-medium text-obsidian">Escalations by Intent</p>
-                <p className="mt-0.5 text-xs text-slate">
-                  Absolute count of escalated calls grouped by call_intent1. High counts on a specific intent
-                  indicate a structural friction point — the process/product for that intent is too complex for
-                  front-line agents.
+                <p className="font-semibold text-obsidian">Agent Escalation Summary Table</p>
+                <p className="mt-0.5 text-slate">
+                  Per-agent breakdown of total calls handled, number escalated, and the resulting escalation %.
+                  Sorted highest-to-lowest by rate. Use this alongside the bar chart to identify which agents
+                  are driving the aggregate rate and to prioritise coaching conversations. The{' '}
+                  <span className="font-mono text-amber-700">Escalation %</span> column is colour-coded: green
+                  ≤ 10%, red above 10%.
                 </p>
               </div>
             </div>
           </div>
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -210,7 +260,13 @@ export default function EscalationsPage() {
         )}
       </GlassPanel>
 
-      <GlassPanel title="Agent Escalation Summary" lottieIcon={lottieEscalation} accent="#EF4444">
+      <GlassPanel
+        title="Agent Escalation Summary"
+        subtitle="Per-agent totals · sorted by escalation rate"
+        lottieIcon={lottieEscalation}
+        accent="#EF4444"
+        tooltip="Per-agent breakdown of total calls handled, number escalated, and escalation rate. Sorted highest to lowest. Escalation % is green at ≤ 10% (on target) and red above 10% (needs review). Use this table to identify which agents are driving the overall escalation rate and to prioritise coaching."
+      >
         {byAgentLoading ? (
           <div className="flex justify-center py-16">
             <LoadingSpinner size={28} />
@@ -219,7 +275,7 @@ export default function EscalationsPage() {
           <EmptyState title="No agent escalation data" description="No data available for this period." />
         ) : (
           <table className="w-full text-sm">
-            <thead>
+            <thead className="sticky top-0 z-10 bg-white">
               <tr className="text-left text-[11px] text-slate">
                 <th className="pb-2">Agent</th>
                 <th className="pb-2">Total Calls</th>

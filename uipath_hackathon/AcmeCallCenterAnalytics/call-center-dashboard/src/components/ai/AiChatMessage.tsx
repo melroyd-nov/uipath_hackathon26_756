@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Bot, User } from 'lucide-react';
+import { Sparkles, User } from 'lucide-react';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -9,27 +9,27 @@ export interface ChatMessage {
 
 function inlineFormat(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const re = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+  // Match **bold** or `code` — bold allows any chars except newline between **
+  const re = /\*\*(.+?)\*\*|`([^`]+)`/g;
   let last = 0;
   let match: RegExpExecArray | null;
   let key = 0;
   while ((match = re.exec(text)) !== null) {
     if (match.index > last) nodes.push(text.slice(last, match.index));
-    const token = match[0];
-    if (token.startsWith('**')) {
+    if (match[1] !== undefined) {
       nodes.push(
-        <strong key={key++} className="text-obsidian font-semibold">
-          {token.slice(2, -2)}
+        <strong key={key++} className="font-bold text-obsidian">
+          {match[1]}
         </strong>,
       );
     } else {
       nodes.push(
         <code key={key++} className="bg-silver/40 text-blue-700 px-1.5 py-0.5 rounded text-xs font-mono">
-          {token.slice(1, -1)}
+          {match[2]}
         </code>,
       );
     }
-    last = match.index + token.length;
+    last = match.index + match[0].length;
   }
   if (last < text.length) nodes.push(text.slice(last));
   return nodes;
@@ -54,13 +54,20 @@ function renderTable(lines: string[], key: number): ReactNode {
     .map((l) => l.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim()));
   if (rows.length === 0) return null;
   const [header, ...body] = rows;
+  const stripped = (cell: string) => cell.replace(/\*\*/g, '').replace(/`/g, '');
+  const isNumeric = (plain: string) => /^\d+(\.\d+)?%$/.test(plain) || /^\d+(\.\d+)?$/.test(plain);
+  // Determine per-column alignment by majority of body cells
+  const colCount = header.length;
+  const numericCol = Array.from({ length: colCount }, (_, ci) =>
+    body.filter((row) => isNumeric(stripped(row[ci] ?? ''))).length > body.length / 2,
+  );
   return (
     <table key={key} className="w-full text-xs my-2 border-collapse">
       <thead>
         <tr className="bg-bone uppercase text-slate">
           {header.map((h, i) => (
-            <th key={i} className="px-2 py-1 text-left border-b border-silver">
-              {h}
+            <th key={i} className={`px-2 py-1 border-b border-silver ${numericCol[i] ? 'text-right' : 'text-left'}`}>
+              {inlineFormat(h)}
             </th>
           ))}
         </tr>
@@ -69,20 +76,23 @@ function renderTable(lines: string[], key: number): ReactNode {
         {body.map((row, ri) => (
           <tr key={ri} className="border-b border-silver">
             {row.map((cell, ci) => {
-              const isPct = /^\d+(\.\d+)?%$/.test(cell);
-              const isBigNum = /^\d{2,}$/.test(cell);
+              const plain = stripped(cell);
+              const isPct = /^\d+(\.\d+)?%$/.test(plain);
+              const isBigNum = /^\d+(\.\d+)?$/.test(plain) && !isPct;
               return (
                 <td
                   key={ci}
                   className={`px-2 py-1 ${
                     isPct
-                      ? 'text-amber-700 font-mono'
+                      ? 'text-amber-700 font-mono text-right'
                       : isBigNum
-                        ? 'text-blue-700 font-mono'
-                        : 'text-graphite'
+                        ? 'text-blue-700 font-mono text-right'
+                        : numericCol[ci]
+                          ? 'text-graphite font-mono text-right'
+                          : 'text-graphite'
                   }`}
                 >
-                  {cell}
+                  {inlineFormat(cell)}
                 </td>
               );
             })}
@@ -265,12 +275,48 @@ export default function AiChatMessage({ message }: { message: ChatMessage }) {
 
   if (isUser) {
     return (
-      <div className="flex items-start gap-3 justify-end">
-        <div className="bg-moss-veil border border-blush rounded-2xl rounded-tr-sm px-4 py-3 max-w-lg">
-          <p className="text-obsidian text-sm whitespace-pre-wrap">{message.content}</p>
+      <div className="flex items-end gap-3 justify-end">
+        <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl rounded-br-sm px-4 py-3 max-w-lg shadow-ai-card">
+          <p className="text-white text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
         </div>
-        <div className="w-8 h-8 rounded-full bg-bone flex items-center justify-center shrink-0">
-          <User size={15} className="text-graphite" />
+        <div className="w-7 h-7 rounded-full bg-bone border border-silver flex items-center justify-center shrink-0">
+          <User size={13} className="text-graphite" />
+        </div>
+      </div>
+    );
+  }
+
+  const avatar = (
+    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shrink-0 mt-0.5 shadow-ai-card">
+      <Sparkles size={13} className="text-white" />
+    </div>
+  );
+
+  if (message.isStreaming && !message.content) {
+    return (
+      <div className="flex items-start gap-3">
+        {avatar}
+        <div className="inline-flex items-center gap-1.5 bg-paper border border-silver rounded-full px-4 py-2.5">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce"
+              style={{ animationDelay: `${i * 0.15}s` }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Streaming finished but no content arrived (network error, empty response, etc.).
+  // Render a subtle error notice rather than a ghost empty bubble.
+  if (!message.content) {
+    return (
+      <div className="flex items-start gap-3">
+        {avatar}
+        <div className="flex-1 min-w-0 bg-paper border border-silver rounded-2xl rounded-tl-sm px-4 py-3">
+          <p className="text-sm italic text-slate">No response received. Please try again.</p>
         </div>
       </div>
     );
@@ -278,23 +324,9 @@ export default function AiChatMessage({ message }: { message: ChatMessage }) {
 
   return (
     <div className="flex items-start gap-3">
-      <div className="w-8 h-8 rounded-full bg-purple-100 border border-purple-200 flex items-center justify-center shrink-0">
-        <Bot size={15} className="text-purple-600" />
-      </div>
-      <div className="flex-1 min-w-0 py-1 pr-4">
-        {message.isStreaming && !message.content ? (
-          <div className="flex items-center gap-1.5 py-0.5">
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
-                style={{ animationDelay: `${i * 0.15}s` }}
-              />
-            ))}
-          </div>
-        ) : (
-          renderMarkdown(message.content)
-        )}
+      {avatar}
+      <div className="flex-1 min-w-0 bg-paper border border-silver rounded-2xl rounded-tl-sm px-4 py-3">
+        {renderMarkdown(message.content)}
       </div>
     </div>
   );

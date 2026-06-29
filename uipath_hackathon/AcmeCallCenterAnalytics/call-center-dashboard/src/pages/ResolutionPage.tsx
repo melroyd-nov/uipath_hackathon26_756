@@ -229,7 +229,7 @@ export default function ResolutionPage() {
             </table>
           ) : (
             <table className="mt-2 w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-white">
                 <tr className="border-b border-silver text-left text-xs uppercase tracking-wide text-slate">
                   <th className="py-2 pr-4">Agent</th>
                   <th className="py-2 pr-4 text-right">Total</th>

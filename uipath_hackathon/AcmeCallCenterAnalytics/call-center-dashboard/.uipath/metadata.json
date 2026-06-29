@@ -1,9 +1,9 @@
 {
   "name": "call-center-dashboard",
   "displayName": "call-center-dashboard",
-  "version": "1.0.2",
+  "version": "1.0.8",
   "description": "call-center-dashboard",
   "author": "UiPath Developer",
   "contentType": "webapp",
-  "createdAt": "2026-06-28T16:23:47.032Z"
+  "createdAt": "2026-06-29T09:03:05.393Z"
 }
